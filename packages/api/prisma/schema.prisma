@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Coupon {
+  id                  String   @id
+  sourceId            String
+  idInSite            String
+  domain              String?
+  merchantName        String
+  title               String
+  description         String?
+  termsAndConditions  String?
+  expiryDateAt        DateTime?
+  code                String?
+  startDateAt         DateTime?
+  sourceUrl           String
+  isShown             Boolean?
+  isExpired           Boolean?
+  isExclusive         Boolean?
+  firstScrapedAt      DateTime @default(now())
+  lastScrapedAt       DateTime @default(now())
+  archivedAt          DateTime?
+
+  source Source @relation(fields: [sourceId], references: [id])
+}
+
+model Source {
+  id             String   @id
+  sourceName     String
+  sourceLocale   String
+  sourceStartUrl String
+  coupons        Coupon[]
+}
+
+model ProcessedRun {
+  id            Int      @id @default(autoincrement())
+  actorId       String
+  actorRunId    String   @unique
+  processedAt   DateTime @default(now())
+  status        String   // Status field as per your requirements
+}

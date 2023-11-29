@@ -1,0 +1,59 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "description": "This project involves creating a TypeScript-based API that integrates with Apify for automated web scraping, stores data in a PostgreSQL database, and allows client data retrieval through well-documented endpoints.",
+  "main": "index.js",
+  "scripts": {
+    "dev": "nodemon src/server.ts",
+    "start": "node ./dist/server.js",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma:dev": "./node_modules/.bin/prisma migrate dev --schema prisma/schema.prisma",
+    "prisma:generate": "./node_modules/.bin/prisma generate --schema prisma/schema.prisma",
+    "prisma:migrate": "./node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma",
+    "prisma:reset": "./node_modules/.bin/prisma migrate reset --schema prisma/schema.prisma",
+    "prisma:reset:testing": "source .env.testing && export $(cut -d= -f1 .env.testing) && yarn prisma:reset",
+    "prisma:seed": "ts-node prisma/seeds/index.ts",
+    "prisma:studio": "./node_modules/.bin/prisma studio --schema prisma/schema.prisma"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lexis-solutions/oberst-scrapers.git"
+  },
+  "keywords": [
+    "TypeScript",
+    "API",
+    "Apify",
+    "web",
+    "scraping",
+    "data",
+    "retrieval",
+    "PostgreSQL",
+    "automation"
+  ],
+  "author": "Angel Naydenov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/lexis-solutions/oberst-scrapers/issues"
+  },
+  "homepage": "https://github.com/lexis-solutions/oberst-scrapers#readme",
+  "dependencies": {
+    "@prisma/client": "^5.6.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.0",
+    "class-validator-jsonschema": "^5.0.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "node-fetch": "^2.7.0",
+    "pg": "^8.11.3",
+    "prisma": "^5.6.0",
+    "reflect-metadata": "^0.1.13",
+    "routing-controllers": "^0.10.4",
+    "routing-controllers-openapi": "^4.0.0",
+    "swagger-ui-express": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/swagger-ui-express": "^4.1.6"
+  }
+}

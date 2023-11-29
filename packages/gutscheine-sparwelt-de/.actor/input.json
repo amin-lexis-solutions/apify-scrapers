@@ -1,0 +1,14 @@
+{
+    "title": "Gutscheine Sparwelt De Scraper",
+    "description": "This is the Gutscheine Sparwelt De Scraper input schema",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "proxyConfiguration": {
+            "title": "Proxy Configuration",
+            "type": "object",
+            "description": "Your proxy configuration from Apify",
+            "editor": "proxy"
+        }
+    }
+}

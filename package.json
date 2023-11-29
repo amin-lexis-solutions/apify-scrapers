@@ -1,0 +1,49 @@
+{
+  "name": "oberst-scrapers",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "scripts": {
+    "import-sort": "import-sort --write */packages/**/**/**/**/**/*.{ts}",
+    "lint:fix": "eslint --ignore-path .gitignore . --ext .ts --fix",
+    "prepare": "test -n \"$CI\" || ./node_modules/.bin/husky install"
+  },
+  "lint-staged": {
+    "!(**/zeus/**/*)*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "import-sort --write"
+    ]
+  },
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "18.11.18",
+    "@typescript-eslint/eslint-plugin": "^5.52.0",
+    "@typescript-eslint/parser": "^5.52.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "eslint": "^8.31.0",
+    "eslint-config-prettier": "^6.15.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-react": "^7.21.5",
+    "husky": "^5.1.2",
+    "import-sort-cli": "^6.0.0",
+    "import-sort-parser-typescript": "^6.0.0",
+    "import-sort-style-module": "^6.0.0",
+    "lint-staged": "^10.5.3",
+    "prettier": "2.2.1",
+    "typescript": "4.9.4"
+  },
+  "importSort": {
+    ".js, .jsx, .es6, .es, .mjs, .ts, .tsx": {
+      "style": "module",
+      "parser": "typescript"
+    }
+  }
+}

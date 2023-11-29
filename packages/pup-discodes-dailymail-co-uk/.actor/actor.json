@@ -1,0 +1,10 @@
+{
+    "actorSpecification": 1,
+    "name": "pup-discodes-dailymail-co-uk-scraper",
+    "title": "Pup Discodes Dailymail Co Uk Scraper",
+    "version": "0.0",
+    "input": "./input.json",
+    "storages": {
+        "dataset": "./output.json"
+    }
+}

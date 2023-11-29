@@ -1,0 +1,14 @@
+{
+    "title": "Pup Discodes Dailymail Co Uk Scraper",
+    "description": "This is the Pup Discodes Dailymail Co Uk Scraper input schema",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "proxyConfiguration": {
+            "title": "Proxy Configuration",
+            "type": "object",
+            "description": "Your proxy configuration from Apify",
+            "editor": "proxy"
+        }
+    }
+}

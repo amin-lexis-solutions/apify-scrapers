@@ -1,0 +1,10 @@
+{
+    "actorSpecification": 1,
+    "name": "gutscheine-sparwelt-de-scraper",
+    "title": "Gutscheine Sparwelt De Scraper",
+    "version": "0.0",
+    "input": "./input.json",
+    "storages": {
+        "dataset": "./output.json"
+    }
+}
