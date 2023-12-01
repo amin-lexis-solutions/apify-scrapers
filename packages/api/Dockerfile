@@ -14,4 +14,4 @@ RUN yarn build
 
 RUN echo "$TLS_CA_CERT_MONGO" >ca-mongo.crt
 
-CMD ["bash", "scripts/start.sh"]
+CMD ["bash", "start.sh"]
