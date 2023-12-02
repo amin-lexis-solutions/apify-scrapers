@@ -12,13 +12,13 @@
                     "title",
                     "description",
                     "termsAndConditions",
-                    "expiryDate",
+                    "expiryDateAt",
                     "code",
-                    "startDate",
+                    "startDateAt",
                     "sourceUrl",
-                    "shown",
+                    "isShown",
                     "isExpired",
-                    "exclusive"
+                    "isExclusive"
                 ]
             },
             "display": {
@@ -56,40 +56,40 @@
                             "description": "Often already in the description but sometimes also separate to it",
                             "label": "Terms And Conditions"
                         },
-                        "expiryDate": {
+                        "expiryDateAt": {
                             "type": "string",
                             "description": "Date or sometimes datetime when the code/offer would expire, often missing and sometimes relative (in 5 days) or e.g. also “ongoing”",
-                            "label": "Expiry Date"
+                            "label": "Expiry Date At"
                         },
                         "code": {
                             "type": "string",
                             "description": "If an entry has a coupon code, we consider it to be of type “Code”, if the code is empty we consider it to be of type “Offer”",
                             "label": "Code"
                         },
-                        "startDate": {
+                        "startDateAt": {
                             "type": "string",
                             "description": "Generally it’s not exposed, the date the entry becomes valid",
-                            "label": "Start Date"
+                            "label": "Start Date At"
                         },
                         "sourceUrl": {
                             "type": "string",
                             "description": "The URL of the page, where the entry was listed",
                             "label": "Source Url"
                         },
-                        "shown": {
+                        "isShown": {
                             "type": "boolean",
                             "description": "An entry is present on the page (valid or expired)",
-                            "label": "Shown"
+                            "label": "Is Shown"
                         },
                         "isExpired": {
                             "type": "boolean",
                             "description": "An entry is expired",
                             "label": "Is Expired"
                         },
-                        "exclusive": {
+                        "isExclusive": {
                             "type": "boolean",
                             "description": "Codes can be exclusive to a site",
-                            "label": "Exclusive"
+                            "label": "Is Exclusive"
                         }
                     }
                 }
