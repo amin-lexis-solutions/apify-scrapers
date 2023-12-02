@@ -160,11 +160,13 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
     for (const voucher of vouchers) {
       const validator = new DataValidator();
 
+      // Add required values to the validator
       validator.addValue('sourceUrl', request.url);
       validator.addValue('merchantName', merchantName);
       validator.addValue('title', voucher.title);
       validator.addValue('idInSite', voucher.id_voucher);
 
+      // Add optional values to the validator
       validator.addValue('domain', domain);
       validator.addValue('description', voucher.description);
       validator.addValue('termsAndConditions', voucher.terms_and_conditions);
