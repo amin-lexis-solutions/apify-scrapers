@@ -13,7 +13,9 @@
                     "description",
                     "termsAndConditions",
                     "expiryDateAt",
+                    "expiryDateAt",
                     "code",
+                    "startDateAt",
                     "startDateAt",
                     "sourceUrl",
                     "isShown",
@@ -88,7 +90,7 @@
                         },
                         "isExclusive": {
                             "type": "boolean",
-                            "description": "Codes can be sole for this site",
+                            "description": "Codes can be exclusive to a site",
                             "label": "Is Exclusive"
                         }
                     }
