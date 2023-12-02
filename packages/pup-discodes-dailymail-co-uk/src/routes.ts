@@ -161,10 +161,8 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       validator.addValue('sourceUrl', request.url);
       validator.addValue('merchantName', merchantName);
       validator.addValue('title', voucher.title);
-      validator.addValue(
-        'id',
-        generateHash(merchantName, voucher.title, request.url)
-      );
+      validator.addValue('idInSite', voucher.id_voucher);
+
       validator.addValue('domain', domain);
       validator.addValue('description', voucher.description);
       validator.addValue('termsAndConditions', voucher.terms_and_conditions);
