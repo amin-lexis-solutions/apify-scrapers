@@ -26,7 +26,7 @@ export class ListController {
     }
 
     if (archived) {
-      where.archivedAt = archived === 'true' ? { not: null } : null;
+      where.archivedAt = archived ? { not: null } : null;
     }
 
     if (domain && typeof domain === 'string' && domain.trim() !== '') {
