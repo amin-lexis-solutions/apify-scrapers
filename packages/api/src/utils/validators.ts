@@ -53,7 +53,7 @@ export class ListRequestBody {
 
   @IsBoolean()
   @IsOptional()
-  archived?: string;
+  archived?: boolean;
 
   @IsString()
   @IsOptional()

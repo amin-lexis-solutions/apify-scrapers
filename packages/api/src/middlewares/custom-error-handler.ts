@@ -20,22 +20,20 @@ export class CustomErrorHandler implements ExpressErrorMiddlewareInterface {
     });
 
     let responseMessage = error.message || 'An error occurred';
+    let httpCode = 500; // Default to 500 Internal Server Error
 
     // Check if error is an instance of HttpError (routing-controllers)
     if (error instanceof HttpError) {
-      response.status(error.httpCode);
+      httpCode = error.httpCode;
 
       // For internal server errors, send a generic message to the client
       if (error.httpCode === 500) {
         responseMessage = 'Internal Server Error';
       }
-    } else {
-      response.status(500); // Internal Server Error for unhandled errors
-      responseMessage = 'Internal Server Error';
     }
 
     // Standardized error response with appropriate message
-    response.json(new StandardResponse(responseMessage, true), error);
+    response.status(httpCode).json(new StandardResponse(responseMessage, true));
 
     next();
   }
