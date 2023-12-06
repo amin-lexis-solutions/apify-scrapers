@@ -86,11 +86,16 @@ router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
     `Found ${sitemapUrls.length} URLs after filtering banned patterns`
   );
 
-  // Take only the first X URLs for testing
-  const x = sitemapUrls.length; // Use the full length for production
-  // const x = 1; // Uncomment this line for testing with just x URLs
+  let x = sitemapUrls.length; // Use the full length for production
+  if (request.userData.testLimit) {
+    // Take only the first X URLs for testing
+    x = Math.min(request.userData.testLimit, sitemapUrls.length);
+  }
 
   const testUrls = sitemapUrls.slice(0, x);
+  if (x < sitemapUrls.length) {
+    console.log(`Using ${testUrls.length} URLs for testing`);
+  }
 
   // Correct usage of enqueueLinks with 'urls' as an array
   const enqueueOptions: EnqueueLinksOptions = {
@@ -101,6 +106,8 @@ router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
 });
 
 router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
+  if (request.userData.label !== Label.listing) return;
+
   try {
     console.log(`\nProcessing URL: ${request.url}`);
 
@@ -155,7 +162,7 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
     const vouchers = [...activeVouchers, ...expiredVouchers];
 
     for (const voucher of vouchers) {
-      await sleep(3000); // Sleep for 3 seconds between requests to avoid rate limitings
+      await sleep(1000); // Sleep for 3 seconds between requests to avoid rate limitings
 
       // Create a new DataValidator instance
       const validator = new DataValidator();
@@ -170,11 +177,11 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
       validator.addValue('domain', domain);
       validator.addValue('description', voucher.description);
       validator.addValue('termsAndConditions', voucher.terms_and_conditions);
-      validator.addValue('expiryDate', formatDateTime(voucher.end_time));
-      validator.addValue('startDate', formatDateTime(voucher.start_time));
-      validator.addValue('exclusive', voucher.exclusive_voucher);
+      validator.addValue('expiryDateAt', formatDateTime(voucher.end_time));
+      validator.addValue('startDateAt', formatDateTime(voucher.start_time));
+      validator.addValue('isExclusive', voucher.exclusive_voucher);
       validator.addValue('isExpired', voucher.is_expired);
-      validator.addValue('shown', true);
+      validator.addValue('isShown', true);
 
       // code must be checked to decide the next step
       const codeType = checkVoucherCode(voucher.code);
@@ -215,9 +222,11 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
 });
 
 router.addHandler(Label.getCode, async ({ request, body }) => {
+  if (request.userData.label !== Label.getCode) return;
+
   try {
     // Sleep for 3 seconds between requests to avoid rate limitings
-    await sleep(3000);
+    await sleep(1000);
 
     // Retrieve validatorData from request's userData
     const validatorData = request.userData.validatorData;

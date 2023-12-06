@@ -1276,7 +1276,7 @@ apify-client@^2.8.4:
     tslib "^2.5.0"
     type-fest "^4.0.0"
 
-apify@^3.1.13:
+apify@^3.1.13, apify@^3.1.14:
   version "3.1.14"
   resolved "https://registry.yarnpkg.com/apify/-/apify-3.1.14.tgz#2e18f45dbe86fdd2b2acce10b1015ba577456d0a"
   integrity sha512-aaF4NxgeL8i3Y2/pUjwW/n1dFKtFO74UnFhrvqB/yAsFmMtHG0YsqPl5sAoyKQp81sRGMIpGMlpt/SCXkRA1Zw==
@@ -3825,6 +3825,11 @@ html-encoding-sniffer@^3.0.0:
   integrity sha512-oWv4T4yJ52iKrufjnyZPkrN0CH3QnrUqdB6In1g5Fe1mia8GmF36gnfNySxoZtxD5+NmYw1EElVXiBk93UeskA==
   dependencies:
     whatwg-encoding "^2.0.0"
+
+html-entities@^2.4.0:
+  version "2.4.0"
+  resolved "https://registry.yarnpkg.com/html-entities/-/html-entities-2.4.0.tgz#edd0cee70402584c8c76cc2c0556db09d1f45061"
+  integrity sha512-igBTJcNNNhvZFRtm8uA6xMY6xYleeDwn3PeBCkDz7tHttv4F2hsDI2aPgNERWzvRcNYHNT3ymRaQzllmXj4YsQ==
 
 html-escaper@^3.0.3:
   version "3.0.3"

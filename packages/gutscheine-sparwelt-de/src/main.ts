@@ -16,6 +16,11 @@ async function main() {
     input?.proxyConfiguration
   );
 
+  let effectiveTestLimit = 0;
+  if (typeof input?.testLimit === 'number' && input?.testLimit > 0) {
+    effectiveTestLimit = input?.testLimit;
+  }
+
   const crawler = new CheerioCrawler({
     proxyConfiguration, // Use this if you need proxy configuration, else comment it out or remove
     requestHandler: router,
@@ -25,11 +30,16 @@ async function main() {
   // Adding the initial request with a handlerLabel in userData
   const sitemapUrls = await getSitemapUrls(startUrl);
 
-  // Take only the first X URLs for testing
-  const x = sitemapUrls.length; // Use the full length for production
-  // const x = 15; // Uncomment this line for testing with just x URLs
+  let x = sitemapUrls.length; // Use the full length for production
+  if (effectiveTestLimit) {
+    // Take only the first X URLs for testing
+    x = Math.min(effectiveTestLimit, sitemapUrls.length);
+  }
 
   const testUrls = sitemapUrls.slice(0, x);
+  if (x < sitemapUrls.length) {
+    console.log(`Using ${testUrls.length} URLs for testing`);
+  }
 
   const requests = testUrls.map((url) => ({
     url,

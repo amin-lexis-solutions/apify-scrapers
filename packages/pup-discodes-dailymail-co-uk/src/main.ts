@@ -15,6 +15,11 @@ async function main() {
     input?.proxyConfiguration
   );
 
+  let effectiveTestLimit = 0;
+  if (typeof input?.testLimit === 'number' && input?.testLimit > 0) {
+    effectiveTestLimit = input?.testLimit;
+  }
+
   const crawler = new PuppeteerCrawler({
     proxyConfiguration, // Use this if you need proxy configuration, else comment it out or remove
     // Set to `true` if running locally for visual debugging; otherwise, it's best to keep headless for performance.
@@ -46,6 +51,9 @@ async function main() {
     {
       url: startUrl,
       label: Label.sitemap,
+      userData: {
+        testLimit: effectiveTestLimit,
+      },
     },
   ]);
 
