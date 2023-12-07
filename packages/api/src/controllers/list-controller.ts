@@ -13,7 +13,7 @@ const prisma = new PrismaClient();
 
 @JsonController()
 @Authorized()
-@OpenAPI({ security: [{ bearerAuth: [] }] })
+@OpenAPI({ security: [{ token: [] }] })
 export class ListController {
   @Get('/list')
   @OpenAPI({

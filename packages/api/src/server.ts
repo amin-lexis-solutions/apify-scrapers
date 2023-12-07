@@ -41,7 +41,16 @@ const schemas = validationMetadatasToSchemas({
 });
 
 const spec = routingControllersToSpec(storage, routingControllersOptions, {
-  components: { schemas: schemas as any },
+  components: {
+    schemas: schemas as any,
+    securitySchemes: {
+      token: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'authorization',
+      },
+    },
+  },
   info: {
     title: 'Coupon API',
     version: '1.0.0',

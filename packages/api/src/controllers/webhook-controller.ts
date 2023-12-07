@@ -27,7 +27,8 @@ export class WebhookController {
   @Post('/webhook')
   @OpenAPI({
     summary: 'Receive webhook data',
-    description: 'Process and store the data received from the webhook',
+    description:
+      'Process and store the data received from the webhook. Do not call this endpoint directly, it is meant to be called by Apify.',
   })
   @ResponseSchema(StandardResponse) // Apply @ResponseSchema at the method level
   async receiveData(
