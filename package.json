@@ -9,11 +9,12 @@
   },
   "scripts": {
     "import-sort": "import-sort --write */packages/**/**/**/**/**/*.{ts}",
+    "lint": "eslint --ignore-path .gitignore . --ext .ts",
     "lint:fix": "eslint --ignore-path .gitignore . --ext .ts --fix",
     "prepare": "test -n \"$CI\" || ./node_modules/.bin/husky install"
   },
   "lint-staged": {
-    "!(**/zeus/**/*)*.{ts,tsx,js,jsx}": [
+    "**/*.{ts}": [
       "eslint --fix",
       "import-sort --write"
     ]
