@@ -2,7 +2,7 @@ enum ValidationResultCode {
   INVALID_KEY,
   INVALID_VALUE,
   VALUE_ADDED,
-  MISSING_REQUIRED_FIELD
+  MISSING_REQUIRED_FIELD,
 }
 
 type SchemaType = 'string' | 'number' | 'boolean' | 'date';
@@ -15,19 +15,19 @@ interface FieldSchema {
 class DataValidator {
   private data: Record<string, any> = {};
   private schema: Record<string, FieldSchema> = {
-            idInSite: { type: 'string', required: true },
-        domain: { type: 'string', required: false },
-        merchantName: { type: 'string', required: true },
-        title: { type: 'string', required: true },
-        description: { type: 'string', required: false },
-        termsAndConditions: { type: 'string', required: false },
-        expiryDateAt: { type: 'string', required: false },
-        code: { type: 'string', required: false },
-        startDateAt: { type: 'string', required: false },
-        sourceUrl: { type: 'string', required: true },
-        isShown: { type: 'boolean', required: false },
-        isExpired: { type: 'boolean', required: false },
-        isExclusive: { type: 'boolean', required: false }
+    idInSite: { type: 'string', required: true },
+    domain: { type: 'string', required: false },
+    merchantName: { type: 'string', required: true },
+    title: { type: 'string', required: true },
+    description: { type: 'string', required: false },
+    termsAndConditions: { type: 'string', required: false },
+    expiryDateAt: { type: 'string', required: false },
+    code: { type: 'string', required: false },
+    startDateAt: { type: 'string', required: false },
+    sourceUrl: { type: 'string', required: true },
+    isShown: { type: 'boolean', required: false },
+    isExpired: { type: 'boolean', required: false },
+    isExclusive: { type: 'boolean', required: false },
   };
 
   addValue(key: string, value: any): ValidationResultCode {
