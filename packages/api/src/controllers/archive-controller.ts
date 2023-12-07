@@ -1,29 +1,28 @@
 import { PrismaClient } from '@prisma/client';
 import {
+  Authorized,
   BadRequestError,
-  Body,
   JsonController,
+  Param,
   Post,
 } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
-import { ArchiveRequestBody, StandardResponse } from '../utils/validators';
+import { StandardResponse } from '../utils/validators';
 
 const prisma = new PrismaClient();
 
 @JsonController()
+@Authorized()
+@OpenAPI({ security: [{ bearerAuth: [] }] })
 export class ArchiveController {
-  @Post('/archive')
+  @Post('/archive/:id')
   @OpenAPI({
     summary: 'Archive a record',
     description: 'Archive a record by ID',
   })
   @ResponseSchema(StandardResponse) // Apply @ResponseSchema at the method level
-  async receiveData(
-    @Body() requestBody: ArchiveRequestBody
-  ): Promise<StandardResponse> {
-    const { id } = requestBody;
-
+  async receiveData(@Param('id') id: string): Promise<StandardResponse> {
     if (!id || id.trim() === '') {
       throw new BadRequestError(
         'ID parameter is required and cannot be empty.'

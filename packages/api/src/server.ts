@@ -16,6 +16,7 @@ import { ArchiveController } from './controllers/archive-controller'; // Import 
 import { ListController } from './controllers/list-controller'; // Import the ListController
 import { WebhookController } from './controllers/webhook-controller'; // Import the WebhookController
 import { CustomErrorHandler } from './middlewares/custom-error-handler'; // Import your custom error handler
+import { authorizationChecker } from './utils/auth';
 
 const routingControllersOptions: RoutingControllersOptions = {
   controllers: [
@@ -27,6 +28,7 @@ const routingControllersOptions: RoutingControllersOptions = {
     CustomErrorHandler, // Registering your custom error handler
   ],
   defaultErrorHandler: false, // Disable the default error handler
+  authorizationChecker,
 };
 
 const app: Express = createExpressServer(routingControllersOptions);
@@ -41,9 +43,10 @@ const schemas = validationMetadatasToSchemas({
 const spec = routingControllersToSpec(storage, routingControllersOptions, {
   components: { schemas: schemas as any },
   info: {
-    title: 'Oberst Coupon API',
+    title: 'Coupon API',
     version: '1.0.0',
-    description: 'API Documentation',
+    description:
+      'Routes marked as authenticated require a valid API key in the "Authorization" header.',
   },
 });
 

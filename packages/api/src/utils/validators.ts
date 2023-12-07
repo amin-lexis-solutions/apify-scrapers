@@ -30,11 +30,6 @@ export class StandardResponse {
   }
 }
 
-export class ArchiveRequestBody {
-  @IsString()
-  id: string;
-}
-
 const MAX_PAGE_SIZE = 100;
 
 export class ListRequestBody {

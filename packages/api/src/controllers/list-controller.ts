@@ -1,5 +1,10 @@
 import { Prisma, PrismaClient } from '@prisma/client';
-import { Get, JsonController, QueryParams } from 'routing-controllers';
+import {
+  Authorized,
+  Get,
+  JsonController,
+  QueryParams,
+} from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
 import { ListRequestBody, StandardResponse } from '../utils/validators';
@@ -7,6 +12,8 @@ import { ListRequestBody, StandardResponse } from '../utils/validators';
 const prisma = new PrismaClient();
 
 @JsonController()
+@Authorized()
+@OpenAPI({ security: [{ bearerAuth: [] }] })
 export class ListController {
   @Get('/list')
   @OpenAPI({
