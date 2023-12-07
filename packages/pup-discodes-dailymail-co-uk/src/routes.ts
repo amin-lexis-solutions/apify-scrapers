@@ -89,14 +89,14 @@ router.addHandler(Label.sitemap, async ({ page, request, enqueueLinks }) => {
     `Found ${filteredUrls.length} URLs after filtering banned patterns`
   );
 
-  let x = sitemapUrls.length; // Use the full length for production
+  let limit = sitemapUrls.length; // Use the full length for production
   if (request.userData.testLimit) {
     // Take only the first X URLs for testing
-    x = Math.min(request.userData.testLimit, sitemapUrls.length);
+    limit = Math.min(request.userData.testLimit, sitemapUrls.length);
   }
 
-  const testUrls = sitemapUrls.slice(0, x);
-  if (x < sitemapUrls.length) {
+  const testUrls = sitemapUrls.slice(0, limit);
+  if (limit < sitemapUrls.length) {
     console.log(`Using ${testUrls.length} URLs for testing`);
   }
 

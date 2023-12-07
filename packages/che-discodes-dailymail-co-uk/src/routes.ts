@@ -86,14 +86,14 @@ router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
     `Found ${sitemapUrls.length} URLs after filtering banned patterns`
   );
 
-  let x = sitemapUrls.length; // Use the full length for production
+  let limit = sitemapUrls.length; // Use the full length for production
   if (request.userData.testLimit) {
     // Take only the first X URLs for testing
-    x = Math.min(request.userData.testLimit, sitemapUrls.length);
+    limit = Math.min(request.userData.testLimit, sitemapUrls.length);
   }
 
-  const testUrls = sitemapUrls.slice(0, x);
-  if (x < sitemapUrls.length) {
+  const testUrls = sitemapUrls.slice(0, limit);
+  if (limit < sitemapUrls.length) {
     console.log(`Using ${testUrls.length} URLs for testing`);
   }
 
@@ -162,7 +162,7 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
     const vouchers = [...activeVouchers, ...expiredVouchers];
 
     for (const voucher of vouchers) {
-      await sleep(1000); // Sleep for 3 seconds between requests to avoid rate limitings
+      await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings
 
       // Create a new DataValidator instance
       const validator = new DataValidator();

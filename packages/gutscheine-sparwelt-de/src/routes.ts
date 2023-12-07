@@ -176,11 +176,11 @@ router.addHandler(Label.details, async ({ request, body }) => {
     const domainName = getDomainName(merchantUrl);
 
     // Populate the validator with data
-    //// Add required values to the validator
+    // Add required values to the validator
     validator.addValue('merchantName', provider.title);
     validator.addValue('title', voucher.title);
 
-    //// Add optional values to the validator
+    // Add optional values to the validator
     validator.addValue('domain', domainName);
     validator.addValue('description', voucher.teaserDescription);
     // Terms and Conditions, Start Date, Code, and Exclusive are not available in the JSON

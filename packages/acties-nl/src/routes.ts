@@ -19,7 +19,6 @@ type Voucher = {
   title: string;
 };
 
-// router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
 export async function sitemapHandler(requestQueue: RequestQueue, context) {
   // context includes request, body, etc.
   const { request, body, $ } = context;
@@ -56,14 +55,14 @@ export async function sitemapHandler(requestQueue: RequestQueue, context) {
     `Found ${sitemapUrls.length} URLs after filtering banned patterns`
   );
 
-  let x = sitemapUrls.length; // Use the full length for production
+  let limit = sitemapUrls.length; // Use the full length for production
   if (request.userData.testLimit) {
     // Take only the first X URLs for testing
-    x = Math.min(request.userData.testLimit, sitemapUrls.length);
+    limit = Math.min(request.userData.testLimit, sitemapUrls.length);
   }
 
-  const testUrls = sitemapUrls.slice(0, x);
-  if (x < sitemapUrls.length) {
+  const testUrls = sitemapUrls.slice(0, limit);
+  if (limit < sitemapUrls.length) {
     console.log(`Using ${testUrls.length} URLs for testing`);
   }
 
@@ -92,17 +91,15 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
     // Convert body to string if it's a Buffer
     const htmlContent = body instanceof Buffer ? body.toString() : body;
 
-    const $ = cheerio.load(htmlContent);
-
     // Check if valid page
     if (!$('#store-topbar').length) {
       console.log(`Not Merchant URL: ${request.url}`);
     } else {
       // Extract the script content
-      //// Initialize variable to hold script content
+      // Initialize variable to hold script content
       let scriptContent: string | undefined;
 
-      //// Convert the collection of script elements to an array and iterate
+      // Convert the collection of script elements to an array and iterate
       const scripts = $('script').toArray();
       for (const script of scripts) {
         const scriptText = $(script).html();
