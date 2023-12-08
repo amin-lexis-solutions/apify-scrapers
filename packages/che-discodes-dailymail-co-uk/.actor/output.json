@@ -13,15 +13,11 @@
                     "description",
                     "termsAndConditions",
                     "expiryDateAt",
-                    "expiryDateAt",
                     "code",
-                    "startDateAt",
                     "startDateAt",
                     "sourceUrl",
                     "isShown",
-                    "isShown",
                     "isExpired",
-                    "isExclusive"
                     "isExclusive"
                 ]
             },
@@ -61,10 +57,8 @@
                             "label": "Terms And Conditions"
                         },
                         "expiryDateAt": {
-                        "expiryDateAt": {
                             "type": "string",
                             "description": "Date or sometimes datetime when the code/offer would expire, often missing and sometimes relative (in 5 days) or e.g. also “ongoing”",
-                            "label": "Expiry Date At"
                             "label": "Expiry Date At"
                         },
                         "code": {
@@ -73,10 +67,8 @@
                             "label": "Code"
                         },
                         "startDateAt": {
-                        "startDateAt": {
                             "type": "string",
                             "description": "Generally it’s not exposed, the date the entry becomes valid",
-                            "label": "Start Date At"
                             "label": "Start Date At"
                         },
                         "sourceUrl": {
@@ -85,10 +77,8 @@
                             "label": "Source Url"
                         },
                         "isShown": {
-                        "isShown": {
                             "type": "boolean",
                             "description": "An entry is present on the page (valid or expired)",
-                            "label": "Is Shown"
                             "label": "Is Shown"
                         },
                         "isExpired": {
@@ -97,9 +87,8 @@
                             "label": "Is Expired"
                         },
                         "isExclusive": {
-                        "isExclusive": {
                             "type": "boolean",
-                            "description": "Codes can be exclusive to a site",
+                            "description": "Codes can be sole for this site",
                             "label": "Is Exclusive"
                         }
                     }
