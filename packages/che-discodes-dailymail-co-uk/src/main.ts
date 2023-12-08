@@ -16,6 +16,11 @@ async function main() {
     input?.proxyConfiguration
   );
 
+  let effectiveTestLimit = 0;
+  if (typeof input?.testLimit === 'number' && input?.testLimit > 0) {
+    effectiveTestLimit = input?.testLimit;
+  }
+
   const crawler = new CheerioCrawler({
     proxyConfiguration, // Use this if you need proxy configuration, else comment it out or remove
     requestHandler: router,
@@ -27,6 +32,9 @@ async function main() {
     {
       url: startUrl,
       label: Label.sitemap,
+      userData: {
+        testLimit: effectiveTestLimit,
+      },
     },
   ]);
 

@@ -88,7 +88,7 @@
                         },
                         "isExclusive": {
                             "type": "boolean",
-                            "description": "Codes can be exclusive to a site",
+                            "description": "Codes can be sole for this site",
                             "label": "Is Exclusive"
                         }
                     }

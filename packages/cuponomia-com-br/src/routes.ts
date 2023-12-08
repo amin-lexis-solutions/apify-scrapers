@@ -51,13 +51,13 @@ async function processCouponItem(
     code = codeElement.text().trim();
   }
 
-  // Determine if the coupon is exclusive
+  // Determine if the coupon isExclusive
   const exclusiveElement = $coupon(
     'div.coupon-info > div.coupon-info-complement > div.couponStatus > span.couponStatus-item'
   );
   const exclusiveText =
     exclusiveElement.length > 0 ? exclusiveElement.text().toUpperCase() : '';
-  const exclusive = exclusiveText.includes('EXCLUSIVO');
+  const isExclusive = exclusiveText.includes('EXCLUSIVO');
 
   const validator = new DataValidator();
 
@@ -67,9 +67,9 @@ async function processCouponItem(
   validator.addValue('title', voucherTitle);
   validator.addValue('idInSite', dataId);
   validator.addValue('description', description);
-  validator.addValue('exclusive', exclusive);
+  validator.addValue('isExclusive', isExclusive);
   validator.addValue('isExpired', isExpired);
-  validator.addValue('shown', true);
+  validator.addValue('isShown', true);
   if (code) {
     validator.addValue('code', code);
   }
@@ -92,11 +92,16 @@ router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
 
   console.log(`Found ${sitemapUrls.length} URLs in the sitemap`);
 
-  // Take only the first X URLs for testing
-  const x = sitemapUrls.length; // Use the full length for production
-  // const x = 1; // Uncomment this line for testing with just x URLs
+  let limit = sitemapUrls.length; // Use the full length for production
+  if (request.userData.testLimit) {
+    // Take only the first X URLs for testing
+    limit = Math.min(request.userData.testLimit, sitemapUrls.length);
+  }
 
-  const testUrls = sitemapUrls.slice(0, x);
+  const testUrls = sitemapUrls.slice(0, limit);
+  if (limit < sitemapUrls.length) {
+    console.log(`Using ${testUrls.length} URLs for testing`);
+  }
 
   // Correct usage of enqueueLinks with 'urls' as an array
   const enqueueOptions: EnqueueLinksOptions = {
@@ -107,6 +112,8 @@ router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
 });
 
 router.addHandler(Label.listing, async ({ request, body }) => {
+  if (request.userData.label !== Label.listing) return;
+
   try {
     console.log(`\nProcessing URL: ${request.url}`);
     const htmlContent = body instanceof Buffer ? body.toString() : body;

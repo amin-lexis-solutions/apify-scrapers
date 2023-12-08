@@ -58,6 +58,8 @@ async function fetchVoucherCode(
 const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
+  if (request.userData.label !== Label.listing) return;
+
   try {
     console.log(`Request URL: ${request.url}`);
     const content = typeof body === 'string' ? body : body.toString();
@@ -133,9 +135,11 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
 });
 
 router.addHandler(Label.details, async ({ request, body }) => {
+  if (request.userData.label !== Label.details) return;
+
   try {
     // Sleep for 3 seconds between requests to avoid rate limitings
-    await sleep(3000);
+    await sleep(1000);
 
     // Retrieve validatorData from request's userData
     const validatorData = request.userData.validatorData;
@@ -172,17 +176,17 @@ router.addHandler(Label.details, async ({ request, body }) => {
     const domainName = getDomainName(merchantUrl);
 
     // Populate the validator with data
-    //// Add required values to the validator
+    // Add required values to the validator
     validator.addValue('merchantName', provider.title);
     validator.addValue('title', voucher.title);
 
-    //// Add optional values to the validator
+    // Add optional values to the validator
     validator.addValue('domain', domainName);
     validator.addValue('description', voucher.teaserDescription);
     // Terms and Conditions, Start Date, Code, and Exclusive are not available in the JSON
     // If you have these details from another source, add them here
-    validator.addValue('expiryDate', voucher.dateEnd);
-    validator.addValue('shown', true);
+    validator.addValue('expiryDateAt', voucher.dateEnd);
+    validator.addValue('isShown', true);
     // console.log(validator.getData());
 
     // Process and store the data

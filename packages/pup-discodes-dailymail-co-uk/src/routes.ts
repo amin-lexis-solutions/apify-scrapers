@@ -1,12 +1,7 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 
 import { DataValidator } from './data-validator';
-import {
-  formatDateTime,
-  generateHash,
-  getDomainName,
-  processAndStoreData,
-} from './utils';
+import { formatDateTime, getDomainName, processAndStoreData } from './utils';
 
 export enum Label {
   'sitemap' = 'SitemapPage',
@@ -94,11 +89,16 @@ router.addHandler(Label.sitemap, async ({ page, request, enqueueLinks }) => {
     `Found ${filteredUrls.length} URLs after filtering banned patterns`
   );
 
-  // Take only the first X URLs for testing
-  const x = filteredUrls.length; // Use the full length for production
-  // const x = 1; // Uncomment this line for testing with just x URLs
+  let limit = sitemapUrls.length; // Use the full length for production
+  if (request.userData.testLimit) {
+    // Take only the first X URLs for testing
+    limit = Math.min(request.userData.testLimit, sitemapUrls.length);
+  }
 
-  const testUrls = filteredUrls.slice(0, x);
+  const testUrls = sitemapUrls.slice(0, limit);
+  if (limit < sitemapUrls.length) {
+    console.log(`Using ${testUrls.length} URLs for testing`);
+  }
 
   // Enqueue the new URLs with the appropriate label
   await enqueueLinks({
@@ -110,6 +110,8 @@ router.addHandler(Label.sitemap, async ({ page, request, enqueueLinks }) => {
 });
 
 router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
+  if (request.userData.label !== Label.listing) return;
+
   try {
     console.log(`\nProcessing URL: ${request.url}`);
 
@@ -166,11 +168,11 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       validator.addValue('domain', domain);
       validator.addValue('description', voucher.description);
       validator.addValue('termsAndConditions', voucher.terms_and_conditions);
-      validator.addValue('expiryDate', formatDateTime(voucher.end_time));
-      validator.addValue('startDate', formatDateTime(voucher.start_time));
-      validator.addValue('exclusive', voucher.exclusive_voucher);
+      validator.addValue('expiryDateAt', formatDateTime(voucher.end_time));
+      validator.addValue('startDateAt', formatDateTime(voucher.start_time));
+      validator.addValue('isExclusive', voucher.exclusive_voucher);
       validator.addValue('isExpired', voucher.is_expired);
-      validator.addValue('shown', true);
+      validator.addValue('isShown', true);
 
       const codeType = checkVoucherCode(voucher.code);
 
@@ -199,6 +201,8 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
 });
 
 router.addHandler(Label.getCode, async ({ page, request }) => {
+  if (request.userData.label !== Label.getCode) return;
+
   try {
     const validatorData = request.userData.validatorData;
     const validator = new DataValidator();

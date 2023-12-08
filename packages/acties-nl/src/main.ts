@@ -1,14 +1,16 @@
 // For more information, see https://crawlee.dev/
 import { Actor } from 'apify';
 import { CheerioCrawler } from 'crawlee';
+import { Label, sitemapHandler, listingHandler, codeHandler } from './routes';
 
-import { Label, router } from './routes';
-
-const startUrl = 'https://www.cuponomia.com.br/stores-sitemappp.xml';
+const startUrl = 'https://www.acties.nl/sitemap.xml';
 
 // Define the main run function as an async function
 async function main() {
   await Actor.init();
+
+  // Initialize the request queue
+  const requestQueue = await Actor.openRequestQueue();
 
   // use proxy configuration if provided in input
   const input: any = await Actor.getInput();
@@ -23,7 +25,22 @@ async function main() {
 
   const crawler = new CheerioCrawler({
     proxyConfiguration, // Use this if you need proxy configuration, else comment it out or remove
-    requestHandler: router,
+    requestQueue,
+    requestHandler: async (context) => {
+      switch (context.request.userData.label) {
+        case Label.sitemap:
+          await sitemapHandler(requestQueue, context);
+          break;
+        case Label.listing:
+          await listingHandler(requestQueue, context);
+          break;
+        case Label.getCode:
+          await codeHandler(requestQueue, context);
+          break;
+        default:
+          throw new Error('Unknown label');
+      }
+    },
     // Additional options can go here, e.g., maxConcurrency, requestTimeouts, etc.
   });
 

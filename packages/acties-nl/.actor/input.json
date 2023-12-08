@@ -1,6 +1,6 @@
 {
-    "title": "Gutscheine Sparwelt De Scraper",
-    "description": "This is the Gutscheine Sparwelt De Scraper input schema",
+    "title": "Acties Nl Scraper",
+    "description": "This is the Acties Nl Scraper input schema",
     "type": "object",
     "schemaVersion": 1,
     "properties": {
