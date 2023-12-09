@@ -41,15 +41,17 @@ export class ListController {
     }
 
     const offset = (page - 1) * pageSize;
-    const totalResults = await prisma.coupon.count({ where });
-    const data = await prisma.coupon.findMany({
-      skip: offset,
-      take: pageSize,
-      where: where,
-      include: {
-        source: true,
-      },
-    });
+    const [totalResults, data] = await Promise.all([
+      prisma.coupon.count({ where }),
+      prisma.coupon.findMany({
+        skip: offset,
+        take: pageSize,
+        where: where,
+        include: {
+          source: true,
+        },
+      }),
+    ]);
 
     const lastPage = Math.ceil(totalResults / pageSize);
     const currentPageResults = data.length;

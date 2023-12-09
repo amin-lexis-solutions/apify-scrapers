@@ -1,15 +1,14 @@
-import { PrismaClient } from '@prisma/client';
-import { Body, JsonController, Post } from 'routing-controllers';
+import { Coupon, Prisma, PrismaClient } from '@prisma/client';
+import fetch from 'node-fetch';
+import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
 import { generateHash } from '../utils/utils';
 import { StandardResponse, WebhookRequestBody } from '../utils/validators';
 
-const fetch = require('node-fetch');
-
 const prisma = new PrismaClient();
 
-const updatableFields = [
+const updatableFields: (keyof Coupon)[] = [
   'domain',
   'title',
   'description',
@@ -31,6 +30,7 @@ export class WebhookController {
       'Process and store the data received from the webhook. Do not call this endpoint directly, it is meant to be called by Apify.',
   })
   @ResponseSchema(StandardResponse) // Apply @ResponseSchema at the method level
+  @Authorized()
   async receiveData(
     @Body() webhookData: WebhookRequestBody
   ): Promise<StandardResponse> {
@@ -47,45 +47,6 @@ export class WebhookController {
       return new StandardResponse('Run already processed', false);
     }
 
-    const scrapedData = await fetchScrapedData(datasetId);
-
-    for (const item of scrapedData) {
-      const id = generateHash(item.merchantName, item.idInSite, item.sourceUrl);
-
-      const updateData: any = {};
-      for (const [key, value] of Object.entries(item)) {
-        if (updatableFields.includes(key)) {
-          updateData[key] = value || null;
-        }
-      }
-      updateData.lastScrapedAt = new Date();
-
-      await prisma.coupon.upsert({
-        where: { id },
-        update: updateData,
-        create: {
-          id,
-          sourceId: actorId,
-          idInSite: item.idInSite,
-          domain: item.domain || null,
-          merchantName: item.merchantName,
-          title: item.title || null,
-          description: item.description || null,
-          termsAndConditions: item.termsAndConditions || null,
-          expiryDateAt: item.expiryDateAt || null,
-          code: item.code || null,
-          startDateAt: item.startDateAt || null,
-          sourceUrl: item.sourceUrl || null,
-          isShown: item.isShown || null,
-          isExpired: item.isExpired || null,
-          isExclusive: item.isExclusive || null,
-          firstScrapedAt: new Date(),
-          lastScrapedAt: new Date(),
-          archivedAt: null,
-        },
-      });
-    }
-
     await prisma.processedRun.create({
       data: {
         actorId: actorId,
@@ -93,6 +54,54 @@ export class WebhookController {
         status: apifyStatus,
       },
     });
+
+    setTimeout(async () => {
+      const scrapedData = await fetchScrapedData(datasetId);
+      const now = new Date();
+
+      for (const item of scrapedData) {
+        const id = generateHash(
+          item.merchantName,
+          item.idInSite,
+          item.sourceUrl
+        );
+
+        const updateData: Prisma.CouponUpdateInput = {
+          lastSeenAt: now,
+        };
+
+        for (const [key, value] of Object.entries(item)) {
+          if (updatableFields.includes(key as keyof Coupon)) {
+            (updateData as any)[key] = value || null;
+          }
+        }
+
+        await prisma.coupon.upsert({
+          where: { id },
+          update: updateData,
+          create: {
+            id,
+            sourceId: actorId,
+            idInSite: item.idInSite,
+            domain: item.domain || null,
+            merchantName: item.merchantName,
+            title: item.title || null,
+            description: item.description || null,
+            termsAndConditions: item.termsAndConditions || null,
+            expiryDateAt: item.expiryDateAt || null,
+            code: item.code || null,
+            startDateAt: item.startDateAt || null,
+            sourceUrl: item.sourceUrl || null,
+            isShown: item.isShown || null,
+            isExpired: item.isExpired || null,
+            isExclusive: item.isExclusive || null,
+            firstSeenAt: now,
+            lastSeenAt: now,
+            archivedAt: null,
+          },
+        });
+      }
+    }, 0);
 
     return new StandardResponse('Data processed successfully', false);
   }
