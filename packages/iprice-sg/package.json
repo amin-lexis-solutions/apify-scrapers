@@ -1,0 +1,44 @@
+{
+  "name": "iprice-sg",
+  "version": "0.0.1",
+  "type": "commonjs",
+  "description": "This is an example of a Crawlee project.",
+  "dependencies": {
+    "@types/cheerio": "^0.22.34",
+    "axios": "^1.6.2",
+    "cheerio": "^1.0.0-rc.12",
+    "node-html-parser": "^6.1.11",
+    "html-entities": "^2.4.0",
+    "chrono-node": "^2.7.3",
+    "apify": "^3.1.14",
+    "crawlee": "^3.0.0",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "@apify/tsconfig": "^0.1.0",
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.1",
+    "@typescript-eslint/eslint-plugin": "^5.52.0",
+    "@typescript-eslint/parser": "^5.52.0",
+    "eslint": "^8.31.0",
+    "eslint-config-prettier": "^6.15.0",
+    "eslint-plugin-prettier": "^3.1.4",
+    "eslint-plugin-react": "^7.21.5",
+    "import-sort-cli": "^6.0.0",
+    "import-sort-parser-typescript": "^6.0.0",
+    "import-sort-style-module": "^6.0.0",
+    "prettier": "^2.2.1",
+    "typescript": "^4.9.4"
+  },
+  "scripts": {
+    "start": "yarn start:dev",
+    "start:prod": "node dist/main.js",
+    "start:dev": "ts-node --project tsconfig.json src/main.ts",
+    "build": "tsc",
+    "test": "echo \"Error: no tests defined\" && exit 1"
+  },
+  "author": "It's not you it's me",
+  "license": "ISC",
+  "main": "index.js",
+  "keywords": []
+}

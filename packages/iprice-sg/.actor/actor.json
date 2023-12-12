@@ -1,0 +1,10 @@
+{
+    "actorSpecification": 1,
+    "name": "iprice-sg-scraper",
+    "title": "Iprice Sg Scraper",
+    "version": "0.0",
+    "input": "./input.json",
+    "storages": {
+        "dataset": "./output.json"
+    }
+}
