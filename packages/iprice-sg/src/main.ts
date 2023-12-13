@@ -2,7 +2,8 @@
 import { Actor } from 'apify';
 import { CheerioCrawler } from 'crawlee';
 
-import { Label, codeHandler, listingHandler, sitemapHandler } from './routes';
+import { Label } from './constants';
+import { router } from './routes';
 
 const startUrl = 'https://iprice.sg/coupons/stores/';
 
@@ -27,22 +28,7 @@ async function main() {
   const crawler = new CheerioCrawler({
     proxyConfiguration, // Use this if you need proxy configuration, else comment it out or remove
     requestQueue,
-    requestHandler: async (context) => {
-      switch (context.request.userData.label) {
-        case Label.sitemap:
-          await sitemapHandler(requestQueue, context);
-          break;
-        case Label.listing:
-          await listingHandler(requestQueue, context);
-          break;
-        case Label.getCode:
-          await codeHandler(requestQueue, context);
-          break;
-        default:
-          throw new Error('Unknown label');
-      }
-    },
-    // Additional options can go here, e.g., maxConcurrency, requestTimeouts, etc.
+    requestHandler: router,
   });
 
   // Adding the initial request with a handlerLabel in userData
