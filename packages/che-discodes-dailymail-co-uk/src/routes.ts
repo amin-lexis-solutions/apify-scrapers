@@ -6,13 +6,13 @@ import {
   formatDateTime,
   getDomainName,
   processAndStoreData,
-  sleep
+  sleep,
 } from './utils';
 
 export enum Label {
   'sitemap' = 'SitemapPage',
   'listing' = 'ProviderCouponsPage',
-  'getCode' = 'GetCodePage'
+  'getCode' = 'GetCodePage',
 }
 
 function checkVoucherCode(code: string | null | undefined) {
@@ -24,7 +24,7 @@ function checkVoucherCode(code: string | null | undefined) {
     return {
       isEmpty: true,
       code: '',
-      startsWithDots: false
+      startsWithDots: false,
     };
   }
 
@@ -33,7 +33,7 @@ function checkVoucherCode(code: string | null | undefined) {
     return {
       isEmpty: false,
       code: trimmedCode,
-      startsWithDots: true
+      startsWithDots: true,
     };
   }
 
@@ -41,7 +41,7 @@ function checkVoucherCode(code: string | null | undefined) {
   return {
     isEmpty: false,
     code: trimmedCode,
-    startsWithDots: false
+    startsWithDots: false,
   };
 }
 
@@ -72,7 +72,7 @@ router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
     /\/seasonal-deals$/,
     /\/specials\//,
     /\/sustainable$/,
-    /\/valentines-day-deals$/
+    /\/valentines-day-deals$/,
   ];
 
   // Filter out URLs that match any of the banned patterns
@@ -100,7 +100,7 @@ router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
   // Correct usage of enqueueLinks with 'urls' as an array
   const enqueueOptions: EnqueueLinksOptions = {
     urls: testUrls,
-    label: Label.listing
+    label: Label.listing,
   };
   await enqueueLinks(enqueueOptions);
 });
@@ -153,11 +153,11 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
     // Combine active and expired vouchers
     const activeVouchers = jsonData.vouchers.map((voucher) => ({
       ...voucher,
-      is_expired: false
+      is_expired: false,
     }));
     const expiredVouchers = jsonData.expiredVouchers.map((voucher) => ({
       ...voucher,
-      is_expired: true
+      is_expired: true,
     }));
     const vouchers = [...activeVouchers, ...expiredVouchers];
 
@@ -202,9 +202,9 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
             urls: [codeDetailsUrl],
             userData: {
               label: Label.getCode,
-              validatorData: validatorData
+              validatorData: validatorData,
             },
-            forefront: true
+            forefront: true,
           });
         }
       } else {

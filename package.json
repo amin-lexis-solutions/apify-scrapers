@@ -9,8 +9,8 @@
   },
   "scripts": {
     "import-sort": "import-sort --write */packages/**/**/**/**/**/*.{ts}",
-    "lint": "eslint --ignore-path .gitignore . --ext .ts",
-    "lint:fix": "eslint --ignore-path .gitignore . --ext .ts --fix",
+    "lint": "eslint --ignore-path .gitignore . --ext .ts,.json",
+    "lint:fix": "eslint --ignore-path .gitignore . --ext .ts,.json --fix",
     "prepare": "test -n \"$CI\" || ./node_modules/.bin/husky install"
   },
   "lint-staged": {

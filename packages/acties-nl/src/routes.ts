@@ -1,7 +1,8 @@
 import { RequestQueue } from 'apify'; // Import types from Apify SDK
-import { parse } from 'node-html-parser';
 import * as cheerio from 'cheerio';
 import { decode } from 'html-entities';
+import { parse } from 'node-html-parser';
+
 import { DataValidator } from './data-validator';
 import { processAndStoreData, sleep } from './utils';
 
@@ -21,7 +22,7 @@ type Voucher = {
 
 export async function sitemapHandler(requestQueue: RequestQueue, context) {
   // context includes request, body, etc.
-  const { request, body, $ } = context;
+  const { request, body } = context;
 
   if (request.userData.label !== Label.sitemap) return;
 
@@ -79,7 +80,7 @@ export async function sitemapHandler(requestQueue: RequestQueue, context) {
 
 export async function listingHandler(requestQueue: RequestQueue, context) {
   // context includes request, body, etc.
-  const { request, body, $ } = context;
+  const { request, $ } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -87,9 +88,6 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
     // Extracting request and body from context
 
     console.log(`\nProcessing URL: ${request.url}`);
-
-    // Convert body to string if it's a Buffer
-    const htmlContent = body instanceof Buffer ? body.toString() : body;
 
     // Check if valid page
     if (!$('#store-topbar').length) {
@@ -248,7 +246,7 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
 
 export async function codeHandler(requestQueue: RequestQueue, context) {
   // context includes request, body, etc.
-  const { request, body, $ } = context;
+  const { request, body } = context;
 
   if (request.userData.label !== Label.getCode) return;
 

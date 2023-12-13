@@ -1,22 +1,14 @@
 import { RequestQueue } from 'apify'; // Import types from Apify SDK
 import cheerio from 'cheerio';
+
 import { DataValidator } from './data-validator';
-import { processAndStoreData, sleep, formatDateTime } from './utils';
-import { val } from 'cheerio/lib/api/attributes';
+import { formatDateTime, processAndStoreData, sleep } from './utils';
 
 export enum Label {
   'sitemap' = 'SitemapPage',
   'listing' = 'ProviderCouponsPage',
   'getCode' = 'GetCodePage',
 }
-
-type Voucher = {
-  isCoupon: boolean;
-  isExpired: boolean;
-  isExclusive: boolean;
-  idInSite: string | undefined;
-  title: string;
-};
 
 const customHeaders = {
   'User-Agent':
@@ -185,7 +177,7 @@ async function processCouponItem(
 
 export async function sitemapHandler(requestQueue: RequestQueue, context) {
   // context includes request, body, etc.
-  const { request, body, $ } = context;
+  const { request, $ } = context;
 
   if (request.userData.label !== Label.sitemap) return;
 
@@ -223,7 +215,7 @@ export async function sitemapHandler(requestQueue: RequestQueue, context) {
 
 export async function listingHandler(requestQueue: RequestQueue, context) {
   // context includes request, body, etc.
-  const { request, body, $ } = context;
+  const { request, $ } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -293,7 +285,7 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
 
 export async function codeHandler(requestQueue: RequestQueue, context) {
   // context includes request, body, etc.
-  const { request, body, $ } = context;
+  const { request, $ } = context;
 
   if (request.userData.label !== Label.getCode) return;
 

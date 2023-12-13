@@ -1,7 +1,8 @@
 // For more information, see https://crawlee.dev/
 import { Actor } from 'apify';
 import { CheerioCrawler } from 'crawlee';
-import { Label, sitemapHandler, listingHandler, codeHandler } from './routes';
+
+import { Label, codeHandler, listingHandler, sitemapHandler } from './routes';
 
 const startUrl = 'https://iprice.sg/coupons/stores/';
 
