@@ -10,6 +10,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ArchiveReason {
+  expired
+  unexpired
+  manual
+}
+
 model Coupon {
   id                 String    @id
   sourceId           String
@@ -29,6 +35,7 @@ model Coupon {
   firstSeenAt        DateTime  @default(now())
   lastSeenAt         DateTime  @default(now())
   archivedAt         DateTime?
+  archivedReason     ArchiveReason?
 
   source Source @relation(fields: [sourceId], references: [id])
 

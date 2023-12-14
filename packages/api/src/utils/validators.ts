@@ -52,7 +52,19 @@ export class ListRequestBody {
 
   @IsString()
   @IsOptional()
-  domain?: string;
+  merchantDomain?: string;
+
+  @IsString()
+  @IsOptional()
+  merchantName?: string;
+
+  @IsString()
+  @IsOptional()
+  sourceName?: string;
+
+  @IsString()
+  @IsOptional()
+  sourceDomain?: string;
 }
 
 export class EventData {

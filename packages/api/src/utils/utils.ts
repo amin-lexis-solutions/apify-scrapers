@@ -36,3 +36,11 @@ export function generateHash(
   hash.update(combinedString);
   return hash.digest('hex');
 }
+
+export function validDateOrNull(dateString: string) {
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    return null;
+  }
+  return date.toISOString();
+}

@@ -1,10 +1,13 @@
 import { Coupon, Prisma, PrismaClient } from '@prisma/client';
+import { $Enums } from '@prisma/client';
 import fetch from 'node-fetch';
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
-import { generateHash } from '../utils/utils';
+import { generateHash, validDateOrNull } from '../utils/utils';
 import { StandardResponse, WebhookRequestBody } from '../utils/validators';
+import { val } from 'cheerio/lib/api/attributes';
+import { start } from 'repl';
 
 const prisma = new PrismaClient();
 
@@ -43,10 +46,6 @@ export class WebhookController {
       where: { actorRunId },
     });
 
-    if (existingRun) {
-      return new StandardResponse('Run already processed', false);
-    }
-
     await prisma.processedRun.create({
       data: {
         actorId: actorId,
@@ -66,12 +65,63 @@ export class WebhookController {
           item.sourceUrl
         );
 
+        let doesExists = false;
+        const existingRecord: Coupon | null = await prisma.coupon.findUnique({
+          where: { id },
+        });
+        if (existingRecord !== null) {
+          doesExists = true;
+        }
+
         const updateData: Prisma.CouponUpdateInput = {
           lastSeenAt: now,
         };
 
-        for (const [key, value] of Object.entries(item)) {
+        let archivedAt = null;
+        let archivedReason:
+          | Prisma.NullableEnumArchiveReasonFieldUpdateOperationsInput
+          | $Enums.ArchiveReason
+          | null = null;
+
+        for (let [key, value] of Object.entries(item)) {
           if (updatableFields.includes(key as keyof Coupon)) {
+            if (key === 'isExpired' && typeof value === 'boolean') {
+              if (value === true) {
+                // newly expired items are archived both when they are first seen and when they are updated
+                archivedAt = now;
+                archivedReason = 'expired';
+              } else {
+                if (
+                  existingRecord !== null &&
+                  existingRecord.isExpired === true
+                ) {
+                  // newly not expired items, which was expired are unarchived and set 'unexpired' on update
+                  archivedAt = null;
+                  archivedReason = 'unexpired';
+                }
+              }
+            }
+            if (
+              key === 'title' &&
+              typeof value === 'string' &&
+              value.trim() !== '' &&
+              existingRecord !== null &&
+              existingRecord.title !== null &&
+              existingRecord.title.trim() !== value.trim() &&
+              existingRecord.isExpired === true
+            ) {
+              // if title is changed, items, which was expired are unarchived and set 'unexpired' on update
+              archivedAt = null;
+              archivedReason = 'unexpired';
+            }
+            updateData.archivedAt = archivedAt;
+            updateData.archivedReason = archivedReason;
+            if (
+              (key === 'expiryDateAt' || key === 'startDateAt') &&
+              typeof value === 'string'
+            ) {
+              value = validDateOrNull(value as string); // ensure that date is in ISO format
+            }
             (updateData as any)[key] = value || null;
           }
         }
@@ -88,16 +138,17 @@ export class WebhookController {
             title: item.title || null,
             description: item.description || null,
             termsAndConditions: item.termsAndConditions || null,
-            expiryDateAt: item.expiryDateAt || null,
+            expiryDateAt: validDateOrNull(item.expiryDateAt) || null,
             code: item.code || null,
-            startDateAt: item.startDateAt || null,
+            startDateAt: validDateOrNull(item.startDateAt) || null,
             sourceUrl: item.sourceUrl || null,
             isShown: item.isShown || null,
             isExpired: item.isExpired || null,
             isExclusive: item.isExclusive || null,
             firstSeenAt: now,
             lastSeenAt: now,
-            archivedAt: null,
+            archivedAt: archivedAt,
+            archivedReason: archivedReason || null,
           },
         });
       }
