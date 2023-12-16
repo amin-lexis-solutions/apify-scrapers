@@ -1,0 +1,10 @@
+{
+    "actorSpecification": 1,
+    "name": "picodi-com-sg-scraper",
+    "title": "Picodi Com Sg Scraper",
+    "version": "0.0",
+    "input": "./input.json",
+    "storages": {
+        "dataset": "./output.json"
+    }
+}
