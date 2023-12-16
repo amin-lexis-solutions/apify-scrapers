@@ -27,7 +27,8 @@ class DataValidator {
     sourceUrl: { type: 'string', required: true },
     isShown: { type: 'boolean', required: false },
     isExpired: { type: 'boolean', required: false },
-    isExclusive: { type: 'boolean', required: false }
+    isExclusive: { type: 'boolean', required: false },
+
   };
 
   addValue(key: string, value: any): ValidationResultCode {
