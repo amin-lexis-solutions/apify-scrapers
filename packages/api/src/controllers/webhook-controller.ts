@@ -3,11 +3,8 @@ import { $Enums } from '@prisma/client';
 import fetch from 'node-fetch';
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
-
 import { generateHash, validDateOrNull } from '../utils/utils';
 import { StandardResponse, WebhookRequestBody } from '../utils/validators';
-import { val } from 'cheerio/lib/api/attributes';
-import { start } from 'repl';
 
 const prisma = new PrismaClient();
 
@@ -42,10 +39,6 @@ export class WebhookController {
     const actorRunId = webhookData.eventData.actorRunId;
     const apifyStatus = webhookData.resource.status;
 
-    const existingRun = await prisma.processedRun.findUnique({
-      where: { actorRunId },
-    });
-
     await prisma.processedRun.create({
       data: {
         actorId: actorId,
@@ -65,13 +58,9 @@ export class WebhookController {
           item.sourceUrl
         );
 
-        let doesExists = false;
         const existingRecord: Coupon | null = await prisma.coupon.findUnique({
           where: { id },
         });
-        if (existingRecord !== null) {
-          doesExists = true;
-        }
 
         const updateData: Prisma.CouponUpdateInput = {
           lastSeenAt: now,
@@ -83,7 +72,8 @@ export class WebhookController {
           | $Enums.ArchiveReason
           | null = null;
 
-        for (let [key, value] of Object.entries(item)) {
+        for (const [key, origValue] of Object.entries(item)) {
+          let value = origValue;
           if (updatableFields.includes(key as keyof Coupon)) {
             if (key === 'isExpired' && typeof value === 'boolean') {
               if (value === true) {

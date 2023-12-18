@@ -37,23 +37,15 @@ export class ListController {
 
     const where: Prisma.CouponWhereInput = {};
 
-    if (locale && typeof locale === 'string' && locale.trim() !== '') {
+    if (locale && locale.trim() !== '') {
       where.source = { sourceLocale: locale };
     }
 
-    if (
-      merchantName &&
-      typeof merchantName === 'string' &&
-      merchantName.trim() !== ''
-    ) {
+    if (merchantName && merchantName.trim() !== '') {
       where.merchantName = merchantName;
     }
 
-    if (
-      sourceName &&
-      typeof sourceName === 'string' &&
-      sourceName.trim() !== ''
-    ) {
+    if (sourceName && sourceName.trim() !== '') {
       where.source = { sourceName: sourceName };
     }
 
@@ -63,15 +55,11 @@ export class ListController {
 
     const domain = merchantDomain;
 
-    if (domain && typeof domain === 'string' && domain.trim() !== '') {
+    if (domain && domain.trim() !== '') {
       where.domain = domain;
     }
 
-    if (
-      sourceDomain &&
-      typeof sourceDomain === 'string' &&
-      sourceDomain.trim() !== ''
-    ) {
+    if (sourceDomain && sourceDomain.trim() !== '') {
       where.sourceUrl = {
         contains: sourceDomain,
       };
