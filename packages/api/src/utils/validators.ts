@@ -7,6 +7,7 @@ import {
   IsString,
   Max,
   Min,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 
@@ -44,6 +45,7 @@ export class ListRequestBody {
 
   @IsString()
   @IsOptional()
+  @MinLength(1)
   locale?: string;
 
   @IsBoolean()
@@ -52,7 +54,23 @@ export class ListRequestBody {
 
   @IsString()
   @IsOptional()
-  domain?: string;
+  @MinLength(1)
+  merchantDomain?: string;
+
+  @IsString()
+  @IsOptional()
+  @MinLength(1)
+  merchantName?: string;
+
+  @IsString()
+  @IsOptional()
+  @MinLength(1)
+  sourceName?: string;
+
+  @IsString()
+  @IsOptional()
+  @MinLength(1)
+  sourceDomain?: string;
 }
 
 export class EventData {

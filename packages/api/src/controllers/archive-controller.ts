@@ -49,7 +49,7 @@ export class ArchiveController {
 
     const updatedRecord = await prisma.coupon.update({
       where: { id },
-      data: { archivedAt: new Date() },
+      data: { archivedAt: new Date(), archivedReason: 'manual' },
     });
 
     return new StandardResponse('Record archived successfully', false, {

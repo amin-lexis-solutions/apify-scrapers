@@ -24,20 +24,45 @@ export class ListController {
   async getList(
     @QueryParams() params: ListRequestBody
   ): Promise<StandardResponse> {
-    const { page, pageSize, locale, archived, domain } = params;
+    const {
+      page,
+      pageSize,
+      locale,
+      archived,
+      merchantDomain,
+      merchantName,
+      sourceName,
+      sourceDomain,
+    } = params;
 
     const where: Prisma.CouponWhereInput = {};
 
-    if (locale && typeof locale === 'string' && locale.trim() !== '') {
+    if (locale) {
       where.source = { sourceLocale: locale };
+    }
+
+    if (merchantName) {
+      where.merchantName = merchantName;
+    }
+
+    if (sourceName) {
+      where.source = { sourceName: sourceName };
     }
 
     if (archived) {
       where.archivedAt = archived ? { not: null } : null;
     }
 
-    if (domain && typeof domain === 'string' && domain.trim() !== '') {
+    const domain = merchantDomain;
+
+    if (domain) {
       where.domain = domain;
+    }
+
+    if (sourceDomain) {
+      where.sourceUrl = {
+        contains: sourceDomain,
+      };
     }
 
     const offset = (page - 1) * pageSize;
