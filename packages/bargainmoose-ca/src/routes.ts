@@ -68,7 +68,7 @@ router.addHandler(Label.sitemap, async (context) => {
 });
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler, body } = context;
+  const { request, $, crawler } = context;
 
   if (request.userData.label !== Label.listing) return;
 
