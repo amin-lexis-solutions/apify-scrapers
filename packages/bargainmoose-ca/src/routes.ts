@@ -1,9 +1,7 @@
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { CUSTOM_HEADERS, Label } from './constants';
-import { DataValidator } from './data-validator';
 import { processCouponItem, extractDomainFromUrl } from './routes-helpers';
-import { processAndStoreData, sleep } from './utils';
 
 export const router = createCheerioRouter();
 
@@ -82,9 +80,6 @@ router.addHandler(Label.listing, async (context) => {
     // Extracting request and body from context
 
     console.log(`\nProcessing URL: ${request.url}`);
-
-    // Convert body to string if it's a Buffer
-    const htmlContent = body instanceof Buffer ? body.toString() : body;
 
     const merchantLink = $(
       'ol.breadcrumb > li:last-child > a.breadcrumb-item__link'
