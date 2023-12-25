@@ -1,0 +1,10 @@
+{
+    "actorSpecification": 1,
+    "name": "lovecoupons-com-sg-scraper",
+    "title": "Lovecoupons Com Sg Scraper",
+    "version": "0.0",
+    "input": "./input.json",
+    "storages": {
+        "dataset": "./output.json"
+    }
+}
