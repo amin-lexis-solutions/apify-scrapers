@@ -79,7 +79,7 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
     }
 
     // Extract coupons and offers using Puppeteer
-    const vouchers = await page.evaluate(() => {
+    const vouchers: Voucher[] = await page.evaluate(() => {
       const voucherElements = Array.from(
         document.querySelectorAll(
           'main.main-shop > div.container > div.row > div > div.row > div.container > div.card-offer-shop'
@@ -87,10 +87,10 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
       );
 
       return voucherElements.map((el) => {
-        const logoImg: HTMLImageElement = el.querySelector(
-          'div.card-body  div.shop-offer-logo-ctnr img'
-        ) as HTMLImageElement;
-        const currMerchantName = logoImg ? logoImg.alt.trim() : '';
+        // const logoImg: HTMLImageElement = el.querySelector(
+        //   'div.card-body  div.shop-offer-logo-ctnr img'
+        // ) as HTMLImageElement;
+        // const currMerchantName = logoImg ? logoImg.alt.trim() : '';
 
         const elementClass = el.className || '';
         const isExpired = elementClass.includes('offer-exp');
@@ -196,7 +196,7 @@ export async function codeHandler(requestQueue: RequestQueue, context) {
     });
 
     if (code) {
-      if (/^[\*]+$/.test(code)) {
+      if (/^[*]+$/.test(code)) {
         throw new Error('Code is hidden');
       }
       console.log(`Found code: ${code}\n    at: ${request.url}`);

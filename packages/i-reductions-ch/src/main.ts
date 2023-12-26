@@ -26,7 +26,7 @@ async function main() {
   const crawler = new PuppeteerCrawler({
     proxyConfiguration,
     requestHandler: async (context) => {
-      const { page, request } = context;
+      const { request } = context;
       switch (request.userData.label) {
         case Label.sitemap:
           await sitemapHandler(requestQueue, context);
