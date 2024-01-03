@@ -8,8 +8,8 @@
     "puppeteer": "*",
     "html-entities": "^2.4.0",
     "chrono-node": "^2.7.3",
-    "apify": "^3.1.14",
-    "crawlee": "^3.0.0",
+    "apify": "3.1.14",
+    "crawlee": "3.7.1",
     "moment": "^2.29.4"
   },
   "devDependencies": {
