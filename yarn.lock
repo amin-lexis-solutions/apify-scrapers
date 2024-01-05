@@ -1348,7 +1348,7 @@ apify-client@^2.8.4:
     tslib "^2.5.0"
     type-fest "^4.0.0"
 
-apify@3.1.14:
+apify@3.1.14, apify@^3.1.14:
   version "3.1.14"
   resolved "https://registry.yarnpkg.com/apify/-/apify-3.1.14.tgz#2e18f45dbe86fdd2b2acce10b1015ba577456d0a"
   integrity sha512-aaF4NxgeL8i3Y2/pUjwW/n1dFKtFO74UnFhrvqB/yAsFmMtHG0YsqPl5sAoyKQp81sRGMIpGMlpt/SCXkRA1Zw==
@@ -2226,7 +2226,7 @@ cosmiconfig@^7.0.0:
     path-type "^4.0.0"
     yaml "^1.10.0"
 
-crawlee@3.7.1, crawlee@3.7.2:
+crawlee@3.7.1, crawlee@^3.0.0:
   version "3.7.1"
   resolved "https://registry.yarnpkg.com/crawlee/-/crawlee-3.7.1.tgz#01f297def7af4c2b2046dbd12d6851c839b819a3"
   integrity sha512-DW8mKRcNhj0RubLJOXGmpnj1Lvo3zTFhyMIYaJCa86ntZ9wISG2YWTzagPG+Rt69QRmPD2D4UJGd8KrLRxk/lQ==
