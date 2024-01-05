@@ -1,0 +1,247 @@
+import { createCheerioRouter } from 'crawlee';
+import { CUSTOM_HEADERS, Label } from './constants';
+import { DataValidator } from './data-validator';
+import { checkVoucherCode } from './routes-helpers';
+import {
+  formatDateTime,
+  getDomainName,
+  processAndStoreData,
+  sleep,
+} from './utils';
+
+export const router = createCheerioRouter();
+
+router.addHandler(Label.sitemap, async (context) => {
+  // context includes request, body, etc.
+  const { request, $, crawler } = context;
+
+  if (request.userData.label !== Label.sitemap) return;
+
+  const sitemapLinks = $('ul > li > a');
+  if (sitemapLinks.length === 0) {
+    console.log('Sitemap HTML:', $.html());
+    throw new Error('Sitemap links are missing');
+  }
+  // Base URL from the request
+  const baseUrl = new URL(request.url);
+
+  // Map each link to a full URL
+  const sitemapUrls = sitemapLinks
+    .map((i, el) => {
+      const relativePath = $(el).attr('href');
+
+      // Skip if the href attribute is missing
+      if (typeof relativePath === 'undefined') {
+        throw new Error('Sitemap link is missing the href attribute');
+      }
+
+      return new URL(relativePath, baseUrl).href;
+    })
+    .get();
+
+  console.log(`Found ${sitemapUrls.length} URLs in the sitemap`);
+
+  let limit = sitemapUrls.length; // Use the full length for production
+  if (request.userData.testLimit) {
+    // Take only the first X URLs for testing
+    limit = Math.min(request.userData.testLimit, sitemapUrls.length);
+  }
+
+  const testUrls = sitemapUrls.slice(0, limit);
+  if (limit < sitemapUrls.length) {
+    console.log(`Using ${testUrls.length} URLs for testing`);
+  }
+
+  if (!crawler.requestQueue) {
+    throw new Error('Request queue is missing');
+  }
+
+  // Manually add each URL to the request queue
+  for (const url of testUrls) {
+    await crawler.requestQueue.addRequest({
+      url: url,
+      userData: {
+        label: Label.listing,
+      },
+      headers: CUSTOM_HEADERS,
+    });
+  }
+});
+
+router.addHandler(Label.listing, async (context) => {
+  const { request, body, crawler } = context;
+
+  if (request.userData.label !== Label.listing) return;
+
+  if (!crawler.requestQueue) {
+    throw new Error('Request queue is missing');
+  }
+
+  try {
+    // Extracting request and body from context
+
+    console.log(`\nProcessing URL: ${request.url}`);
+
+    // Convert body to string if it's a Buffer
+    const htmlContent = body instanceof Buffer ? body.toString() : body;
+
+    // Define a regex pattern to extract the JSON from the script tag
+    const jsonPattern = /<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s;
+
+    // Use the regex pattern to extract the JSON string
+    const match = htmlContent.match(jsonPattern);
+
+    let jsonData;
+    let retailerId;
+    if (match && match[1]) {
+      try {
+        // Parse the JSON string
+        jsonData = JSON.parse(match[1]);
+      } catch (error) {
+        throw new Error('Failed to parse JSON from HTML content');
+      }
+      retailerId = jsonData.query.clientId;
+      jsonData = jsonData.props.pageProps;
+    } else {
+      throw new Error(
+        'No matching script tag found or no JSON content present'
+      );
+    }
+
+    if (!jsonData || !jsonData.retailer) {
+      throw new Error('Retailer data is missing in the parsed JSON');
+    }
+
+    console.log(
+      `\n\nFound ${jsonData.vouchers.length} active vouchers and ${jsonData.expiredVouchers.length} expired vouchers\n    at: ${request.url}\n`
+    );
+
+    // Declarations outside the loop
+    const merchantName = jsonData.retailer.name;
+    const merchantUrl = jsonData.retailer.merchant_url;
+    const domain = getDomainName(merchantUrl);
+
+    // Combine active and expired vouchers
+    const activeVouchers = jsonData.vouchers.map((voucher) => ({
+      ...voucher,
+      is_expired: false,
+    }));
+    const expiredVouchers = jsonData.expiredVouchers.map((voucher) => ({
+      ...voucher,
+      is_expired: true,
+    }));
+    const vouchers = [...activeVouchers, ...expiredVouchers];
+
+    for (const voucher of vouchers) {
+      await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings
+
+      // Create a new DataValidator instance
+      const validator = new DataValidator();
+
+      // Add required values to the validator
+      validator.addValue('sourceUrl', request.url);
+      validator.addValue('merchantName', merchantName);
+      validator.addValue('title', voucher.title);
+      validator.addValue('idInSite', voucher.id_voucher);
+
+      // Add optional values to the validator
+      validator.addValue('domain', domain);
+      validator.addValue('description', voucher.description);
+      validator.addValue('termsAndConditions', voucher.terms_and_conditions);
+      validator.addValue('expiryDateAt', formatDateTime(voucher.end_time));
+      validator.addValue('startDateAt', formatDateTime(voucher.start_time));
+      validator.addValue('isExclusive', voucher.exclusive_voucher);
+      validator.addValue('isExpired', voucher.is_expired);
+      validator.addValue('isShown', true);
+
+      // code must be checked to decide the next step
+      const codeType = checkVoucherCode(voucher.code);
+
+      // Add the code to the validator
+      if (!codeType.isEmpty) {
+        if (!codeType.startsWithDots) {
+          validator.addValue('code', codeType.code);
+
+          // Process and store the data
+          await processAndStoreData(validator);
+        } else {
+          const idPool = voucher.id_pool;
+          const codeDetailsUrl = `https://www.cuponation.com.sg/api/voucher/country/sg/client/${retailerId}/id/${idPool}`;
+          // console.log(`Found code details URL: ${codeDetailsUrl}`);
+          const validatorData = validator.getData();
+
+          // Add the coupon URL to the request queue
+          await crawler.requestQueue.addRequest(
+            {
+              url: codeDetailsUrl,
+              userData: {
+                label: Label.getCode,
+                validatorData: validator.getData(),
+              },
+              headers: CUSTOM_HEADERS,
+            },
+            { forefront: true }
+          );
+        }
+      } else {
+        // If the code is empty, process and store the data
+        await processAndStoreData(validator);
+      }
+    }
+  } catch (error) {
+    console.error(
+      `An error occurred while processing the URL ${request.url}:`,
+      error
+    );
+  }
+});
+
+router.addHandler(Label.getCode, async (context) => {
+  // context includes request, body, etc.
+  const { request, body } = context;
+
+  if (request.userData.label !== Label.getCode) return;
+
+  try {
+    // Sleep for x seconds between requests to avoid rate limitings
+    await sleep(1000);
+
+    // Retrieve validatorData from request's userData
+    const validatorData = request.userData.validatorData;
+
+    // Create a new DataValidator instance and load the data
+    const validator = new DataValidator();
+    validator.loadData(validatorData);
+
+    // Convert body to string if it's a Buffer
+    const htmlContent = body instanceof Buffer ? body.toString() : body;
+
+    // Safely parse the JSON string
+    let jsonCodeData;
+    try {
+      jsonCodeData = JSON.parse(htmlContent);
+    } catch (error) {
+      throw new Error('Failed to parse JSON from HTML content');
+    }
+
+    // Validate the necessary data is present
+    if (!jsonCodeData || !jsonCodeData.code) {
+      throw new Error('Code data is missing in the parsed JSON');
+    }
+
+    const code = jsonCodeData.code;
+    console.log(`Found code: ${code}\n    at: ${request.url}`);
+
+    // Assuming the code should be added to the validator's data
+    validator.addValue('code', code);
+
+    // Process and store the data
+    await processAndStoreData(validator);
+  } catch (error) {
+    // Handle any errors that occurred during the handler execution
+    console.error(
+      `An error occurred while processing the URL ${request.url}:`,
+      error
+    );
+  }
+});
