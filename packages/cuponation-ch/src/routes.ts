@@ -168,7 +168,6 @@ router.addHandler(Label.listing, async (context) => {
           const idPool = voucher.id_pool;
           const codeDetailsUrl = `https://www.cuponation.ch/api/voucher/country/ch/client/${retailerId}/id/${idPool}`;
           // console.log(`Found code details URL: ${codeDetailsUrl}`);
-          const validatorData = validator.getData();
 
           // Add the coupon URL to the request queue
           await crawler.requestQueue.addRequest(
