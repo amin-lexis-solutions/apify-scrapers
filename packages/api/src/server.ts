@@ -4,6 +4,7 @@ import 'reflect-metadata'; // Required for routing-controllers
 
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 import { Express } from 'express';
+import expressBasicAuth from 'express-basic-auth';
 import {
   RoutingControllersOptions,
   createExpressServer,
@@ -59,7 +60,15 @@ const spec = routingControllersToSpec(storage, routingControllersOptions, {
   },
 });
 
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(spec));
+app.use(
+  '/api-docs',
+  expressBasicAuth({
+    users: { admin: process.env.API_PASSWORD || '' },
+    challenge: true,
+  }),
+  swaggerUi.serve,
+  swaggerUi.setup(spec)
+);
 
 const port = process.env.PORT || 3000;
 
