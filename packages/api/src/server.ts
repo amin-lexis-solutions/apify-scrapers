@@ -63,7 +63,7 @@ const spec = routingControllersToSpec(storage, routingControllersOptions, {
 app.use(
   '/api-docs',
   expressBasicAuth({
-    users: { admin: process.env.API_PASSWORD || '' },
+    users: { admin: process.env.API_DOCS_PASSWORD || '' },
     challenge: true,
   }),
   swaggerUi.serve,

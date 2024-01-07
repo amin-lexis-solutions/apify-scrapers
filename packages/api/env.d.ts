@@ -4,6 +4,7 @@ declare global {
       NODE_ENV: 'development' | 'staging' | 'production';
       PORT?: string;
       API_SECRET?: string;
+      API_DOCS_PASSWORD?: string;
       DATABASE_URL?: string;
       DATABASE_URL_NON_POOLED?: string;
     }
