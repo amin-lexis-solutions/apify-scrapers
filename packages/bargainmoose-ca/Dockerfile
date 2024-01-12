@@ -8,10 +8,7 @@ FROM apify/actor-node:18 AS builder
 COPY package*.json ./
 
 # Install all dependencies. Don't audit to speed up the installation.
-RUN npm --quiet set progress=false \
-    && npm install --include=dev --audit=false \
-    && echo "Installed NPM packages:" \
-    && (npm list --omit=dev --all || true)
+RUN npm install --include=dev --audit=false
 
 # Next, copy the source files using the user set
 # in the base image.
