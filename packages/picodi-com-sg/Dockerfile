@@ -14,9 +14,6 @@ RUN npm install --include=dev --audit=false
 # in the base image.
 COPY . ./
 
-# Remove a range of lines that break the build. Introduced in crawlee@3.7.0, remove this line once next version is published.
-RUN sed -i '370,452d' node_modules/@crawlee/http/internals/http-crawler.d.ts
-
 # Install all dependencies and build the project.
 # Don't audit to speed up the installation.
 RUN npm run build

@@ -14,9 +14,6 @@ RUN npm install --include=dev --audit=false
 # in the base image.
 COPY . ./
 
-# Remove a range of lines that break the build. Introduced in crawlee@3.7.0, remove this line once next version is published.
-RUN sed -i '370,452d' node_modules/@crawlee/http/internals/http-crawler.d.ts
-
 # Install all dependencies and build the project.
 # Don't audit to speed up the installation.
 RUN npm run build
@@ -34,14 +31,14 @@ COPY package*.json ./
 # Install NPM packages, skip optional and development dependencies to
 # keep the image small. Avoid logging too much and print the dependency
 # tree for debugging
-RUN npm --quiet set progress=false \
-    && npm install --omit=dev --omit=optional \
-    && echo "Installed NPM packages:" \
-    && (npm list --omit=dev --all || true) \
-    && echo "Node.js version:" \
-    && node --version \
-    && echo "NPM version:" \
-    && npm --version
+RUN npm --quiet set progress=false &&
+    npm install --omit=dev --omit=optional &&
+    echo "Installed NPM packages:" &&
+    (npm list --omit=dev --all || true) &&
+    echo "Node.js version:" &&
+    node --version &&
+    echo "NPM version:" &&
+    npm --version
 
 # Next, copy the remaining files and directories with the source code.
 # Since we do this after NPM install, quick build will be really fast

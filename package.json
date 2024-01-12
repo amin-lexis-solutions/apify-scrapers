@@ -2,6 +2,7 @@
   "name": "oberst-scrapers",
   "version": "0.1.0",
   "private": true,
+  "license": "ISC",
   "workspaces": {
     "packages": [
       "packages/*"
@@ -39,7 +40,7 @@
     "import-sort-style-module": "^6.0.0",
     "lint-staged": "^10.5.3",
     "prettier": "2.2.1",
-    "typescript": "4.9.4"
+    "typescript": "5.3.3"
   },
   "importSort": {
     ".js, .jsx, .es6, .es, .mjs, .ts, .tsx": {
