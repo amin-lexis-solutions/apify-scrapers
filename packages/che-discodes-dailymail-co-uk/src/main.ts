@@ -22,7 +22,7 @@ async function main() {
   }
 
   const crawler = new CheerioCrawler({
-    proxyConfiguration, // Use this if you need proxy configuration, else comment it out or remove
+    proxyConfiguration: proxyConfiguration as any,
     requestHandler: router,
     // Additional options can go here, e.g., maxConcurrency, requestTimeouts, etc.
   });

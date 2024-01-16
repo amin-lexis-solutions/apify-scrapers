@@ -23,7 +23,7 @@ async function main() {
   }
 
   const crawler = new CheerioCrawler({
-    proxyConfiguration,
+    proxyConfiguration: proxyConfiguration as any,
     requestHandler: router,
   });
 

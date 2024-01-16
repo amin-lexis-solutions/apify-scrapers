@@ -24,7 +24,7 @@ async function main() {
   }
 
   const crawler = new PuppeteerCrawler({
-    proxyConfiguration,
+    proxyConfiguration: proxyConfiguration as any,
     requestHandler: async (context) => {
       const { request } = context;
       switch (request.userData.label) {

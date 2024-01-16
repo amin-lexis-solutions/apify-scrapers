@@ -1,0 +1,10 @@
+{
+    "actorSpecification": 1,
+    "name": "radins-com-scraper",
+    "title": "Radins Com Scraper",
+    "version": "0.0",
+    "input": "./input.json",
+    "storages": {
+        "dataset": "./output.json"
+    }
+}
