@@ -142,16 +142,16 @@ router.addHandler(Label.listing, async (context) => {
       validator.addValue('sourceUrl', request.url);
       validator.addValue('merchantName', merchantName);
       validator.addValue('title', voucher.title);
-      validator.addValue('idInSite', voucher.id_voucher);
+      validator.addValue('idInSite', voucher.idVoucher);
 
       // Add optional values to the validator
       validator.addValue('domain', domain);
       validator.addValue('description', voucher.description);
-      validator.addValue('termsAndConditions', voucher.terms_and_conditions);
-      validator.addValue('expiryDateAt', formatDateTime(voucher.end_time));
-      validator.addValue('startDateAt', formatDateTime(voucher.start_time));
-      validator.addValue('isExclusive', voucher.exclusive_voucher);
-      validator.addValue('isExpired', voucher.is_expired);
+      validator.addValue('termsAndConditions', voucher.termsAndConditions);
+      validator.addValue('expiryDateAt', formatDateTime(voucher.endTime));
+      validator.addValue('startDateAt', formatDateTime(voucher.startTime));
+      validator.addValue('isExclusive', voucher.exclusiveVoucher);
+      validator.addValue('isExpired', voucher.isExpired);
       validator.addValue('isShown', true);
 
       // code must be checked to decide the next step
@@ -165,7 +165,7 @@ router.addHandler(Label.listing, async (context) => {
           // Process and store the data
           await processAndStoreData(validator);
         } else {
-          const idPool = voucher.id_pool;
+          const idPool = voucher.idPool;
           const codeDetailsUrl = `https://www.cuponation.ch/api/voucher/country/ch/client/${retailerId}/id/${idPool}`;
           // console.log(`Found code details URL: ${codeDetailsUrl}`);
 

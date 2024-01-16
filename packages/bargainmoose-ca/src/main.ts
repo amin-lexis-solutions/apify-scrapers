@@ -1,7 +1,6 @@
 // For more information, see https://crawlee.dev/
 import { Actor } from 'apify';
 import { CheerioCrawler } from 'crawlee';
-
 import { Label } from './constants';
 import { router } from './routes';
 
@@ -10,9 +9,6 @@ const startUrl = 'https://www.bargainmoose.ca/coupons/sitemap.xml';
 // Define the main run function as an async function
 async function main() {
   await Actor.init();
-
-  // Initialize the request queue
-  const requestQueue = await Actor.openRequestQueue();
 
   // use proxy configuration if provided in input
   const input: any = await Actor.getInput();
@@ -26,8 +22,7 @@ async function main() {
   }
 
   const crawler = new CheerioCrawler({
-    proxyConfiguration, // Use this if you need proxy configuration, else comment it out or remove
-    requestQueue,
+    proxyConfiguration: proxyConfiguration as any,
     requestHandler: router,
   });
 

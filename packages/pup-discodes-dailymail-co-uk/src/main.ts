@@ -21,7 +21,7 @@ async function main() {
   }
 
   const crawler = new PuppeteerCrawler({
-    proxyConfiguration, // Use this if you need proxy configuration, else comment it out or remove
+    proxyConfiguration: proxyConfiguration as any,
     // Set to `true` if running locally for visual debugging; otherwise, it's best to keep headless for performance.
     headless: true,
     // Enable if you want to reuse sessions to minimize login and other overhead.

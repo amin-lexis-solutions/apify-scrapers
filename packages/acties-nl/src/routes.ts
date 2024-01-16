@@ -1,8 +1,6 @@
-import { RequestQueue } from 'apify'; // Import types from Apify SDK
+import { createCheerioRouter } from 'crawlee';
 import * as cheerio from 'cheerio';
 import { decode } from 'html-entities';
-import { parse } from 'node-html-parser';
-
 import { DataValidator } from './data-validator';
 import { processAndStoreData, sleep } from './utils';
 
@@ -20,17 +18,22 @@ type Voucher = {
   title: string;
 };
 
-export async function sitemapHandler(requestQueue: RequestQueue, context) {
+export const router = createCheerioRouter();
+
+router.addHandler(Label.sitemap, async (context) => {
   // context includes request, body, etc.
-  const { request, body } = context;
+  const { request, $, crawler } = context;
 
   if (request.userData.label !== Label.sitemap) return;
 
-  const content = typeof body === 'string' ? body : body.toString();
-  const root = parse(content);
-  let sitemapUrls = root
-    .querySelectorAll('urlset url loc')
-    .map((el) => el.text.trim());
+  const sitemapLinks = $('urlset url loc');
+  if (sitemapLinks.length === 0) {
+    console.log('Sitemap HTML:', $.html());
+    throw new Error('Sitemap links are missing');
+  }
+  let sitemapUrls = sitemapLinks
+    .map((i, el) => $(el).text().trim() as string)
+    .get();
 
   console.log(`Found ${sitemapUrls.length} URLs in the sitemap`);
 
@@ -45,12 +48,21 @@ export async function sitemapHandler(requestQueue: RequestQueue, context) {
     /\/categorie\//,
   ];
 
-  // Filter out URLs that match any of the banned patterns
-  sitemapUrls = sitemapUrls.filter((url) => {
-    const notHomepage = url !== 'https://www.acties.nl/';
-    const notBanned = !bannedPatterns.some((pattern) => pattern.test(url));
-    return notHomepage && notBanned;
-  });
+  if (bannedPatterns.length > 0) {
+    // Filter out URLs that match any of the banned patterns
+    const oldLength = sitemapUrls.length;
+    sitemapUrls = sitemapUrls.filter((url) => {
+      const notHomepage = url !== 'https://www.acties.nl/';
+      const notBanned = !bannedPatterns.some((pattern) => pattern.test(url));
+      return notBanned && notHomepage;
+    });
+
+    if (sitemapUrls.length < oldLength) {
+      console.log(
+        `Remained ${sitemapUrls.length} URLs after filtering banned patterns`
+      );
+    }
+  }
 
   console.log(
     `Found ${sitemapUrls.length} URLs after filtering banned patterns`
@@ -68,19 +80,22 @@ export async function sitemapHandler(requestQueue: RequestQueue, context) {
   }
 
   // Manually add each URL to the request queue
+  if (!crawler.requestQueue) {
+    throw new Error('Request queue is not initialized');
+  }
   for (const url of testUrls) {
-    await requestQueue.addRequest({
+    await crawler.requestQueue.addRequest({
       url: url,
       userData: {
         label: Label.listing,
       },
     });
   }
-}
+});
 
-export async function listingHandler(requestQueue: RequestQueue, context) {
+router.addHandler(Label.listing, async (context) => {
   // context includes request, body, etc.
-  const { request, $ } = context;
+  const { request, $, crawler } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -217,7 +232,10 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
           const validatorData = validator.getData();
 
           // Add the request to the request queue
-          await requestQueue.addRequest(
+          if (!crawler.requestQueue) {
+            throw new Error('Request queue is not initialized');
+          }
+          await crawler.requestQueue.addRequest(
             {
               url: codeDetailsUrl,
               userData: {
@@ -242,9 +260,9 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
       error
     );
   }
-}
+});
 
-export async function codeHandler(requestQueue: RequestQueue, context) {
+router.addHandler(Label.getCode, async (context) => {
   // context includes request, body, etc.
   const { request, body } = context;
 
@@ -292,4 +310,4 @@ export async function codeHandler(requestQueue: RequestQueue, context) {
       error
     );
   }
-}
+});

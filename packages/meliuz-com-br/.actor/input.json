@@ -1,0 +1,20 @@
+{
+    "title": "Meliuz Com Br Scraper",
+    "description": "This is the Meliuz Com Br Scraper input schema",
+    "type": "object",
+    "schemaVersion": 1,
+    "properties": {
+        "proxyConfiguration": {
+            "title": "Proxy Configuration",
+            "type": "object",
+            "description": "Your proxy configuration from Apify",
+            "editor": "proxy"
+        },
+        "testLimit": {
+            "title": "Number of URLs to Test",
+            "type": "integer",
+            "description": "Optional: Enter the number of URLs to process for testing. If not provided, all URLs will be processed.",
+            "minimum": 1
+        }
+    }
+}
