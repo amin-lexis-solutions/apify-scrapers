@@ -11,9 +11,6 @@ const startUrl = 'https://iprice.sg/coupons/stores/';
 async function main() {
   await Actor.init();
 
-  // Initialize the request queue
-  const requestQueue = await Actor.openRequestQueue();
-
   // use proxy configuration if provided in input
   const input: any = await Actor.getInput();
   const proxyConfiguration = await Actor.createProxyConfiguration(
@@ -26,8 +23,7 @@ async function main() {
   }
 
   const crawler = new CheerioCrawler({
-    proxyConfiguration, // Use this if you need proxy configuration, else comment it out or remove
-    requestQueue,
+    proxyConfiguration,
     requestHandler: router,
   });
 

@@ -1,6 +1,7 @@
 // For more information, see https://crawlee.dev/
 import { Actor } from 'apify';
 import { CheerioCrawler } from 'crawlee';
+
 import { Label } from './constants';
 import { router } from './routes';
 
