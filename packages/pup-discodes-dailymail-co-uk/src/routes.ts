@@ -37,6 +37,15 @@ function checkVoucherCode(code: string | null | undefined) {
     };
   }
 
+  // Check if the trimmed code is shorter than 5 characters
+  if (trimmedCode.length < 5) {
+    return {
+      isEmpty: false,
+      code: trimmedCode,
+      startsWithDots: true, // This is not a typo, it's intentional
+    };
+  }
+
   // If the code is not empty and does not start with '...', it's a regular code
   return {
     isEmpty: false,

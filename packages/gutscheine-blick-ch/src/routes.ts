@@ -1,7 +1,7 @@
-import { EnqueueLinksOptions, createCheerioRouter } from 'crawlee';
-import { parse } from 'node-html-parser';
-
+import { createCheerioRouter } from 'crawlee';
+import { CUSTOM_HEADERS, Label } from './constants';
 import { DataValidator } from './data-validator';
+import { checkVoucherCode } from './routes-helpers';
 import {
   formatDateTime,
   getDomainName,
@@ -9,91 +9,37 @@ import {
   sleep,
 } from './utils';
 
-export enum Label {
-  'sitemap' = 'SitemapPage',
-  'listing' = 'ProviderCouponsPage',
-  'getCode' = 'GetCodePage',
-}
+export const router = createCheerioRouter();
 
-function checkVoucherCode(code: string | null | undefined) {
-  // Trim the code to remove any leading/trailing whitespace
-  const trimmedCode = code?.trim();
+router.addHandler(Label.sitemap, async (context) => {
+  // context includes request, body, etc.
+  const { request, $, crawler } = context;
 
-  // Check if the code is null or an empty string after trimming
-  if (!trimmedCode) {
-    return {
-      isEmpty: true,
-      code: '',
-      startsWithDots: false,
-    };
-  }
-
-  // Check if the trimmed code starts with '...'
-  if (trimmedCode.startsWith('...')) {
-    return {
-      isEmpty: false,
-      code: trimmedCode,
-      startsWithDots: true,
-    };
-  }
-
-  // Check if the trimmed code is shorter than 5 characters
-  if (trimmedCode.length < 5) {
-    return {
-      isEmpty: false,
-      code: trimmedCode,
-      startsWithDots: true, // This is not a typo, it's intentional
-    };
-  }
-
-  // If the code is not empty and does not start with '...', it's a regular code
-  return {
-    isEmpty: false,
-    code: trimmedCode,
-    startsWithDots: false,
-  };
-}
-
-// Export the router function that determines which handler to use based on the request label
-const router = createCheerioRouter();
-
-router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
   if (request.userData.label !== Label.sitemap) return;
 
-  const content = typeof body === 'string' ? body : body.toString();
-  const root = parse(content);
-  let sitemapUrls = root
-    .querySelectorAll('urlset url loc')
-    .map((el) => el.text.trim());
+  const sitemapLinks = $('div[data-testid=alphabet-sections] li > a');
+  if (sitemapLinks.length === 0) {
+    console.log('Sitemap HTML:', $.html());
+    throw new Error('Sitemap links are missing');
+  }
+  // Base URL from the request
+  const baseUrl = new URL(request.url);
+
+  // Map each link to a full URL
+  const sitemapUrls = sitemapLinks
+    .map((i, el) => {
+      const relativePath = $(el).attr('href');
+
+      // Skip if the href attribute is missing
+      if (typeof relativePath === 'undefined') {
+        throw new Error('Sitemap link is missing the href attribute');
+      }
+
+      return new URL(relativePath, baseUrl).href;
+    })
+    .get();
 
   console.log(`Found ${sitemapUrls.length} URLs in the sitemap`);
-
-  // Define a list of banned URL patterns (regular expressions)
-  const bannedPatterns = [
-    /\/about-us$/,
-    /\/articles$/,
-    /\/articles\//,
-    /\/categories$/,
-    /\/categories\//,
-    /\/christmas-gifts-cheap$/,
-    /\/faq$/,
-    /\/mothers-day-deals$/,
-    /\/seasonal-deals$/,
-    /\/specials\//,
-    /\/sustainable$/,
-    /\/valentines-day-deals$/,
-  ];
-
-  // Filter out URLs that match any of the banned patterns
-  sitemapUrls = sitemapUrls.filter((url) => {
-    const notHomepage = url !== 'https://discountcode.dailymail.co.uk/';
-    const notBanned = !bannedPatterns.some((pattern) => pattern.test(url));
-    return notHomepage && notBanned;
-  });
-
-  console.log(
-    `Found ${sitemapUrls.length} URLs after filtering banned patterns`
-  );
 
   let limit = sitemapUrls.length; // Use the full length for production
   if (request.userData.testLimit) {
@@ -106,18 +52,34 @@ router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
     console.log(`Using ${testUrls.length} URLs for testing`);
   }
 
-  // Correct usage of enqueueLinks with 'urls' as an array
-  const enqueueOptions: EnqueueLinksOptions = {
-    urls: testUrls,
-    label: Label.listing,
-  };
-  await enqueueLinks(enqueueOptions);
+  if (!crawler.requestQueue) {
+    throw new Error('Request queue is missing');
+  }
+
+  // Manually add each URL to the request queue
+  for (const url of testUrls) {
+    await crawler.requestQueue.addRequest({
+      url: url,
+      userData: {
+        label: Label.listing,
+      },
+      headers: CUSTOM_HEADERS,
+    });
+  }
 });
 
-router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
+router.addHandler(Label.listing, async (context) => {
+  const { request, body, crawler } = context;
+
   if (request.userData.label !== Label.listing) return;
 
+  if (!crawler.requestQueue) {
+    throw new Error('Request queue is missing');
+  }
+
   try {
+    // Extracting request and body from context
+
     console.log(`\nProcessing URL: ${request.url}`);
 
     // Convert body to string if it's a Buffer
@@ -204,17 +166,21 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
           await processAndStoreData(validator);
         } else {
           const idPool = voucher.idPool;
-          const codeDetailsUrl = `https://discountcode.dailymail.co.uk/api/voucher/country/uk/client/${retailerId}/id/${idPool}`;
-          const validatorData = validator.getData();
+          const codeDetailsUrl = `https://gutscheine.blick.ch/api/voucher/country/ch/client/${retailerId}/id/${idPool}`;
+          // console.log(`Found code details URL: ${codeDetailsUrl}`);
 
-          await enqueueLinks({
-            urls: [codeDetailsUrl],
-            userData: {
-              label: Label.getCode,
-              validatorData: validatorData,
+          // Add the coupon URL to the request queue
+          await crawler.requestQueue.addRequest(
+            {
+              url: codeDetailsUrl,
+              userData: {
+                label: Label.getCode,
+                validatorData: validator.getData(),
+              },
+              headers: CUSTOM_HEADERS,
             },
-            forefront: true,
-          });
+            { forefront: true }
+          );
         }
       } else {
         // If the code is empty, process and store the data
@@ -222,7 +188,6 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
       }
     }
   } catch (error) {
-    // Handle any errors that occurred during processing
     console.error(
       `An error occurred while processing the URL ${request.url}:`,
       error
@@ -230,11 +195,14 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
   }
 });
 
-router.addHandler(Label.getCode, async ({ request, body }) => {
+router.addHandler(Label.getCode, async (context) => {
+  // context includes request, body, etc.
+  const { request, body } = context;
+
   if (request.userData.label !== Label.getCode) return;
 
   try {
-    // Sleep for 3 seconds between requests to avoid rate limitings
+    // Sleep for x seconds between requests to avoid rate limitings
     await sleep(1000);
 
     // Retrieve validatorData from request's userData
@@ -274,8 +242,5 @@ router.addHandler(Label.getCode, async ({ request, body }) => {
       `An error occurred while processing the URL ${request.url}:`,
       error
     );
-    // Depending on your use case, you might want to re-throw the error or handle it differently
   }
 });
-
-export { router };
