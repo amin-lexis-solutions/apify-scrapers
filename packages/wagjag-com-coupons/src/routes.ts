@@ -16,8 +16,6 @@ router.addHandler(Label.sitemap, async (context) => {
     console.log('Sitemap HTML:', $.html());
     throw new Error('Sitemap links are missing');
   }
-  // Base URL from the request
-  const baseUrl = new URL(request.url);
 
   // Map each link to a full URL
   const sitemapUrls = sitemapLinks
