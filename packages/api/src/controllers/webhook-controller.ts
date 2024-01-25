@@ -3,6 +3,7 @@ import { $Enums } from '@prisma/client';
 import fetch from 'node-fetch';
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
+
 import { generateHash, validDateOrNull } from '../utils/utils';
 import { StandardResponse, WebhookRequestBody } from '../utils/validators';
 
@@ -37,13 +38,13 @@ export class WebhookController {
     const datasetId = webhookData.resource.defaultDatasetId;
     const actorId = webhookData.eventData.actorId;
     const actorRunId = webhookData.eventData.actorRunId;
-    const apifyStatus = webhookData.resource.status;
+    const status = webhookData.resource.status;
 
-    await prisma.processedRun.create({
+    const run = await prisma.processedRun.create({
       data: {
-        actorId: actorId,
-        actorRunId: actorRunId,
-        status: apifyStatus,
+        actorId,
+        actorRunId,
+        status,
       },
     });
 
@@ -51,7 +52,14 @@ export class WebhookController {
       const scrapedData = await fetchScrapedData(datasetId);
       const now = new Date();
 
-      for (const item of scrapedData) {
+      let createdCount = 0,
+        updatedCount = 0,
+        unarchivedCount = 0,
+        archivedCount = 0;
+      const errors: Record<string, any>[] = [];
+
+      for (let i = 0; i < scrapedData.length; i++) {
+        const item = scrapedData[i];
         const id = generateHash(
           item.merchantName,
           item.idInSite,
@@ -116,32 +124,77 @@ export class WebhookController {
           }
         }
 
-        await prisma.coupon.upsert({
-          where: { id },
-          update: updateData,
-          create: {
-            id,
-            sourceId: actorId,
-            idInSite: item.idInSite,
-            domain: item.domain || null,
-            merchantName: item.merchantName,
-            title: item.title || null,
-            description: item.description || null,
-            termsAndConditions: item.termsAndConditions || null,
-            expiryDateAt: validDateOrNull(item.expiryDateAt) || null,
-            code: item.code || null,
-            startDateAt: validDateOrNull(item.startDateAt) || null,
-            sourceUrl: item.sourceUrl || null,
-            isShown: item.isShown || null,
-            isExpired: item.isExpired || null,
-            isExclusive: item.isExclusive || null,
-            firstSeenAt: now,
-            lastSeenAt: now,
-            archivedAt: archivedAt,
-            archivedReason: archivedReason || null,
-          },
-        });
+        const updatedFieldsCount = existingRecord
+          ? Object.keys(updateData)
+              .filter((key) => key !== 'lastSeenAt' && key !== 'archivedAt')
+              .filter((key) => {
+                const existingValue = (existingRecord as any)[key];
+                const newValue = (updateData as any)[key];
+
+                if (existingValue instanceof Date) {
+                  return (
+                    existingValue.getTime() !== new Date(newValue).getTime()
+                  );
+                }
+
+                return existingValue !== newValue;
+              }).length
+          : 0;
+
+        try {
+          await prisma.coupon.upsert({
+            where: { id },
+            update: updateData,
+            create: {
+              id,
+              sourceId: actorId,
+              idInSite: item.idInSite,
+              domain: item.domain || null,
+              merchantName: item.merchantName,
+              title: item.title || null,
+              description: item.description || null,
+              termsAndConditions: item.termsAndConditions || null,
+              expiryDateAt: validDateOrNull(item.expiryDateAt) || null,
+              code: item.code || null,
+              startDateAt: validDateOrNull(item.startDateAt) || null,
+              sourceUrl: item.sourceUrl || null,
+              isShown: item.isShown || null,
+              isExpired: item.isExpired || null,
+              isExclusive: item.isExclusive || null,
+              firstSeenAt: now,
+              lastSeenAt: now,
+              archivedAt: archivedAt,
+              archivedReason: archivedReason || null,
+            },
+          });
+
+          if (existingRecord === null) {
+            createdCount++;
+          } else if (!existingRecord.archivedAt && updateData.archivedAt) {
+            archivedCount++;
+          } else if (existingRecord.archivedAt && !updateData.archivedAt) {
+            unarchivedCount++;
+          } else if (updatedFieldsCount > 0) {
+            updatedCount++;
+          }
+        } catch (e: any) {
+          errors.push({ index: i, error: e.toString() });
+        }
       }
+
+      await prisma.processedRun.update({
+        where: { id: run.id },
+        data: {
+          createdCount,
+          updatedCount,
+          archivedCount,
+          unarchivedCount,
+          resultCount: scrapedData.length,
+          errorCount: errors.length,
+          processingErrors: errors,
+          processedAt: new Date(),
+        },
+      });
     }, 0);
 
     return new StandardResponse('Data processed successfully', false);

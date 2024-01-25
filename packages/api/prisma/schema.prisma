@@ -17,7 +17,7 @@ enum ArchiveReason {
 }
 
 model Coupon {
-  id                 String    @id
+  id                 String         @id
   sourceId           String
   idInSite           String
   domain             String?
@@ -32,8 +32,8 @@ model Coupon {
   isShown            Boolean?
   isExpired          Boolean?
   isExclusive        Boolean?
-  firstSeenAt        DateTime  @default(now())
-  lastSeenAt         DateTime  @default(now())
+  firstSeenAt        DateTime       @default(now())
+  lastSeenAt         DateTime       @default(now())
   archivedAt         DateTime?
   archivedReason     ArchiveReason?
 
@@ -45,17 +45,27 @@ model Coupon {
 }
 
 model Source {
-  id             String   @id
+  id             String         @id
   sourceName     String
   sourceLocale   String
   sourceStartUrl String
   coupons        Coupon[]
+  runs           ProcessedRun[]
 }
 
 model ProcessedRun {
-  id          Int      @id @default(autoincrement())
-  actorId     String
-  actorRunId  String   @unique
-  processedAt DateTime @default(now())
-  status      String
+  id               Int       @id @default(autoincrement())
+  actorId          String
+  actorRunId       String    @unique
+  finishedAt       DateTime  @default(now())
+  processedAt      DateTime?
+  status           String
+  resultCount      Int       @default(0)
+  createdCount     Int       @default(0)
+  updatedCount     Int       @default(0)
+  archivedCount    Int       @default(0)
+  unarchivedCount  Int       @default(0)
+  errorCount       Int       @default(0)
+  processingErrors Json?
+  source           Source?   @relation(fields: [actorId], references: [id])
 }
