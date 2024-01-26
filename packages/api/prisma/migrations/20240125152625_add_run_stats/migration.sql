@@ -1,0 +1,17 @@
+-- Truncate ProcessedRun
+TRUNCATE TABLE "ProcessedRun" CASCADE;
+
+-- AlterTable
+ALTER TABLE "ProcessedRun" ADD COLUMN     "archivedCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "createdCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "errorCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "finishedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "processingErrors" JSONB,
+ADD COLUMN     "resultCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "unarchivedCount" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "updatedCount" INTEGER NOT NULL DEFAULT 0,
+ALTER COLUMN "processedAt" DROP NOT NULL,
+ALTER COLUMN "processedAt" DROP DEFAULT;
+
+-- AddForeignKey
+ALTER TABLE "ProcessedRun" ADD CONSTRAINT "ProcessedRun_actorId_fkey" FOREIGN KEY ("actorId") REFERENCES "Source"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
