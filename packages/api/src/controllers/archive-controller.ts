@@ -22,7 +22,7 @@ export class ArchiveController {
     description: 'Archive a record by ID',
   })
   @ResponseSchema(StandardResponse) // Apply @ResponseSchema at the method level
-  async receiveData(@Param('id') id: string): Promise<StandardResponse> {
+  async archive(@Param('id') id: string): Promise<StandardResponse> {
     if (!id || id.trim() === '') {
       throw new BadRequestError(
         'ID parameter is required and cannot be empty.'

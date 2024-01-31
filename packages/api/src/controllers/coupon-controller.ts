@@ -1,26 +1,32 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import {
   Authorized,
+  Body,
   Get,
   JsonController,
+  Post,
   QueryParams,
 } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
-import { ListRequestBody, StandardResponse } from '../utils/validators';
+import {
+  CouponMatchRequestBody,
+  ListRequestBody,
+  StandardResponse,
+} from '../utils/validators';
 
 const prisma = new PrismaClient();
 
 @JsonController()
-@Authorized()
-@OpenAPI({ security: [{ token: [] }] })
-export class ListController {
+export class CouponController {
   @Get('/list')
   @OpenAPI({
     summary: 'List items',
     description: 'Get a list of items with pagination and optional filtering',
   })
-  @ResponseSchema(StandardResponse) // Apply @ResponseSchema at the method level
+  @ResponseSchema(StandardResponse)
+  @Authorized()
+  @OpenAPI({ security: [{ token: [] }] })
   async getList(
     @QueryParams() params: ListRequestBody
   ): Promise<StandardResponse> {
@@ -92,5 +98,22 @@ export class ListController {
         results: data,
       }
     );
+  }
+
+  @Post('/match')
+  @OpenAPI({
+    summary: 'Check if a set of coupons exists by ID',
+  })
+  async matchCoupons(@Body() params: CouponMatchRequestBody) {
+    const { ids } = params;
+
+    const coupons = await prisma.coupon.findMany({
+      where: { id: { in: ids } },
+      select: { id: true },
+    });
+
+    return ids.map((id) => {
+      return !!coupons.find((coupon) => coupon.id === id);
+    });
   }
 }

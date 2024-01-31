@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsObject,
   IsOptional,
@@ -71,6 +72,11 @@ export class ListRequestBody {
   @IsOptional()
   @MinLength(1)
   sourceDomain?: string;
+}
+
+export class CouponMatchRequestBody {
+  @IsArray()
+  ids: string[];
 }
 
 export class EventData {
