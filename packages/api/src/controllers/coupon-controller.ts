@@ -9,6 +9,7 @@ import {
 } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
+import { couponMatchCache } from '../lib/cache';
 import {
   CouponMatchRequestBody,
   ListRequestBody,
@@ -109,13 +110,43 @@ export class CouponController {
   async matchCoupons(@Body() params: CouponMatchRequestBody) {
     const { ids } = params;
 
-    const coupons = await prisma.coupon.findMany({
-      where: { id: { in: ids } },
-      select: { id: true },
+    const cachedIds: string[] = [];
+    const uncachedIds: string[] = [];
+
+    ids.forEach((id) => {
+      if (couponMatchCache.has(id)) {
+        cachedIds.push(id);
+      } else {
+        uncachedIds.push(id);
+      }
+    });
+
+    const coupons =
+      uncachedIds.length > 0
+        ? await prisma.coupon.findMany({
+            where: { id: { in: uncachedIds } },
+            select: { id: true },
+          })
+        : [];
+
+    coupons.forEach((coupon) => {
+      couponMatchCache.set(coupon.id, true);
     });
 
     return ids
-      .map((id, idx) => (coupons.some((coupon) => coupon.id === id) ? idx : -1))
+      .map((id, idx) => {
+        const inCache = cachedIds.includes(id);
+        if (inCache) {
+          return idx;
+        }
+
+        const inDb = coupons.find((coupon) => coupon.id === id);
+        if (inDb) {
+          return idx;
+        }
+
+        return -1;
+      })
       .filter((idx) => idx !== -1);
   }
 }
