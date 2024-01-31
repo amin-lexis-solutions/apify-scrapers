@@ -100,9 +100,11 @@ export class CouponController {
     );
   }
 
-  @Post('/match')
+  @Post('/match-ids')
   @OpenAPI({
     summary: 'Check if a set of coupons exists by ID',
+    description:
+      'Returns an array of indices of coupons that exist. For example, if you pass in 5 IDs and ids at index 0, 2, and 4 exist, the response will be [0, 2, 4]',
   })
   async matchCoupons(@Body() params: CouponMatchRequestBody) {
     const { ids } = params;
@@ -112,8 +114,8 @@ export class CouponController {
       select: { id: true },
     });
 
-    return ids.map((id) => {
-      return !!coupons.find((coupon) => coupon.id === id);
-    });
+    return ids
+      .map((id, idx) => (coupons.some((coupon) => coupon.id === id) ? idx : -1))
+      .filter((idx) => idx !== -1);
   }
 }
