@@ -134,19 +134,7 @@ export class CouponController {
     });
 
     return ids
-      .map((id, idx) => {
-        const inCache = cachedIds.includes(id);
-        if (inCache) {
-          return idx;
-        }
-
-        const inDb = coupons.find((coupon) => coupon.id === id);
-        if (inDb) {
-          return idx;
-        }
-
-        return -1;
-      })
+      .map((id, idx) => (cachedIds.includes(id) ? idx : -1))
       .filter((idx) => idx !== -1);
   }
 }
