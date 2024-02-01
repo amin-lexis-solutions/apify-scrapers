@@ -1,0 +1,10 @@
+{
+    "actorSpecification": 1,
+    "name": "pelando-com-br-scraper",
+    "title": "Pelando Com Br Scraper",
+    "version": "0.0",
+    "input": "./input.json",
+    "storages": {
+        "dataset": "./output.json"
+    }
+}
