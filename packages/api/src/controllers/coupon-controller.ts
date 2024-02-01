@@ -1,26 +1,33 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import {
   Authorized,
+  Body,
   Get,
   JsonController,
+  Post,
   QueryParams,
 } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
-import { ListRequestBody, StandardResponse } from '../utils/validators';
+import { couponMatchCache } from '../lib/cache';
+import {
+  CouponMatchRequestBody,
+  ListRequestBody,
+  StandardResponse,
+} from '../utils/validators';
 
 const prisma = new PrismaClient();
 
 @JsonController()
-@Authorized()
-@OpenAPI({ security: [{ token: [] }] })
-export class ListController {
+export class CouponController {
   @Get('/list')
   @OpenAPI({
     summary: 'List items',
     description: 'Get a list of items with pagination and optional filtering',
   })
-  @ResponseSchema(StandardResponse) // Apply @ResponseSchema at the method level
+  @ResponseSchema(StandardResponse)
+  @Authorized()
+  @OpenAPI({ security: [{ token: [] }] })
   async getList(
     @QueryParams() params: ListRequestBody
   ): Promise<StandardResponse> {
@@ -92,5 +99,42 @@ export class ListController {
         results: data,
       }
     );
+  }
+
+  @Post('/match-ids')
+  @OpenAPI({
+    summary: 'Check if a set of coupons exists by ID',
+    description:
+      'Returns an array of indices of coupons that exist. For example, if you pass in 5 IDs and ids at index 0, 2, and 4 exist, the response will be [0, 2, 4]',
+  })
+  async matchCoupons(@Body() params: CouponMatchRequestBody) {
+    const { ids } = params;
+
+    const cachedIds: string[] = [];
+    const uncachedIds: string[] = [];
+
+    ids.forEach((id) => {
+      if (couponMatchCache.has(id)) {
+        cachedIds.push(id);
+      } else {
+        uncachedIds.push(id);
+      }
+    });
+
+    const coupons =
+      uncachedIds.length > 0
+        ? await prisma.coupon.findMany({
+            where: { id: { in: uncachedIds } },
+            select: { id: true },
+          })
+        : [];
+
+    coupons.forEach((coupon) => {
+      couponMatchCache.set(coupon.id, true);
+    });
+
+    return ids
+      .map((id, idx) => (cachedIds.includes(id) ? idx : -1))
+      .filter((idx) => idx !== -1);
   }
 }

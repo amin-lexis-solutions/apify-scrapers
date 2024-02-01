@@ -14,7 +14,7 @@ import { routingControllersToSpec } from 'routing-controllers-openapi';
 import swaggerUi from 'swagger-ui-express';
 
 import { ArchiveController } from './controllers/archive-controller'; // Import the ArchiveController
-import { ListController } from './controllers/list-controller'; // Import the ListController
+import { CouponController } from './controllers/coupon-controller'; // Import the ListController
 import { WebhookController } from './controllers/webhook-controller'; // Import the WebhookController
 import { CustomErrorHandler } from './middlewares/custom-error-handler'; // Import your custom error handler
 import { authorizationChecker } from './utils/auth';
@@ -22,7 +22,7 @@ import { authorizationChecker } from './utils/auth';
 const routingControllersOptions: RoutingControllersOptions = {
   controllers: [
     WebhookController, // Registering the WebhookController
-    ListController, // Registering the ListController
+    CouponController, // Registering the ListController
     ArchiveController, // Registering the ArchiveController
   ],
   middlewares: [

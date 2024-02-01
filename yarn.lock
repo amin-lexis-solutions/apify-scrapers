@@ -1322,25 +1322,6 @@ apify@3.1.14:
     tslib "^2.6.2"
     ws "^7.5.9"
 
-apify@^3.1.14:
-  version "3.1.15"
-  resolved "https://registry.yarnpkg.com/apify/-/apify-3.1.15.tgz#2f1dd7641640431f22fa4e43710893587ec61daa"
-  integrity sha512-qzkl0b4Gn4bj3fe9zuNfWKfyoHDkkw0PdzTVmL+YaAuSrjLGpKN9uI6W0KCx9eVhJwgU7rOrjQdeeHkxqFvjcg==
-  dependencies:
-    "@apify/consts" "^2.23.0"
-    "@apify/input_secrets" "^1.1.40"
-    "@apify/log" "^2.4.3"
-    "@apify/timeout" "^0.3.0"
-    "@apify/utilities" "^2.9.3"
-    "@crawlee/core" "^3.6.1"
-    "@crawlee/types" "^3.6.1"
-    "@crawlee/utils" "^3.6.1"
-    apify-client "^2.8.4"
-    ow "^0.28.2"
-    semver "^7.5.4"
-    tslib "^2.6.2"
-    ws "^7.5.9"
-
 append-field@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/append-field/-/append-field-1.0.0.tgz#1e3440e915f0b1203d23748e78edd7b9b5b43e56"
@@ -5040,6 +5021,11 @@ lowercase-keys@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/lowercase-keys/-/lowercase-keys-3.0.0.tgz#c5e7d442e37ead247ae9db117a9d0a467c89d4f2"
   integrity sha512-ozCC6gdQ+glXOQsveKD0YsDy8DSQFjDTz4zyzEHNV5+JP5D62LmfDZ6o1cycFx9ouG940M5dE8C8CTewdj2YWQ==
+
+lru-cache@^10.2.0:
+  version "10.2.0"
+  resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-10.2.0.tgz#0bd445ca57363465900f4d1f9bd8db343a4d95c3"
+  integrity sha512-2bIM8x+VAf6JT4bKAljS1qUWgMsqZRPGJS6FSahIMPVvctcNhyVp7AJu7quxOW9jwkryBReKZY5tY5JYv2n/7Q==
 
 lru-cache@^5.1.1:
   version "5.1.1"
