@@ -1,8 +1,10 @@
 import crypto from 'crypto';
+
+import { Dataset } from 'apify';
 import * as chrono from 'chrono-node';
 import moment from 'moment';
+
 import { DataValidator } from './data-validator';
-import { Dataset } from 'apify';
 
 // Normalizes strings by trimming, converting to lowercase, and replacing multiple spaces with a single space
 function normalizeString(s: string): string {
