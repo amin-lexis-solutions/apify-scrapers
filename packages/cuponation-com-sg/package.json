@@ -25,7 +25,8 @@
     "start:prod": "node dist/main.js",
     "start:dev": "ts-node --project tsconfig.json src/main.ts",
     "build": "tsc",
-    "test": "echo \"Error: no tests defined\" && exit 1"
+    "test": "echo \"Error: no tests defined\" && exit 1",
+    "postinstall": "[ -z \"$CI\" ] && cp ../../yarn.lock . || exit 0"
   },
   "author": "It's not you it's me",
   "license": "ISC",

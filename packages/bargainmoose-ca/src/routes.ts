@@ -2,6 +2,8 @@ import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { CUSTOM_HEADERS, Label } from './constants';
 import { processCouponItem, extractDomainFromUrl } from './routes-helpers';
+import { DataValidator } from './data-validator';
+import { processAndStoreData, sleep } from './utils';
 
 export const router = createCheerioRouter();
 
@@ -113,6 +115,54 @@ router.addHandler(Label.listing, async (context) => {
       );
     }
   } catch (error) {
+    console.error(
+      `An error occurred while processing the URL ${request.url}:`,
+      error
+    );
+  }
+});
+
+router.addHandler(Label.getCode, async (context) => {
+  // context includes request, body, etc.
+  const { request, $ } = context;
+
+  if (request.userData.label !== Label.getCode) return;
+
+  try {
+    // Sleep for x seconds between requests to avoid rate limitings
+    await sleep(1000);
+
+    // Retrieve validatorData from request's userData
+    const validatorData = request.userData.validatorData;
+
+    // Create a new DataValidator instance and load the data
+    const validator = new DataValidator();
+    validator.loadData(validatorData);
+
+    // Extract the coupon code
+    const codeInput = $('input.promotion-modal__code-row__code');
+    if (codeInput.length === 0) {
+      console.log('Coupon HTML:', $.html());
+      throw new Error('Coupon code input is missing');
+    }
+
+    const code = codeInput.val().trim();
+
+    // Check if the code is found
+    if (!code) {
+      console.log('Coupon HTML:', $.html());
+      throw new Error('Coupon code not found in the HTML content');
+    }
+
+    console.log(`Found code: ${code}\n    at: ${request.url}`);
+
+    // Add the decoded code to the validator's data
+    validator.addValue('code', code);
+
+    // Process and store the data
+    await processAndStoreData(validator);
+  } catch (error) {
+    // Handle any errors that occurred during the handler execution
     console.error(
       `An error occurred while processing the URL ${request.url}:`,
       error
