@@ -1,14 +1,28 @@
 import crypto from 'crypto';
-
-import { Dataset } from 'apify';
 import * as chrono from 'chrono-node';
 import moment from 'moment';
-
 import { DataValidator } from './data-validator';
+import { Dataset } from 'apify';
 
 // Normalizes strings by trimming, converting to lowercase, and replacing multiple spaces with a single space
 function normalizeString(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+export function generateCouponId(
+  merchantName: string,
+  idInSite: string,
+  sourceUrl: string
+): string {
+  const normalizedMerchant = normalizeString(merchantName);
+  const normalizedVoucher = normalizeString(idInSite);
+  const normalizedUrl = normalizeString(getDomainName(sourceUrl));
+
+  const combinedString = `${normalizedMerchant}|${normalizedVoucher}|${normalizedUrl}`;
+
+  const hash = crypto.createHash('sha256');
+  hash.update(combinedString);
+  return hash.digest('hex');
 }
 
 // Generates a hash from merchant name, voucher title, and source URL
