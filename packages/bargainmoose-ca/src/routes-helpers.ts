@@ -2,6 +2,7 @@ import cheerio from 'cheerio';
 import { RequestProvider } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from './data-validator';
+import { Label, CUSTOM_HEADERS } from './constants';
 import { processAndStoreData } from './utils';
 
 export function extractDomainFromUrl(url: string): string {
@@ -91,8 +92,19 @@ export async function processCouponItem(
   validator.addValue('isShown', true);
 
   if (hasCode) {
-    const coupon = elemCode.text().trim();
-    validator.addValue('code', coupon);
+    // Add the coupon URL to the request queue
+    await requestQueue.addRequest(
+      {
+        url: `https://www.bargainmoose.ca/coupons/promotions/modal/${idInSite}`,
+        userData: {
+          label: Label.getCode,
+          validatorData: validator.getData(),
+        },
+        headers: CUSTOM_HEADERS,
+      },
+      { forefront: true }
+    );
+  } else {
+    await processAndStoreData(validator);
   }
-  await processAndStoreData(validator);
 }

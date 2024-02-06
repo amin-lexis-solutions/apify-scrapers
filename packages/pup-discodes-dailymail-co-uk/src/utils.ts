@@ -11,6 +11,22 @@ function normalizeString(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+export function generateCouponId(
+  merchantName: string,
+  idInSite: string,
+  sourceUrl: string
+): string {
+  const normalizedMerchant = normalizeString(merchantName);
+  const normalizedVoucher = normalizeString(idInSite);
+  const normalizedUrl = normalizeString(getDomainName(sourceUrl));
+
+  const combinedString = `${normalizedMerchant}|${normalizedVoucher}|${normalizedUrl}`;
+
+  const hash = crypto.createHash('sha256');
+  hash.update(combinedString);
+  return hash.digest('hex');
+}
+
 // Generates a hash from merchant name, voucher title, and source URL
 export function generateHash(
   merchantName: string,
