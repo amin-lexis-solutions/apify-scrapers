@@ -3,7 +3,6 @@ import { CUSTOM_HEADERS, Label, OfferItem } from './constants';
 import { processCouponItem } from './routes-helpers';
 import { getDomainName, processAndStoreData, sleep } from './utils';
 import { DataValidator } from './data-validator';
-import { off } from 'process';
 
 export const router = createCheerioRouter();
 
