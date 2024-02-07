@@ -32,7 +32,7 @@ export async function processCouponItem(
     savingValue = `CHF ${couponItem.node.voucher.savingValue}`;
   }
 
-  const description = `Gutscheinwert: ${limitProduct}\nGilt für:\n    ${savingValue}\n    alle Kunden`
+  const description = `Gutscheinwert: ${limitProduct}\nGilt für:\n    ${savingValue}\n    alle Kunden`;
 
   const validator = new DataValidator();
 
@@ -54,16 +54,16 @@ export async function processCouponItem(
     } else {
       const couponUrl = `https://www.sparwelt.de/hinge/vouchercodes/${idInSite}`;
       await requestQueue.addRequest(
-      {
-        url: couponUrl,
-        userData: {
-          label: Label.getCode,
-          validatorData: validator.getData(),
+        {
+          url: couponUrl,
+          userData: {
+            label: Label.getCode,
+            validatorData: validator.getData(),
+          },
+          headers: CUSTOM_HEADERS,
         },
-        headers: CUSTOM_HEADERS,
-      },
-      { forefront: true }
-    );
+        { forefront: true }
+      );
     }
   } else {
     await processAndStoreData(validator);

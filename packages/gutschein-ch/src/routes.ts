@@ -29,7 +29,7 @@ router.addHandler(Label.sitemap, async (context) => {
     /\/exklusive-gutscheine$/,
     /\/kategorien$/,
     /\/neue-gutscheine$/,
-    /\/specials$/
+    /\/specials$/,
   ];
 
   if (bannedPatterns.length > 0) {
@@ -89,24 +89,24 @@ router.addHandler(Label.listing, async (context) => {
 
     let jsonData: any = null; // Consider defining a more specific type based on the expected structure of your JSON data
 
-    $("script").each((index, element) => {
-        const scriptElement = $(element);
-        const scriptContent: string | null = scriptElement.html();
+    $('script').each((index, element) => {
+      const scriptElement = $(element);
+      const scriptContent: string | null = scriptElement.html();
         
-        if (scriptContent && scriptContent.startsWith("window.nuxt =")) {
-            // Extract the JSON string
-            const jsonString = scriptContent.replace("window.nuxt =", "").trim();
-            try {
-                // Parse the JSON string
-                jsonData = JSON.parse(jsonString);
-            } catch (error) {
-                console.log("Error parsing JSON data:", error);
-            }
-        }
+      if (scriptContent && scriptContent.startsWith("window.nuxt =")) {
+          // Extract the JSON string
+          const jsonString = scriptContent.replace("window.nuxt =", "").trim();
+          try {
+              // Parse the JSON string
+              jsonData = JSON.parse(jsonString);
+          } catch (error) {
+              console.log("Error parsing JSON data:", error);
+          }
+      }
     });
 
     if (!jsonData) {
-        console.log(`No matching script tag found or JSON parsing failed: ${request.url}`);
+      console.log(`No matching script tag found or JSON parsing failed: ${request.url}`);
     } else if (jsonData.data.offers && jsonData.data.offers.length > 0) {
       const offers = jsonData.data.offers;
       console.log(`Found ${offers.length} offers`);
