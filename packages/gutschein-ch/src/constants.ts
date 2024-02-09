@@ -10,7 +10,6 @@ export const CUSTOM_HEADERS = {
   Origin: 'https://www.picodi.com',
 };
 
-
 export interface OfferItem {
   cursor: string;
   node: OfferNode;
@@ -60,4 +59,3 @@ interface ShoppingShop {
   image: string;
   domainUrl: string;
 }
-

@@ -92,27 +92,31 @@ router.addHandler(Label.listing, async (context) => {
     $('script').each((index, element) => {
       const scriptElement = $(element);
       const scriptContent: string | null = scriptElement.html();
-        
-      if (scriptContent && scriptContent.startsWith("window.nuxt =")) {
-          // Extract the JSON string
-          const jsonString = scriptContent.replace("window.nuxt =", "").trim();
-          try {
-              // Parse the JSON string
-              jsonData = JSON.parse(jsonString);
-          } catch (error) {
-              console.log("Error parsing JSON data:", error);
-          }
+
+      if (scriptContent && scriptContent.startsWith('window.nuxt =')) {
+        // Extract the JSON string
+        const jsonString = scriptContent.replace('window.nuxt =', '').trim();
+        try {
+          // Parse the JSON string
+          jsonData = JSON.parse(jsonString);
+        } catch (error) {
+          console.log('Error parsing JSON data:', error);
+        }
       }
     });
 
     if (!jsonData) {
-      console.log(`No matching script tag found or JSON parsing failed: ${request.url}`);
+      console.log(
+        `No matching script tag found or JSON parsing failed: ${request.url}`
+      );
     } else if (jsonData.data.offers && jsonData.data.offers.length > 0) {
       const offers = jsonData.data.offers;
       console.log(`Found ${offers.length} offers`);
       // console.log(offers[0]);
       const merchantName = offers[0].node.partnerShoppingShop.title;
-      const domain = getDomainName(offers[0].node.partnerShoppingShop.shoppingShop.domainUrl);
+      const domain = getDomainName(
+        offers[0].node.partnerShoppingShop.shoppingShop.domainUrl
+      );
 
       if (!merchantName) {
         console.log(`Merchant name not found: ${request.url}`);
@@ -125,7 +129,7 @@ router.addHandler(Label.listing, async (context) => {
             domain,
             item,
             request.url
-          ); 
+          );
         }
       }
     } else {
