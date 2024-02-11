@@ -3,4 +3,7 @@ dist
 node_modules
 *.log
 .env
-packages/*/yarn.lock
+
+packages/*
+!packages/shared/
+!packages/acties-nl/
