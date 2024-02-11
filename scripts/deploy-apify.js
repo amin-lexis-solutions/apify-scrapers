@@ -5,12 +5,6 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
 
-// check APIFY_TOKEN in env
-if (!process.env.APIFY_TOKEN) {
-  console.error('APIFY_TOKEN environment variable is required');
-  process.exit(1);
-}
-
 // Parse actorId from first argument
 const actorId = process.argv[2];
 

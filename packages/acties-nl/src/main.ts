@@ -1,13 +1,20 @@
-import { buildCheerioMainFunction } from 'shared/main-fn-builder';
+import { Actor } from 'apify';
+import { prepareCheerioScraper } from 'shared/actor-utils';
 
 import { Label, router } from './routes';
 
 const startUrl = 'https://www.acties.nl/sitemap.xml';
 
-const main = buildCheerioMainFunction({
-  router,
-  label: Label.sitemap,
-  startUrl,
-});
+async function main() {
+  await Actor.init();
+
+  const crawler = await prepareCheerioScraper(router, {
+    startUrl,
+    label: Label.sitemap,
+  });
+
+  await crawler.run();
+  await Actor.exit();
+}
 
 main();

@@ -3,13 +3,17 @@
 # You can also use any other image from Docker Hub.
 FROM apify/actor-node:18 AS builder
 
+# Set the working directory.
+WORKDIR /usr/src/app
+
 # Copy just package.json and yarn.lock
 # to speed up the build using Docker layer cache.
-COPY package.json yarn.lock ./
+COPY package.prod.json ./package.json
+COPY yarn.lock ./
 COPY packages/{{actorId}}/package.json ./packages/{{actorId}}/
 
 # Install all dependencies.
-RUN CI=1 yarn --cwd packages/{{actorId}} install --production=false --focus
+RUN yarn --cwd packages/{{actorId}} install --production=false --focus
 
 # Next, copy the source files using the user set
 # in the base image.
@@ -25,13 +29,17 @@ FROM apify/actor-node:18
 # Copy only built JS files from builder image
 COPY --from=builder /usr/src/app/packages/{{actorId}}/dist /usr/src/app/packages/{{actorId}}/dist
 
+# Set the working directory.
+WORKDIR /usr/src/app
+
 # Copy just package.json and package-lock.json
 # to speed up the build using Docker layer cache.
-COPY package.json yarn.lock ./
+COPY package.prod.json ./package.json
+COPY yarn.lock ./
 COPY packages/{{actorId}}/package.json ./packages/{{actorId}}/
 
 # Install only production dependencies
-RUN yarn --production --silent && (yarn list || true) && node --version && yarn --version
+RUN yarn --cwd packages/{{actorId}} install --production --focus && (yarn list || true) && node --version && yarn --version
 
 # Next, copy the remaining files and directories with the source code.
 # Since we do this after yarn install, quick build will be really fast

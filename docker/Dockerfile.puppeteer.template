@@ -1,0 +1,59 @@
+# Specify the base Docker image. You can read more about
+# the available images at https://crawlee.dev/docs/guides/docker-images
+# You can also use any other image from Docker Hub.
+FROM apify/actor-node-puppeteer-chrome:18 AS builder
+
+WORKDIR /home/myuser/app
+
+# Copy just package.json and yarn.lock
+# to speed up the build using Docker layer cache.
+COPY --chown=myuser package.prod.json ./package.json
+COPY --chown=myuser yarn.lock ./
+COPY --chown=myuser packages/{{actorId}}/package.json ./packages/{{actorId}}/
+
+# Create node_modules directory and set permissions
+USER root
+RUN mkdir -p /home/myuser/app/node_modules && chown -R myuser:myuser /home/myuser/app
+USER myuser
+
+# Install all dependencies.
+RUN yarn --cwd packages/{{actorId}} install --production=false --focus
+
+# Next, copy the source files using the user set
+# in the base image.
+COPY --chown=myuser packages/{{actorId}} ./packages/{{actorId}}/
+COPY --chown=myuser packages/shared ./packages/shared/
+
+# Build the project.
+RUN yarn --cwd packages/{{actorId}} build
+
+# Create final image
+FROM apify/actor-node-puppeteer-chrome:18
+
+WORKDIR /home/myuser/app
+
+# Copy only built JS files from builder image
+COPY --from=builder --chown=myuser /home/myuser/app/packages/{{actorId}}/dist /home/myuser/app/packages/{{actorId}}/dist
+
+# Copy just package.json and package-lock.json
+# to speed up the build using Docker layer cache.
+COPY --chown=myuser package.prod.json ./package.json
+COPY --chown=myuser yarn.lock ./
+COPY --chown=myuser packages/{{actorId}}/package.json ./packages/{{actorId}}/
+
+# Create node_modules directory and set permissions
+USER root
+RUN mkdir -p /home/myuser/app/node_modules && chown -R myuser:myuser /home/myuser/app
+USER myuser
+
+# Install only production dependencies
+RUN yarn --cwd packages/{{actorId}} install --production --focus && (yarn list || true) && node --version && yarn --version
+
+# Next, copy the remaining files and directories with the source code.
+# Since we do this after yarn install, quick build will be really fast
+# for most source file changes.
+COPY --chown=myuser packages/{{actorId}} ./packages/{{actorId}}/
+COPY --chown=myuser packages/shared ./packages/shared/
+
+# Run the image.
+CMD /home/myuser/start_xvfb_and_run_cmd.sh && yarn --cwd packages/{{actorId}} start:prod
