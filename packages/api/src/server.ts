@@ -13,18 +13,15 @@ import { getMetadataArgsStorage } from 'routing-controllers';
 import { routingControllersToSpec } from 'routing-controllers-openapi';
 import swaggerUi from 'swagger-ui-express';
 
-import { ArchiveController } from './controllers/archive-controller'; // Import the ArchiveController
-import { CouponController } from './controllers/coupon-controller'; // Import the ListController
-import { WebhookController } from './controllers/webhook-controller'; // Import the WebhookController
-import { CustomErrorHandler } from './middlewares/custom-error-handler'; // Import your custom error handler
+import { CouponsController } from './controllers/coupons-controller';
+import { TargetsController } from './controllers/targets-controller';
+import { WebhooksController } from './controllers/webhooks-controller';
+import { useNgrok } from './lib/ngrok';
+import { CustomErrorHandler } from './middlewares/custom-error-handler';
 import { authorizationChecker } from './utils/auth';
 
 const routingControllersOptions: RoutingControllersOptions = {
-  controllers: [
-    WebhookController, // Registering the WebhookController
-    CouponController, // Registering the ListController
-    ArchiveController, // Registering the ArchiveController
-  ],
+  controllers: [WebhooksController, CouponsController, TargetsController],
   middlewares: [
     CustomErrorHandler, // Registering your custom error handler
   ],
@@ -74,4 +71,9 @@ const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
+
+  const args = process.argv.slice(2);
+  if (args.includes('--ngrok')) {
+    useNgrok(port);
+  }
 });

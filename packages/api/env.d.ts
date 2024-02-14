@@ -7,6 +7,8 @@ declare global {
       API_DOCS_PASSWORD?: string;
       DATABASE_URL?: string;
       DATABASE_URL_NON_POOLED?: string;
+      BASE_URL?: string;
+      OBERST_API_KEY?: string;
     }
   }
 }

@@ -35,26 +35,32 @@ model Coupon {
   firstSeenAt        DateTime       @default(now())
   lastSeenAt         DateTime       @default(now())
   archivedAt         DateTime?
+  localeId           String
   archivedReason     ArchiveReason?
 
-  source Source @relation(fields: [sourceId], references: [id])
+  source Source       @relation(fields: [sourceId], references: [id])
+  locale TargetLocale @relation(fields: [localeId], references: [id], onDelete: Cascade)
 
   @@index([sourceId])
+  @@index([localeId])
   @@index([archivedAt])
   @@index([domain])
 }
 
+// A source of coupons, handled by an Apify actor
 model Source {
-  id             String         @id
-  sourceName     String
-  sourceLocale   String
-  sourceStartUrl String
-  coupons        Coupon[]
-  runs           ProcessedRun[]
+  id           String         @id @default(uuid())
+  domain       String
+  name         String
+  apifyActorId String
+  isActive     Boolean        @default(true)
+  coupons      Coupon[]
+  runs         ProcessedRun[]
 }
 
+// Maps to a single Apify actor run
 model ProcessedRun {
-  id               Int       @id @default(autoincrement())
+  id               String    @id @default(uuid())
   actorId          String
   actorRunId       String    @unique
   finishedAt       DateTime  @default(now())
@@ -68,4 +74,37 @@ model ProcessedRun {
   errorCount       Int       @default(0)
   processingErrors Json?
   source           Source?   @relation(fields: [actorId], references: [id])
+}
+
+// Maps to a locale we are targeting
+model TargetLocale {
+  id             String       @id @default(uuid())
+  locale         String
+  countryCode    String
+  languageCode   String
+  searchTemplate String // e.g. "{{website}} coupon codes"
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now())
+  pages          TargetPage[]
+  coupons        Coupon[]
+}
+
+// Maps to a page we want to scrape using an Apify actor
+model TargetPage {
+  id             String   @id @default(uuid())
+  url            String   @unique
+  domain         String
+  title          String
+  searchTerm     String
+  searchPosition Int
+  searchDomain   String // e.g. google.com.sg
+  apifyRunId     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @default(now())
+  localeId       String
+
+  locale TargetLocale @relation(fields: [localeId], references: [id])
+
+  @@index([domain])
 }
