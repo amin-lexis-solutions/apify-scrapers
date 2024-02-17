@@ -1,13 +1,13 @@
 import { EnqueueLinksOptions, createCheerioRouter } from 'crawlee';
 import { parse } from 'node-html-parser';
 
-import { DataValidator } from './data-validator';
+import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
   getDomainName,
   processAndStoreData,
   sleep,
-} from './utils';
+} from 'shared/helpers';
 
 export enum Label {
   'sitemap' = 'SitemapPage',

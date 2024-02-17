@@ -1,7 +1,90 @@
+import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
-import { CUSTOM_HEADERS, Label } from './constants';
-import { processCouponItem } from './routes-helpers';
-import { getDomainName } from './utils';
+import * as he from 'he';
+import {
+  getDomainName,
+  processAndStoreData,
+  generateHash,
+} from 'shared/helpers';
+import { DataValidator } from 'shared/data-validator';
+
+export enum Label {
+  'sitemap' = 'SitemapPage',
+  'listing' = 'ProviderCouponsPage',
+  'getCode' = 'GetCodePage',
+}
+
+const CUSTOM_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',
+  Origin: 'https://www.picodi.com',
+};
+
+async function processCouponItem(
+  merchantName: string,
+  domain: string,
+  isExpired: boolean,
+  couponElement: cheerio.Element,
+  sourceUrl: string
+) {
+  const $coupon = cheerio.load(couponElement);
+
+  let titleCss = '';
+  let codeCss = '';
+  let codeAttr = '';
+  if (!isExpired) {
+    titleCss = 'h3';
+    codeCss = 'span[data-masked]';
+    codeAttr = 'data-masked';
+  } else {
+    titleCss = 'p';
+    codeCss = 'button[title]';
+    codeAttr = 'title';
+  }
+
+  // Extract the voucher title
+  const titleElement = $coupon(titleCss).first();
+  if (titleElement.length === 0) {
+    console.log('Coupon HTML:', $coupon.html());
+    throw new Error('Voucher title is missing');
+  }
+  const voucherTitle = he.decode(
+    titleElement
+      .text()
+      .trim()
+      .replace(/[\s\t\r\n]+/g, ' ')
+  );
+
+  const idInSite = generateHash(merchantName, voucherTitle, sourceUrl);
+
+  // Extract the voucher code
+  const codeElement = $coupon(codeCss).first();
+  let code = '';
+  if (codeElement.length !== 0) {
+    code = codeElement.attr(codeAttr) || '';
+    if (!code) {
+      console.log('Coupon HTML:', $coupon.html());
+      throw new Error('Voucher code is missing');
+    }
+  }
+
+  const validator = new DataValidator();
+
+  // Add required and optional values to the validator
+  validator.addValue('sourceUrl', sourceUrl);
+  validator.addValue('merchantName', merchantName);
+  validator.addValue('domain', domain);
+  validator.addValue('title', voucherTitle);
+  validator.addValue('idInSite', idInSite);
+  validator.addValue('isExpired', isExpired);
+  validator.addValue('isShown', true);
+
+  if (code) {
+    validator.addValue('code', code);
+  }
+
+  await processAndStoreData(validator);
+}
 
 export const router = createCheerioRouter();
 
