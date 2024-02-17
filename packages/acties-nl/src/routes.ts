@@ -1,8 +1,8 @@
-import { createCheerioRouter } from 'crawlee';
 import * as cheerio from 'cheerio';
+import { createCheerioRouter } from 'crawlee';
 import { decode } from 'html-entities';
-import { DataValidator } from './data-validator';
-import { processAndStoreData, sleep } from './utils';
+import { DataValidator } from 'shared/data-validator';
+import { processAndStoreData, sleep } from 'shared/helpers';
 
 export enum Label {
   'sitemap' = 'SitemapPage',

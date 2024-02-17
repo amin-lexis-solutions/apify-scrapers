@@ -1,7 +1,10 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
-
-import { DataValidator } from './data-validator';
-import { formatDateTime, getDomainName, processAndStoreData } from './utils';
+import { DataValidator } from 'shared/data-validator';
+import {
+  formatDateTime,
+  getDomainName,
+  processAndStoreData,
+} from 'shared/helpers';
 
 export enum Label {
   'sitemap' = 'SitemapPage',

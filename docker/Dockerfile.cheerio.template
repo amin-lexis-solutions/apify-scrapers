@@ -1,0 +1,51 @@
+# Specify the base Docker image. You can read more about
+# the available images at https://crawlee.dev/docs/guides/docker-images
+# You can also use any other image from Docker Hub.
+FROM apify/actor-node:18 AS builder
+
+# Set the working directory.
+WORKDIR /usr/src/app
+
+# Copy just package.json and yarn.lock
+# to speed up the build using Docker layer cache.
+COPY package.prod.json ./package.json
+COPY yarn.lock ./
+COPY packages/{{actorId}}/package.json ./packages/{{actorId}}/
+
+# Install all dependencies.
+RUN yarn --cwd packages/{{actorId}} install --production=false --focus
+
+# Next, copy the source files using the user set
+# in the base image.
+COPY packages/{{actorId}} ./packages/{{actorId}}/
+COPY packages/shared ./packages/shared/
+
+# Build the project.
+RUN yarn --cwd packages/{{actorId}} build
+
+# Create final image
+FROM apify/actor-node:18
+
+# Copy only built JS files from builder image
+COPY --from=builder /usr/src/app/packages/{{actorId}}/dist /usr/src/app/packages/{{actorId}}/dist
+
+# Set the working directory.
+WORKDIR /usr/src/app
+
+# Copy just package.json and package-lock.json
+# to speed up the build using Docker layer cache.
+COPY package.prod.json ./package.json
+COPY yarn.lock ./
+COPY packages/{{actorId}}/package.json ./packages/{{actorId}}/
+
+# Install only production dependencies
+RUN yarn --cwd packages/{{actorId}} install --production --focus && (yarn list || true) && node --version && yarn --version
+
+# Next, copy the remaining files and directories with the source code.
+# Since we do this after yarn install, quick build will be really fast
+# for most source file changes.
+COPY packages/{{actorId}} ./packages/{{actorId}}/
+COPY packages/shared ./packages/shared/
+
+# Run the image.
+CMD yarn --cwd packages/{{actorId}} start:prod

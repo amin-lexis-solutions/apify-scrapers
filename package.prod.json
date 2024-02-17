@@ -1,0 +1,9 @@
+{
+  "name": "oberst-scrapers",
+  "version": "0.1.0",
+  "private": true,
+  "license": "ISC",
+  "workspaces": {
+    "packages": ["packages/*"]
+  }
+}
