@@ -235,21 +235,23 @@ export class WebhooksController {
     ).then((res) => res.json());
 
     await prisma.targetPage.createMany({
-      data: data.map(
-        (item) => {
-          return {
-            url: item.url,
-            title: item.title,
-            searchTerm: item.searchQuery.term,
-            searchPosition: item.position,
-            searchDomain: item.searchQuery.domain,
-            apifyRunId: actorRunId,
-            domain: new URL(item.url).hostname.replace('www.', ''),
-            localeId,
-          };
-        },
-        { skipDuplicates: true }
-      ),
+      data: data
+        .filter((item) => item.url)
+        .map(
+          (item) => {
+            return {
+              url: item.url,
+              title: item.title,
+              searchTerm: item.searchQuery.term,
+              searchPosition: item.position,
+              searchDomain: item.searchQuery.domain,
+              apifyRunId: actorRunId,
+              domain: new URL(item.url).hostname.replace('www.', ''),
+              localeId,
+            };
+          },
+          { skipDuplicates: true }
+        ),
     });
 
     return new StandardResponse('Data processed successfully', false);
