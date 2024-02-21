@@ -1,0 +1,21 @@
+FROM node:lts
+
+WORKDIR /app
+
+COPY package.prod.json ./package.json
+COPY yarn.lock ./
+COPY packages/api/package.json ./packages/api/
+
+RUN yarn --silent
+
+COPY packages/api ./packages/api/
+
+WORKDIR /app/packages/api
+
+RUN yarn prisma:generate
+
+RUN yarn build
+
+RUN echo "$TLS_CA_CERT_MONGO" >ca-mongo.crt
+
+CMD ["bash", "start.sh"]
