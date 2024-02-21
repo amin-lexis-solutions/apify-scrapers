@@ -6,17 +6,7 @@ import {
   processAndStoreData,
   sleep,
 } from 'shared/helpers';
-
-export enum Label {
-  'sitemap' = 'SitemapPage',
-  'listing' = 'ProviderCouponsPage',
-  'getCode' = 'GetCodePage',
-}
-
-const CUSTOM_HEADERS = {
-  'User-Agent':
-    'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',
-};
+import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
 function checkVoucherCode(code: string | null | undefined) {
   // Trim the code to remove any leading/trailing whitespace
@@ -58,63 +48,6 @@ function checkVoucherCode(code: string | null | undefined) {
 }
 
 export const router = createCheerioRouter();
-
-router.addHandler(Label.sitemap, async (context) => {
-  // context includes request, body, etc.
-  const { request, $, crawler } = context;
-
-  if (request.userData.label !== Label.sitemap) return;
-
-  const sitemapLinks = $('ul > li > a');
-  if (sitemapLinks.length === 0) {
-    console.log('Sitemap HTML:', $.html());
-    throw new Error('Sitemap links are missing');
-  }
-  // Base URL from the request
-  const baseUrl = new URL(request.url);
-
-  // Map each link to a full URL
-  const sitemapUrls = sitemapLinks
-    .map((i, el) => {
-      const relativePath = $(el).attr('href');
-
-      // Skip if the href attribute is missing
-      if (typeof relativePath === 'undefined') {
-        throw new Error('Sitemap link is missing the href attribute');
-      }
-
-      return new URL(relativePath, baseUrl).href;
-    })
-    .get();
-
-  console.log(`Found ${sitemapUrls.length} URLs in the sitemap`);
-
-  let limit = sitemapUrls.length; // Use the full length for production
-  if (request.userData.testLimit) {
-    // Take only the first X URLs for testing
-    limit = Math.min(request.userData.testLimit, sitemapUrls.length);
-  }
-
-  const testUrls = sitemapUrls.slice(0, limit);
-  if (limit < sitemapUrls.length) {
-    console.log(`Using ${testUrls.length} URLs for testing`);
-  }
-
-  if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
-  }
-
-  // Manually add each URL to the request queue
-  for (const url of testUrls) {
-    await crawler.requestQueue.addRequest({
-      url: url,
-      userData: {
-        label: Label.listing,
-      },
-      headers: CUSTOM_HEADERS,
-    });
-  }
-});
 
 router.addHandler(Label.listing, async (context) => {
   const { request, body, crawler } = context;

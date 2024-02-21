@@ -1,4 +1,4 @@
-import { Actor } from 'apify';
+import { Actor, RequestQueue } from 'apify';
 import {
   CheerioCrawler,
   CheerioCrawlingContext,
@@ -8,14 +8,34 @@ import {
 import { PuppeteerCrawler } from 'crawlee';
 
 type Input = {
-  testLimit?: number;
+  startUrls: Array<{ url: string }>;
   proxyConfiguration?: any;
 };
 
 type MainFunctionArgs = {
-  startUrl: string;
-  label: string;
+  // custom headers in a format of key-value pairs
+  customHeaders?: Record<string, string>;
 };
+
+const getStartUrlsArray = (startUrls) => {
+  if (startUrls) {
+    return startUrls.map(({ url }) => {
+      return url;
+    });
+  }
+};
+
+export const CUSTOM_HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',
+};
+
+export enum Label {
+  'sitemap' = 'SitemapPage',
+  'listing' = 'ProviderCouponsPage',
+  'details' = 'VoucherDetailsPage',
+  'getCode' = 'GetCodePage',
+}
 
 export async function prepareCheerioScraper(
   router: RouterHandler<CheerioCrawlingContext<Input>>,
@@ -25,26 +45,40 @@ export async function prepareCheerioScraper(
   const proxyConfiguration = await Actor.createProxyConfiguration(
     input?.proxyConfiguration
   );
+  const startUrls: any = input?.startUrls
+    ? getStartUrlsArray(input.startUrls)
+    : [];
 
-  let effectiveTestLimit = 0;
-  if (typeof input?.testLimit === 'number' && input?.testLimit > 0) {
-    effectiveTestLimit = input?.testLimit;
-  }
+  console.log(`Found ${startUrls.length} start URLs`);
+
+  const requestQueue = await RequestQueue.open();
 
   const crawler = new CheerioCrawler({
     proxyConfiguration,
     requestHandler: router,
+    requestQueue,
   });
 
-  await crawler.addRequests([
-    {
-      url: args.startUrl,
-      label: args.label,
+  let customHeaders = CUSTOM_HEADERS;
+  // If custom headers are provided, merge them with the default headers
+  if (args.customHeaders) {
+    customHeaders = { ...customHeaders, ...args.customHeaders };
+  }
+
+  if (!crawler.requestQueue) {
+    throw new Error('Request queue is not available');
+  }
+
+  // Manually add each URL to the request queue
+  for (const url of startUrls) {
+    await crawler.requestQueue.addRequest({
+      url,
       userData: {
-        testLimit: effectiveTestLimit,
+        label: Label.listing,
       },
-    },
-  ]);
+      headers: customHeaders,
+    });
+  }
 
   return crawler;
 }
@@ -57,11 +91,13 @@ export async function preparePuppeteerScraper(
   const proxyConfiguration = await Actor.createProxyConfiguration(
     input?.proxyConfiguration
   );
+  const startUrls: any = input?.startUrls
+    ? getStartUrlsArray(input.startUrls)
+    : [];
 
-  let effectiveTestLimit = 0;
-  if (typeof input?.testLimit === 'number' && input?.testLimit > 0) {
-    effectiveTestLimit = input?.testLimit;
-  }
+  console.log(`Found ${startUrls.length} start URLs`);
+
+  const requestQueue = await RequestQueue.open();
 
   const crawler = new PuppeteerCrawler({
     proxyConfiguration: proxyConfiguration as any,
@@ -73,19 +109,30 @@ export async function preparePuppeteerScraper(
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
       },
     },
-    requestHandler: router,
+    requestHandler: router as any,
+    requestQueue,
   });
 
-  // Adding the initial request with a handlerLabel in userData
-  await crawler.addRequests([
-    {
-      url: args.startUrl,
-      label: args.label,
+  let customHeaders = CUSTOM_HEADERS;
+  // If custom headers are provided, merge them with the default headers
+  if (args.customHeaders) {
+    customHeaders = { ...customHeaders, ...args.customHeaders };
+  }
+
+  if (!crawler.requestQueue) {
+    throw new Error('Request queue is not available');
+  }
+
+  // Manually add each URL to the request queue
+  for (const url of startUrls) {
+    await crawler.requestQueue.addRequest({
+      url,
       userData: {
-        testLimit: effectiveTestLimit,
+        label: Label.listing,
       },
-    },
-  ]);
+      headers: customHeaders,
+    });
+  }
 
   return crawler;
 }

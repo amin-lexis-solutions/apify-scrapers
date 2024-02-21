@@ -1,17 +1,12 @@
 import { Actor } from 'apify';
 import { preparePuppeteerScraper } from 'shared/actor-utils';
 
-import { Label, router } from './routes';
-
-const startUrl = 'https://discountcode.dailymail.co.uk/sitemap.xml';
+import { router } from './routes';
 
 async function main() {
   await Actor.init();
 
-  const crawler = await preparePuppeteerScraper(router, {
-    startUrl,
-    label: Label.sitemap,
-  });
+  const crawler = await preparePuppeteerScraper(router as any, {});
 
   await crawler.run();
   await Actor.exit();

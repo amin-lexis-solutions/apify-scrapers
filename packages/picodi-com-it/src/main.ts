@@ -1,15 +1,12 @@
 import { Actor } from 'apify';
 import { prepareCheerioScraper } from 'shared/actor-utils';
-import { Label, router } from './routes';
-
-const startUrl = 'https://www.picodi.com/it/sitemap.xml';
+import { router } from './routes';
 
 async function main() {
   await Actor.init();
 
   const crawler = await prepareCheerioScraper(router, {
-    startUrl,
-    label: Label.sitemap,
+    customHeaders: { Origin: 'https://www.picodi.com' },
   });
 
   await crawler.run();

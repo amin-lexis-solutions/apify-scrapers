@@ -1,6 +1,4 @@
-import { EnqueueLinksOptions, createCheerioRouter } from 'crawlee';
-import { parse } from 'node-html-parser';
-
+import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
@@ -8,12 +6,7 @@ import {
   processAndStoreData,
   sleep,
 } from 'shared/helpers';
-
-export enum Label {
-  'sitemap' = 'SitemapPage',
-  'listing' = 'ProviderCouponsPage',
-  'getCode' = 'GetCodePage',
-}
+import { Label } from 'shared/actor-utils';
 
 function checkVoucherCode(code: string | null | undefined) {
   // Trim the code to remove any leading/trailing whitespace
@@ -56,63 +49,6 @@ function checkVoucherCode(code: string | null | undefined) {
 
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
-
-router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
-  if (request.userData.label !== Label.sitemap) return;
-
-  const content = typeof body === 'string' ? body : body.toString();
-  const root = parse(content);
-  let sitemapUrls = root
-    .querySelectorAll('urlset url loc')
-    .map((el) => el.text.trim());
-
-  console.log(`Found ${sitemapUrls.length} URLs in the sitemap`);
-
-  // Define a list of banned URL patterns (regular expressions)
-  const bannedPatterns = [
-    /\/about-us$/,
-    /\/articles$/,
-    /\/articles\//,
-    /\/categories$/,
-    /\/categories\//,
-    /\/christmas-gifts-cheap$/,
-    /\/faq$/,
-    /\/mothers-day-deals$/,
-    /\/seasonal-deals$/,
-    /\/specials\//,
-    /\/sustainable$/,
-    /\/valentines-day-deals$/,
-  ];
-
-  // Filter out URLs that match any of the banned patterns
-  sitemapUrls = sitemapUrls.filter((url) => {
-    const notHomepage = url !== 'https://discountcode.dailymail.co.uk/';
-    const notBanned = !bannedPatterns.some((pattern) => pattern.test(url));
-    return notHomepage && notBanned;
-  });
-
-  console.log(
-    `Found ${sitemapUrls.length} URLs after filtering banned patterns`
-  );
-
-  let limit = sitemapUrls.length; // Use the full length for production
-  if (request.userData.testLimit) {
-    // Take only the first X URLs for testing
-    limit = Math.min(request.userData.testLimit, sitemapUrls.length);
-  }
-
-  const testUrls = sitemapUrls.slice(0, limit);
-  if (limit < sitemapUrls.length) {
-    console.log(`Using ${testUrls.length} URLs for testing`);
-  }
-
-  // Correct usage of enqueueLinks with 'urls' as an array
-  const enqueueOptions: EnqueueLinksOptions = {
-    urls: testUrls,
-    label: Label.listing,
-  };
-  await enqueueLinks(enqueueOptions);
-});
 
 router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
   if (request.userData.label !== Label.listing) return;

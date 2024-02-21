@@ -1,13 +1,8 @@
 import * as cheerio from 'cheerio';
-import { EnqueueLinksOptions, createCheerioRouter } from 'crawlee';
-import { parse } from 'node-html-parser';
+import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { processAndStoreData } from 'shared/helpers';
-
-export enum Label {
-  'sitemap' = 'SitemapPage',
-  'listing' = 'ProviderCouponsPage',
-}
+import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
   merchantName: string,
@@ -78,37 +73,6 @@ async function processCouponItem(
 
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
-
-router.addHandler(Label.sitemap, async ({ request, body, enqueueLinks }) => {
-  if (request.userData.label !== Label.sitemap) return;
-
-  const content = typeof body === 'string' ? body : body.toString();
-  // console.log(content)
-  const root = parse(content);
-  const sitemapUrls = root
-    .querySelectorAll('urlset url loc')
-    .map((el) => el.text.trim());
-
-  console.log(`Found ${sitemapUrls.length} URLs in the sitemap`);
-
-  let limit = sitemapUrls.length; // Use the full length for production
-  if (request.userData.testLimit) {
-    // Take only the first X URLs for testing
-    limit = Math.min(request.userData.testLimit, sitemapUrls.length);
-  }
-
-  const testUrls = sitemapUrls.slice(0, limit);
-  if (limit < sitemapUrls.length) {
-    console.log(`Using ${testUrls.length} URLs for testing`);
-  }
-
-  // Correct usage of enqueueLinks with 'urls' as an array
-  const enqueueOptions: EnqueueLinksOptions = {
-    urls: testUrls,
-    label: Label.listing,
-  };
-  await enqueueLinks(enqueueOptions);
-});
 
 router.addHandler(Label.listing, async ({ request, body }) => {
   if (request.userData.label !== Label.listing) return;

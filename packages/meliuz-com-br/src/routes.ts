@@ -3,18 +3,7 @@ import * as he from 'he';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { processAndStoreData } from 'shared/helpers';
-
-export enum Label {
-  'sitemap' = 'SitemapPage',
-  'listing' = 'ProviderCouponsPage',
-  'getCode' = 'GetCodePage',
-}
-
-const CUSTOM_HEADERS = {
-  'User-Agent':
-    'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',
-  Origin: 'https://www.picodi.com',
-};
+import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
   merchantName: string,
@@ -87,63 +76,6 @@ async function processCouponItem(
 }
 
 export const router = createCheerioRouter();
-
-router.addHandler(Label.sitemap, async (context) => {
-  // context includes request, body, etc.
-  const { request, $, crawler } = context;
-
-  if (request.userData.label !== Label.sitemap) return;
-
-  const sitemapLinks = $('urlset url loc');
-  if (sitemapLinks.length === 0) {
-    console.log('Sitemap HTML:', $.html());
-    throw new Error('Sitemap links are missing');
-  }
-  let sitemapUrls = sitemapLinks
-    .map((i, el) => $(el).text().trim() as string)
-    .get();
-
-  console.log(`Found ${sitemapUrls.length} URLs in the sitemap`);
-
-  // Define the inclusion pattern
-  const includePattern = /\/desconto\//;
-
-  // Filter in URLs that contain the pattern `/desconto/`
-  const oldLength = sitemapUrls.length;
-  sitemapUrls = sitemapUrls.filter((url) => includePattern.test(url));
-
-  if (sitemapUrls.length < oldLength) {
-    console.log(
-      `Retained ${sitemapUrls.length} URLs after filtering for /desconto/ pattern`
-    );
-  }
-
-  let limit = sitemapUrls.length; // Use the full length for production
-  if (request.userData.testLimit) {
-    // Take only the first X URLs for testing
-    limit = Math.min(request.userData.testLimit, sitemapUrls.length);
-  }
-
-  const testUrls = sitemapUrls.slice(0, limit);
-  if (limit < sitemapUrls.length) {
-    console.log(`Using ${testUrls.length} URLs for testing`);
-  }
-
-  if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
-  }
-
-  // Manually add each URL to the request queue
-  for (const url of testUrls) {
-    await crawler.requestQueue.addRequest({
-      url: url,
-      userData: {
-        label: Label.listing,
-      },
-      headers: CUSTOM_HEADERS,
-    });
-  }
-});
 
 router.addHandler(Label.listing, async (context) => {
   const { request, $, crawler } = context;
