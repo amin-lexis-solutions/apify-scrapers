@@ -44,3 +44,11 @@ export function validDateOrNull(dateString: string) {
   }
   return date.toISOString();
 }
+
+export function getWebhookUrl(path: string): string {
+  const hostname = process.env.BASE_URL?.endsWith('/')
+    ? process.env.BASE_URL.replace(/\/$/, '')
+    : process.env.BASE_URL;
+
+  return hostname + path;
+}

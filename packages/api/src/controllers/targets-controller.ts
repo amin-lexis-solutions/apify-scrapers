@@ -9,6 +9,7 @@ import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { apify } from '../lib/apify';
 import { getMerchantsForLocale } from '../lib/oberst-api';
 import { prisma } from '../lib/prisma';
+import { getWebhookUrl } from '../utils/utils';
 import { StandardResponse } from '../utils/validators';
 
 @JsonController('/targets')
@@ -70,7 +71,7 @@ export class TargetsController {
                     'ACTOR.RUN.TIMED_OUT',
                     'ACTOR.RUN.ABORTED',
                   ],
-                  requestUrl: process.env.BASE_URL + '/webhooks/serp',
+                  requestUrl: getWebhookUrl('/webhooks/serp'),
                   payloadTemplate: `{"localeId":"${id}","resource":{{resource}},"eventData":{{eventData}}}`,
                   headersTemplate: `{"authorization":"${process.env.API_SECRET}"}`,
                 },
@@ -131,7 +132,7 @@ export class TargetsController {
                       'ACTOR.RUN.TIMED_OUT',
                       'ACTOR.RUN.ABORTED',
                     ],
-                    requestUrl: process.env.BASE_URL + '/webhooks/coupons',
+                    requestUrl: getWebhookUrl('/webhooks/coupons'),
                     payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}}}`,
                     headersTemplate: `{"authorization":"${process.env.API_SECRET}"}`,
                   },
