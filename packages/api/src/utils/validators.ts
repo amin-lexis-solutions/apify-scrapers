@@ -44,11 +44,6 @@ export class ListRequestBody {
   @IsOptional()
   pageSize = 10;
 
-  @IsString()
-  @IsOptional()
-  @MinLength(1)
-  locale?: string;
-
   @IsBoolean()
   @IsOptional()
   archived?: boolean;
@@ -103,4 +98,11 @@ export class WebhookRequestBody {
   @ValidateNested()
   @Type(() => Resource)
   resource: Resource;
+
+  @IsString()
+  @IsOptional()
+  sourceId?: string;
+
+  @IsString()
+  localeId: string;
 }

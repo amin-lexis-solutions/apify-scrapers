@@ -1,26 +1,27 @@
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   Authorized,
+  BadRequestError,
   Body,
   Get,
   JsonController,
+  Param,
   Post,
   QueryParams,
 } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
 import { couponMatchCache } from '../lib/cache';
+import { prisma } from '../lib/prisma';
 import {
   CouponMatchRequestBody,
   ListRequestBody,
   StandardResponse,
 } from '../utils/validators';
 
-const prisma = new PrismaClient();
-
-@JsonController()
-export class CouponController {
-  @Get('/list')
+@JsonController('/coupons')
+export class CouponsController {
+  @Get('/')
   @OpenAPI({
     summary: 'List items',
     description: 'Get a list of items with pagination and optional filtering',
@@ -34,7 +35,6 @@ export class CouponController {
     const {
       page,
       pageSize,
-      locale,
       archived,
       merchantDomain,
       merchantName,
@@ -44,16 +44,12 @@ export class CouponController {
 
     const where: Prisma.CouponWhereInput = {};
 
-    if (locale) {
-      where.source = { sourceLocale: locale };
-    }
-
     if (merchantName) {
       where.merchantName = merchantName;
     }
 
     if (sourceName) {
-      where.source = { sourceName: sourceName };
+      where.source = { name: sourceName };
     }
 
     if (archived) {
@@ -136,5 +132,47 @@ export class CouponController {
     return ids
       .map((id, idx) => (cachedIds.includes(id) ? idx : -1))
       .filter((idx) => idx !== -1);
+  }
+
+  @Post('/archive/:id')
+  @OpenAPI({
+    summary: 'Archive a record',
+    description: 'Archive a record by ID',
+  })
+  @Authorized()
+  @ResponseSchema(StandardResponse) // Apply @ResponseSchema at the method level
+  async archive(@Param('id') id: string): Promise<StandardResponse> {
+    if (!id || id.trim() === '') {
+      throw new BadRequestError(
+        'ID parameter is required and cannot be empty.'
+      );
+    }
+
+    const existingRecord = await prisma.coupon.findUnique({
+      where: { id },
+    });
+
+    if (!existingRecord) {
+      throw new BadRequestError('Record not found.');
+    }
+
+    if (existingRecord.archivedAt) {
+      const archivedDate = existingRecord.archivedAt.toISOString();
+
+      return new StandardResponse(
+        `Record already archived on ${archivedDate}. No changes done.`,
+        false,
+        { existingRecord: existingRecord }
+      );
+    }
+
+    const updatedRecord = await prisma.coupon.update({
+      where: { id },
+      data: { archivedAt: new Date(), archivedReason: 'manual' },
+    });
+
+    return new StandardResponse('Record archived successfully', false, {
+      updatedRecord: updatedRecord,
+    });
   }
 }

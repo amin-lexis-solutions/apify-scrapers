@@ -1,13 +1,13 @@
-import { Coupon, Prisma, PrismaClient } from '@prisma/client';
+import { Coupon, Prisma } from '@prisma/client';
 import { $Enums } from '@prisma/client';
 import fetch from 'node-fetch';
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
+import { ApifyGoogleSearchResult } from '../lib/apify';
+import { prisma } from '../lib/prisma';
 import { generateHash, validDateOrNull } from '../utils/utils';
 import { StandardResponse, WebhookRequestBody } from '../utils/validators';
-
-const prisma = new PrismaClient();
 
 const updatableFields: (keyof Coupon)[] = [
   'domain',
@@ -22,34 +22,41 @@ const updatableFields: (keyof Coupon)[] = [
   'isExclusive',
 ];
 
-@JsonController()
-export class WebhookController {
-  @Post('/webhook')
+@JsonController('/webhooks')
+@Authorized()
+export class WebhooksController {
+  @Post('/coupons')
   @OpenAPI({
-    summary: 'Receive webhook data',
+    summary: 'Receive webhook data for coupons',
     description:
       'Process and store the data received from the webhook. Do not call this endpoint directly, it is meant to be called by Apify.',
   })
   @ResponseSchema(StandardResponse) // Apply @ResponseSchema at the method level
-  @Authorized()
   async receiveData(
     @Body() webhookData: WebhookRequestBody
   ): Promise<StandardResponse> {
     const datasetId = webhookData.resource.defaultDatasetId;
-    const actorId = webhookData.eventData.actorId;
     const actorRunId = webhookData.eventData.actorRunId;
     const status = webhookData.resource.status;
+    const { sourceId, localeId } = webhookData;
+
+    if (!sourceId) {
+      return new StandardResponse('sourceId is a required field', true);
+    }
 
     const run = await prisma.processedRun.create({
       data: {
-        actorId,
+        actorId: sourceId,
         actorRunId,
         status,
       },
     });
 
     setTimeout(async () => {
-      const scrapedData = await fetchScrapedData(datasetId);
+      const scrapedData = await fetch(
+        `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json`
+      ).then((res) => res.json());
+
       const now = new Date();
 
       let createdCount = 0,
@@ -147,7 +154,8 @@ export class WebhookController {
             update: updateData,
             create: {
               id,
-              sourceId: actorId,
+              sourceId,
+              localeId,
               idInSite: item.idInSite,
               domain: item.domain || null,
               merchantName: item.merchantName,
@@ -183,7 +191,7 @@ export class WebhookController {
       }
 
       await prisma.processedRun.update({
-        where: { id: run.id },
+        where: { actorRunId: run.id },
         data: {
           createdCount,
           updatedCount,
@@ -199,10 +207,51 @@ export class WebhookController {
 
     return new StandardResponse('Data processed successfully', false);
   }
-}
 
-async function fetchScrapedData(datasetId: string) {
-  const url = `https://api.apify.com/v2/datasets/${datasetId}/items`;
-  const response = await fetch(url);
-  return response.json();
+  @Post('/serp')
+  @OpenAPI({
+    summary: 'Receive SERP webhook data',
+    description:
+      'Process and store the data received from the SERP webhook. Do not call this endpoint directly, it is meant to be called by Apify.',
+  })
+  @ResponseSchema(StandardResponse)
+  async receiveSerpData(
+    @Body() webhookData: WebhookRequestBody
+  ): Promise<StandardResponse> {
+    const datasetId = webhookData.resource.defaultDatasetId;
+    const actorRunId = webhookData.eventData.actorRunId;
+    const status = webhookData.resource.status;
+    const { localeId } = webhookData;
+
+    if (status !== 'SUCCEEDED') {
+      return new StandardResponse(
+        `The actor run was not successful. Status: ${status}`,
+        true
+      );
+    }
+
+    const data: ApifyGoogleSearchResult[] = await fetch(
+      `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&limit=1000&view=organic_results`
+    ).then((res) => res.json());
+
+    await prisma.targetPage.createMany({
+      data: data.map(
+        (item) => {
+          return {
+            url: item.url,
+            title: item.title,
+            searchTerm: item.searchQuery.term,
+            searchPosition: item.position,
+            searchDomain: item.searchQuery.domain,
+            apifyRunId: actorRunId,
+            domain: new URL(item.url).hostname.replace('www.', ''),
+            localeId,
+          };
+        },
+        { skipDuplicates: true }
+      ),
+    });
+
+    return new StandardResponse('Data processed successfully', false);
+  }
 }
