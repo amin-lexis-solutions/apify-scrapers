@@ -18,15 +18,16 @@
     "@apify/tsconfig": "^0.1.0",
     "@types/node": "18.11.18",
     "ts-node": "10.9.2",
+    "tsc-alias": "1.8.8",
+    "tsconfig-paths": "4.2.0",
     "typescript": "5.3.3"
   },
   "scripts": {
     "start": "yarn start:dev",
-    "start:prod": "node dist/main.js",
-    "start:dev": "ts-node --project tsconfig.json src/main.ts",
-    "build": "tsc",
-    "test": "echo \"Error: no tests defined\" && exit 1",
-    "postinstall": "[ -z \"$CI\" ] && cp ../../yarn.lock . || exit 0"
+    "start:prod": "node dist/acties-nl/src/main.js",
+    "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
+    "build": "tsc && tsc-alias",
+    "test": "echo \"Error: no tests defined\" && exit 1"
   },
   "author": "It's not you it's me",
   "license": "ISC",
