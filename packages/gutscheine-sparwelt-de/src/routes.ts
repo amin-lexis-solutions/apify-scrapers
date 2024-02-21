@@ -1,32 +1,8 @@
 import { createCheerioRouter } from 'crawlee';
 import { parse } from 'node-html-parser';
-
-import { DataValidator } from './data-validator';
-import { getDomainName, processAndStoreData, sleep } from './utils';
-
-export enum Label {
-  'sitemap' = 'SitemapPage',
-  'listing' = 'ProviderCouponsPage',
-  'details' = 'VoucherDetailsPage',
-  'getCode' = 'GetCodePage',
-}
-
-export async function getSitemapUrls(sitemapUrl: string): Promise<string[]> {
-  // Fetch the content of the sitemap URL
-  const response = await fetch(sitemapUrl);
-  const content = await response.text();
-
-  // Parse the sitemap content
-  const root = parse(content);
-  const sitemapUrls = root
-    .querySelectorAll('urlset url loc')
-    .map((el) => el.text);
-
-  console.log(`Found ${sitemapUrls.length} URLs in the sitemap`);
-  console.log(sitemapUrls[0]);
-
-  return sitemapUrls;
-}
+import { DataValidator } from 'shared/data-validator';
+import { getDomainName, processAndStoreData, sleep } from 'shared/helpers';
+import { Label } from 'shared/actor-utils';
 
 async function fetchVoucherCode(
   voucherCodeURL: string

@@ -110,20 +110,22 @@ function getActorInputSpec() {
     type: 'object',
     schemaVersion: 1,
     properties: {
+      startUrls: {
+        sectionCaption: "Basic configuration",
+        title: "Start URLs",
+        type: "array",
+        description: "A static list of URLs to scrape. <br><br>For details, see the <a href='https://apify.com/apify/cheerio-scraper#start-urls' target='_blank' rel='noopener'>Start URLs</a> section in the README.",
+        prefill: [ { "url": "https://apify.com" } ],
+        editor: "requestListSources",
+      },
       proxyConfiguration: {
         title: 'Proxy Configuration',
         type: 'object',
         description: 'Your proxy configuration from Apify',
         editor: 'proxy',
       },
-      testLimit: {
-        title: 'Number of URLs to Test',
-        type: 'integer',
-        description:
-          'Optional: Enter the number of URLs to process for testing. If not provided, all URLs will be processed.',
-        minimum: 1,
-      },
     },
+    required: ['startUrls'],
   };
 }
 

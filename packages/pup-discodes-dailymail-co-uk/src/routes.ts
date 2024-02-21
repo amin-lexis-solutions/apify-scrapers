@@ -5,12 +5,7 @@ import {
   getDomainName,
   processAndStoreData,
 } from 'shared/helpers';
-
-export enum Label {
-  'sitemap' = 'SitemapPage',
-  'listing' = 'ProviderCouponsPage',
-  'getCode' = 'GetCodePage',
-}
+import { Label } from 'shared/actor-utils';
 
 declare global {
   interface Window {
@@ -59,67 +54,6 @@ function checkVoucherCode(code: string | null | undefined) {
 
 // Export the router function that determines which handler to use based on the request label
 const router = Router.create<PuppeteerCrawlingContext>();
-
-router.addHandler(Label.sitemap, async ({ page, request, enqueueLinks }) => {
-  if (request.userData.label !== Label.sitemap) return;
-
-  // Use Puppeteer's page.evaluate to interact with the DOM and extract sitemap URLs
-  const sitemapUrls = await page.evaluate(() => {
-    return Array.from(document.querySelectorAll('urlset url loc')).map(
-      (el) => el.textContent?.trim() || ''
-    );
-  });
-  console.log(`Found ${sitemapUrls.length} URLs in the sitemap`);
-
-  // Define a list of banned URL patterns (regular expressions)
-  const bannedPatterns = [
-    /\/about-us$/,
-    /\/articles$/,
-    /\/articles\//,
-    /\/categories$/,
-    /\/categories\//,
-    /\/christmas-gifts-cheap$/,
-    /\/faq$/,
-    /\/mothers-day-deals$/,
-    /\/seasonal-deals$/,
-    /\/specials\//,
-    /\/sustainable$/,
-    /\/valentines-day-deals$/,
-  ];
-
-  // Filter out URLs that match any of the banned patterns
-  const filteredUrls = sitemapUrls.filter((url) => {
-    // Ensure the URL is trimmed before testing
-    const trimmedUrl = url.trim();
-    const notHomepage = trimmedUrl != 'https://discountcode.dailymail.co.uk/';
-    const notBanned = !bannedPatterns.some((pattern) =>
-      pattern.test(trimmedUrl)
-    );
-    return notHomepage && notBanned;
-  });
-  console.log(
-    `Found ${filteredUrls.length} URLs after filtering banned patterns`
-  );
-
-  let limit = sitemapUrls.length; // Use the full length for production
-  if (request.userData.testLimit) {
-    // Take only the first X URLs for testing
-    limit = Math.min(request.userData.testLimit, sitemapUrls.length);
-  }
-
-  const testUrls = sitemapUrls.slice(0, limit);
-  if (limit < sitemapUrls.length) {
-    console.log(`Using ${testUrls.length} URLs for testing`);
-  }
-
-  // Enqueue the new URLs with the appropriate label
-  await enqueueLinks({
-    urls: testUrls,
-    userData: {
-      label: Label.listing,
-    },
-  });
-});
 
 router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
   if (request.userData.label !== Label.listing) return;
