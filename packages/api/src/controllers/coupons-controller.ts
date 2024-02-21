@@ -140,7 +140,7 @@ export class CouponsController {
     description: 'Archive a record by ID',
   })
   @Authorized()
-  @ResponseSchema(StandardResponse) // Apply @ResponseSchema at the method level
+  @ResponseSchema(StandardResponse)
   async archive(@Param('id') id: string): Promise<StandardResponse> {
     if (!id || id.trim() === '') {
       throw new BadRequestError(

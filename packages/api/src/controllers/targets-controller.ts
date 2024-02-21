@@ -1,16 +1,15 @@
-import {
-  Authorized,
-  JsonController,
-  Post,
-  QueryParam,
-} from 'routing-controllers';
+import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
 import { apify } from '../lib/apify';
 import { getMerchantsForLocale } from '../lib/oberst-api';
 import { prisma } from '../lib/prisma';
 import { getWebhookUrl } from '../utils/utils';
-import { StandardResponse } from '../utils/validators';
+import {
+  FindTargetPagesBody,
+  RunTargetPagesBody,
+  StandardResponse,
+} from '../utils/validators';
 
 @JsonController('/targets')
 @Authorized()
@@ -19,14 +18,16 @@ export class TargetsController {
   @Post('/find')
   @OpenAPI({
     summary: 'Find target pages',
-    description: 'For all available locales, find target pages to be updated',
+    description: 'For a given locale (or all) find target pages to be updated',
   })
   @ResponseSchema(StandardResponse)
   async findTargetPages(
-    @QueryParam('limit') limit: number
+    @Body() body: FindTargetPagesBody
   ): Promise<StandardResponse> {
+    const { limit, locale } = body;
+
     const locales = await prisma.targetLocale.findMany({
-      where: { isActive: true },
+      where: { isActive: true, locale },
     });
 
     const unusableLocaleIndex = locales.findIndex(
@@ -95,51 +96,46 @@ export class TargetsController {
 
   @Post('/run')
   @OpenAPI({
-    summary: 'Run a scrape on all target pages',
-    description: 'Run a scrape on all target pages for all active sources',
+    summary: 'Run scrapes on target pages',
+    description: 'Run scrapes on target pages for active sources',
   })
   @ResponseSchema(StandardResponse)
-  async runTargetPages(): Promise<StandardResponse> {
+  async runTargetPages(
+    @Body() body: RunTargetPagesBody
+  ): Promise<StandardResponse> {
+    const { locale, domain } = body;
+
     const sources = await prisma.source.findMany({
-      where: { isActive: true },
+      where: { isActive: true, domain },
     });
 
     const counts = await Promise.all(
       sources.map(async (source) => {
         const pages = await prisma.targetPage.findMany({
-          where: { domain: source.domain },
+          where: {
+            domain: source.domain,
+            locale: { locale },
+          },
         });
 
-        // group pages by locale
-        const pagesByLocale = pages.reduce((acc, page) => {
-          if (!acc[page.localeId]) {
-            acc[page.localeId] = [];
-          }
-          acc[page.localeId].push(page);
-          return acc;
-        }, {} as Record<string, typeof pages>);
-
-        await Promise.all(
-          Object.entries(pagesByLocale).map(async ([localeId, pages]) => {
-            await apify.actor(source.apifyActorId).start(
-              { startUrls: pages.map((page) => ({ url: page.url })) },
+        const localeId = pages[0]?.localeId;
+        await apify.actor(source.apifyActorId).start(
+          { startUrls: pages.map((page) => ({ url: page.url })) },
+          {
+            webhooks: [
               {
-                webhooks: [
-                  {
-                    eventTypes: [
-                      'ACTOR.RUN.SUCCEEDED',
-                      'ACTOR.RUN.FAILED',
-                      'ACTOR.RUN.TIMED_OUT',
-                      'ACTOR.RUN.ABORTED',
-                    ],
-                    requestUrl: getWebhookUrl('/webhooks/coupons'),
-                    payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}}}`,
-                    headersTemplate: `{"authorization":"${process.env.API_SECRET}"}`,
-                  },
+                eventTypes: [
+                  'ACTOR.RUN.SUCCEEDED',
+                  'ACTOR.RUN.FAILED',
+                  'ACTOR.RUN.TIMED_OUT',
+                  'ACTOR.RUN.ABORTED',
                 ],
-              }
-            );
-          })
+                requestUrl: getWebhookUrl('/webhooks/coupons'),
+                payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}}}`,
+                headersTemplate: `{"authorization":"${process.env.API_SECRET}"}`,
+              },
+            ],
+          }
         );
 
         return pages.length;

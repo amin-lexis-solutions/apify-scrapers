@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsNumber,
   IsObject,
   IsOptional,
   IsPositive,
@@ -105,4 +106,23 @@ export class WebhookRequestBody {
 
   @IsString()
   localeId: string;
+}
+
+export class FindTargetPagesBody {
+  @IsNumber()
+  @IsOptional()
+  limit?: number;
+
+  @IsString()
+  @IsOptional()
+  locale?: string;
+}
+
+export class RunTargetPagesBody {
+  @IsString()
+  locale: string;
+
+  @IsString()
+  @IsOptional()
+  domain?: string;
 }
