@@ -9,6 +9,7 @@ declare global {
       DATABASE_URL_NON_POOLED?: string;
       BASE_URL?: string;
       OBERST_API_KEY?: string;
+      API_KEY_APIFY?: string;
     }
   }
 }

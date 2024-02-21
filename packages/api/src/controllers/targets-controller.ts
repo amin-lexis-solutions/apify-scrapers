@@ -1,4 +1,9 @@
-import { Authorized, JsonController, Post } from 'routing-controllers';
+import {
+  Authorized,
+  JsonController,
+  Post,
+  QueryParam,
+} from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
 import { apify } from '../lib/apify';
@@ -16,7 +21,9 @@ export class TargetsController {
     description: 'For all available locales, find target pages to be updated',
   })
   @ResponseSchema(StandardResponse)
-  async findTargetPages(): Promise<StandardResponse> {
+  async findTargetPages(
+    @QueryParam('limit') limit: number
+  ): Promise<StandardResponse> {
     const locales = await prisma.targetLocale.findMany({
       where: { isActive: true },
     });
@@ -37,9 +44,11 @@ export class TargetsController {
         async ({ id, countryCode, languageCode, locale, searchTemplate }) => {
           const domains = await getMerchantsForLocale(locale);
 
-          const queries = domains.map(({ domain }) => {
-            return searchTemplate.replace('{{website}}', domain);
-          });
+          const queries = domains
+            .map(({ domain }) => {
+              return searchTemplate.replace('{{website}}', domain);
+            })
+            .slice(0, limit);
 
           await apify.actor('apify/google-search-scraper').start(
             {
@@ -47,7 +56,7 @@ export class TargetsController {
               countryCode,
               languageCode,
               maxPagesPerQuery: 1,
-              resultsPerPage: 20,
+              resultsPerPage: 10,
               saveHtml: false,
               saveHtmlToKeyValueStore: false,
               mobileResults: false,
@@ -58,8 +67,8 @@ export class TargetsController {
                   eventTypes: [
                     'ACTOR.RUN.SUCCEEDED',
                     'ACTOR.RUN.FAILED',
-                    'ACTOR.BUILD.TIMED_OUT',
-                    'ACTOR.BUILD.ABORTED',
+                    'ACTOR.RUN.TIMED_OUT',
+                    'ACTOR.RUN.ABORTED',
                   ],
                   requestUrl: process.env.BASE_URL + '/webhooks/serp',
                   payloadTemplate: `{"localeId":"${id}","resource":{{resource}},"eventData":{{eventData}}}`,
@@ -119,8 +128,8 @@ export class TargetsController {
                     eventTypes: [
                       'ACTOR.RUN.SUCCEEDED',
                       'ACTOR.RUN.FAILED',
-                      'ACTOR.BUILD.TIMED_OUT',
-                      'ACTOR.BUILD.ABORTED',
+                      'ACTOR.RUN.TIMED_OUT',
+                      'ACTOR.RUN.ABORTED',
                     ],
                     requestUrl: process.env.BASE_URL + '/webhooks/coupons',
                     payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}}}`,
