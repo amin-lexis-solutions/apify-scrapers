@@ -234,14 +234,10 @@ export class WebhooksController {
       `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&limit=1000&view=organic_results`
     ).then((res) => res.json());
 
-    // deduplicate the data by URL
-    const uniqueData = Array.from(new Set(data.map((item) => item.url))).map(
-      (url) => data.find((item) => item.url === url)!
-    );
-
     await prisma.targetPage.createMany({
-      data: uniqueData.map(
-        (item) => {
+      data: data
+        .filter((item) => !!item.url)
+        .map((item) => {
           return {
             url: item.url,
             title: item.title,
@@ -252,9 +248,8 @@ export class WebhooksController {
             domain: new URL(item.url).hostname.replace('www.', ''),
             localeId,
           };
-        },
-        { skipDuplicates: true }
-      ),
+        }),
+      skipDuplicates: true,
     });
 
     return new StandardResponse('Data processed successfully', false);
