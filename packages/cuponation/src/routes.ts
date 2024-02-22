@@ -8,6 +8,26 @@ import {
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
+function generateCodeDetailsUrl(
+  merchantUrl: string,
+  retailerId: string,
+  idPool: string
+): string {
+  // Use the URL constructor to parse the given merchant URL
+  const parsedUrl = new URL(merchantUrl);
+
+  // Extract the domain
+  const domain = parsedUrl.hostname;
+
+  // Get the country code as the last part of the domain
+  const countryCode = domain.split('.').slice(-1)[0]; // Equivalent to Python's [-1]
+
+  // Fill the URL template with the extracted details
+  const codeDetailsUrl = `https://${domain}/api/voucher/country/${countryCode}/client/${retailerId}/id/${idPool}`;
+
+  return codeDetailsUrl;
+}
+
 function checkVoucherCode(code: string | null | undefined) {
   // Trim the code to remove any leading/trailing whitespace
   const trimmedCode = code?.trim();
@@ -147,7 +167,11 @@ router.addHandler(Label.listing, async (context) => {
           await processAndStoreData(validator);
         } else {
           const idPool = voucher.idPool;
-          const codeDetailsUrl = `https://www.cuponation.com.br/api/voucher/country/br/client/${retailerId}/id/${idPool}`;
+          const codeDetailsUrl = generateCodeDetailsUrl(
+            request.url,
+            retailerId,
+            idPool
+          );
           // console.log(`Found code details URL: ${codeDetailsUrl}`);
 
           // Add the coupon URL to the request queue

@@ -4,13 +4,29 @@ import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
 import { processAndStoreData, sleep } from 'shared/helpers';
-import { Label } from 'shared/actor-utils';
+import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
-const CUSTOM_HEADERS = {
-  'User-Agent':
-    'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',
+const CUSTOM_HEADERS_LOCAL = {
+  ...CUSTOM_HEADERS,
   Origin: 'https://www.picodi.com',
 };
+
+function extractCountryCode(url: string): string {
+  // Use the URL constructor to parse the given URL
+  const parsedUrl = new URL(url);
+
+  // Split the pathname by '/' to get the segments
+  const pathSegments = parsedUrl.pathname.split('/');
+
+  // Assuming the country code is always after the first '/' (and not the last element if it's empty)
+  // Filter out empty strings to avoid issues with trailing slashes
+  const nonEmptySegments = pathSegments.filter((segment) => segment.length > 0);
+
+  // The country code is expected to be the first segment after the domain
+  const countryCode = nonEmptySegments[0];
+
+  return countryCode;
+}
 
 async function processCouponItem(
   requestQueue: RequestProvider,
@@ -84,7 +100,10 @@ async function processCouponItem(
     validator.addValue('isShown', true);
 
     if (hasCode) {
-      const couponUrl = `https://s.picodi.com/sg/api/offers/${idInSite}/v2`;
+      // Extract country code from the URL with RegEx
+      const countryCode = extractCountryCode(sourceUrl);
+
+      const couponUrl = `https://s.picodi.com/${countryCode}/api/offers/${idInSite}/v2`;
       // Add the coupon URL to the request queue
       await requestQueue.addRequest(
         {
@@ -93,7 +112,7 @@ async function processCouponItem(
             label: Label.getCode,
             validatorData: validator.getData(),
           },
-          headers: CUSTOM_HEADERS,
+          headers: CUSTOM_HEADERS_LOCAL,
         },
         { forefront: true }
       );
