@@ -1,12 +1,54 @@
 import crypto from 'crypto';
 import * as chrono from 'chrono-node';
 import moment from 'moment';
+import axios from 'axios';
 import { DataValidator } from './data-validator';
 import { Dataset } from 'apify';
+
+export type CouponItemResult = {
+  generatedHash: string;
+  hasCode: boolean;
+  couponUrl: string;
+  validator: DataValidator;
+};
+
+export type CouponHashMap = { [key: string]: CouponItemResult };
 
 // Normalizes strings by trimming, converting to lowercase, and replacing multiple spaces with a single space
 function normalizeString(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+export async function checkCouponIds(ids) {
+  try {
+    const response = await axios.post(
+      'https://codes-api-d9jbl.ondigitalocean.app/coupons/match-ids',
+      { ids: ids }
+    );
+
+    // response.data contains the array of indices of coupons that exist
+    const existingIdsIndices = response.data;
+    // console.log('Existing IDs indices:', existingIdsIndices);
+
+    // Convert indices back to IDs
+    const existingIds = existingIdsIndices.map((index) => ids[index]);
+    // console.log('Existing IDs:', existingIds);
+
+    // Filter the original IDs array to get only the non-existing IDs
+    const nonExistingIds = ids.filter((id) => !existingIds.includes(id));
+    // console.log('Non-existing IDs:', nonExistingIds);
+    console.log('Non-existing IDs count:', nonExistingIds.length);
+
+    return nonExistingIds;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Error in API request:', error.message);
+    } else {
+      console.error('An unexpected error occurred');
+      // Handle the error without assuming it's an instance of Error
+    }
+    return ids; // Return the original IDs array in case of an error
+  }
 }
 
 export function generateCouponId(
