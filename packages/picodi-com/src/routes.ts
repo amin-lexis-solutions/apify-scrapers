@@ -1,9 +1,15 @@
 import cheerio from 'cheerio';
-import { RequestProvider } from 'crawlee';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData, sleep } from 'shared/helpers';
+import {
+  processAndStoreData,
+  sleep,
+  generateCouponId,
+  checkCouponIds,
+  CouponItemResult,
+  CouponHashMap,
+} from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
 const CUSTOM_HEADERS_LOCAL = {
@@ -28,16 +34,17 @@ function extractCountryCode(url: string): string {
   return countryCode;
 }
 
-async function processCouponItem(
-  requestQueue: RequestProvider,
+function processCouponItem(
   merchantName: string,
   isExpired: boolean,
   couponElement: cheerio.Element,
   sourceUrl: string
-) {
+): CouponItemResult {
   const $coupon = cheerio.load(couponElement);
 
   let hasCode = false;
+
+  const validator = new DataValidator();
 
   if (!isExpired) {
     const elementClass = $coupon('*').first().attr('class');
@@ -88,8 +95,6 @@ async function processCouponItem(
         .replace('\n\n', '\n'); // remove extra spaces, but keep the meaningful line breaks
     }
 
-    const validator = new DataValidator();
-
     // Add required and optional values to the validator
     validator.addValue('sourceUrl', sourceUrl);
     validator.addValue('merchantName', merchantName);
@@ -99,27 +104,17 @@ async function processCouponItem(
     validator.addValue('isExpired', isExpired);
     validator.addValue('isShown', true);
 
+    let couponUrl = '';
     if (hasCode) {
       // Extract country code from the URL with RegEx
       const countryCode = extractCountryCode(sourceUrl);
-
-      const couponUrl = `https://s.picodi.com/${countryCode}/api/offers/${idInSite}/v2`;
-      // Add the coupon URL to the request queue
-      await requestQueue.addRequest(
-        {
-          url: couponUrl,
-          userData: {
-            label: Label.getCode,
-            validatorData: validator.getData(),
-          },
-          headers: CUSTOM_HEADERS_LOCAL,
-        },
-        { forefront: true }
-      );
-    } else {
-      await processAndStoreData(validator);
+      couponUrl = `https://s.picodi.com/${countryCode}/api/offers/${idInSite}/v2`;
     }
+    const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+
+    return { generatedHash, hasCode, couponUrl, validator };
   }
+  return { generatedHash: '', hasCode, couponUrl: '', validator };
 }
 
 export const router = createCheerioRouter();
@@ -157,15 +152,18 @@ router.addHandler(Label.listing, async (context) => {
       const validCoupons = $(
         'section.card-offers > ul > li.type-promo, section.card-offers > ul > li.type-code'
       );
+      const couponsWithCode: CouponHashMap = {};
+      const idsToCheck: string[] = [];
+      let result: CouponItemResult;
       for (let i = 0; i < validCoupons.length; i++) {
         const element = validCoupons[i];
-        await processCouponItem(
-          crawler.requestQueue,
-          merchantName,
-          false,
-          element,
-          request.url
-        );
+        result = processCouponItem(merchantName, false, element, request.url);
+        if (!result.hasCode) {
+          await processAndStoreData(result.validator);
+        } else {
+          couponsWithCode[result.generatedHash] = result;
+          idsToCheck.push(result.generatedHash);
+        }
       }
       // We don't extract expired coupons, because they don't have id and we cannot match them with the ones in the DB
       // const expiredCoupons = $('section.archive-offers > article');
@@ -179,6 +177,27 @@ router.addHandler(Label.listing, async (context) => {
       //     request.url
       //   );
       // }
+      // Call the API to check if the coupon exists
+      const nonExistingIds = await checkCouponIds(idsToCheck);
+
+      if (nonExistingIds.length > 0) {
+        let currentResult: CouponItemResult;
+        for (const id of nonExistingIds) {
+          currentResult = couponsWithCode[id];
+          // Add the coupon URL to the request queue
+          await crawler.requestQueue.addRequest(
+            {
+              url: currentResult.couponUrl,
+              userData: {
+                label: Label.getCode,
+                validatorData: currentResult.validator.getData(),
+              },
+              headers: CUSTOM_HEADERS_LOCAL,
+            },
+            { forefront: true }
+          );
+        }
+      }
     }
   } catch (error) {
     console.error(
