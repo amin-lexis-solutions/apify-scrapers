@@ -1,7 +1,14 @@
-import { RequestProvider } from 'crawlee';
 import { createCheerioRouter } from 'crawlee';
-import { getDomainName, processAndStoreData, sleep } from 'shared/helpers';
 import { DataValidator } from 'shared/data-validator';
+import {
+  processAndStoreData,
+  sleep,
+  getDomainName,
+  generateCouponId,
+  checkCouponIds,
+  CouponItemResult,
+  CouponHashMap,
+} from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
 interface OfferItem {
@@ -54,18 +61,17 @@ interface ShoppingShop {
   domainUrl: string;
 }
 
-async function processCouponItem(
-  requestQueue: RequestProvider,
+function processCouponItem(
   merchantName: string,
   domain: string,
   couponItem: OfferItem,
   sourceUrl: string
-) {
+): CouponItemResult {
   const voucherTitle = couponItem.node.title;
 
   const idInSite = couponItem.node.voucher.id.split(':')[3]; // value is like ":hinge:vouchers:123456"
 
-  const hasCode = couponItem.node.voucher.hasVoucherCode;
+  let hasCode = couponItem.node.voucher.hasVoucherCode;
 
   const code = couponItem.node.voucher.code;
 
@@ -98,27 +104,19 @@ async function processCouponItem(
   validator.addValue('isExclusive', isExclusive);
   validator.addValue('isShown', true);
 
+  let couponUrl = '';
   if (hasCode) {
     if (code !== null && code.trim() !== '') {
       validator.addValue('code', code);
-      await processAndStoreData(validator);
+      hasCode = false;
     } else {
-      const couponUrl = `https://www.sparwelt.de/hinge/vouchercodes/${idInSite}`;
-      await requestQueue.addRequest(
-        {
-          url: couponUrl,
-          userData: {
-            label: Label.getCode,
-            validatorData: validator.getData(),
-          },
-          headers: CUSTOM_HEADERS,
-        },
-        { forefront: true }
-      );
+      couponUrl = `https://www.sparwelt.de/hinge/vouchercodes/${idInSite}`;
     }
-  } else {
-    await processAndStoreData(validator);
   }
+
+  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+
+  return { generatedHash, hasCode, couponUrl, validator };
 }
 
 export const router = createCheerioRouter();
@@ -170,15 +168,40 @@ router.addHandler(Label.listing, async (context) => {
       if (!merchantName) {
         console.log(`Merchant name not found: ${request.url}`);
       } else {
+        const couponsWithCode: CouponHashMap = {};
+        const idsToCheck: string[] = [];
+        let result: CouponItemResult;
         for (let i = 0; i < offers.length; i++) {
           const item = offers[i] as OfferItem;
-          await processCouponItem(
-            crawler.requestQueue,
-            merchantName,
-            domain,
-            item,
-            request.url
-          );
+          result = processCouponItem(merchantName, domain, item, request.url);
+          if (!result.hasCode) {
+            await processAndStoreData(result.validator);
+          } else {
+            couponsWithCode[result.generatedHash] = result;
+            idsToCheck.push(result.generatedHash);
+          }
+        }
+
+        // Call the API to check if the coupon exists
+        const nonExistingIds = await checkCouponIds(idsToCheck);
+
+        if (nonExistingIds.length > 0) {
+          let currentResult: CouponItemResult;
+          for (const id of nonExistingIds) {
+            currentResult = couponsWithCode[id];
+            // Add the coupon URL to the request queue
+            await crawler.requestQueue.addRequest(
+              {
+                url: currentResult.couponUrl,
+                userData: {
+                  label: Label.getCode,
+                  validatorData: currentResult.validator.getData(),
+                },
+                headers: CUSTOM_HEADERS,
+              },
+              { forefront: true }
+            );
+          }
         }
       }
     } else {
