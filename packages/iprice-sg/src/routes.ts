@@ -1,8 +1,15 @@
 import cheerio from 'cheerio';
-import { RequestProvider } from 'crawlee';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData, formatDateTime, sleep } from 'shared/helpers';
+import {
+  processAndStoreData,
+  sleep,
+  generateCouponId,
+  checkCouponIds,
+  CouponItemResult,
+  CouponHashMap,
+  formatDateTime,
+} from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
 function extractDomainFromImageUrl(url: string): string {
@@ -54,14 +61,13 @@ function extractIdFromUrl(url: string): string | null {
   }
 }
 
-async function processCouponItem(
-  requestQueue: RequestProvider,
+function processCouponItem(
   merchantName: string,
   domain: string,
   isExpired: boolean,
   couponElement: cheerio.Element,
   sourceUrl: string
-) {
+): CouponItemResult {
   const $coupon = cheerio.load(couponElement);
 
   const elementClass = $coupon('*').first().attr('class');
@@ -95,6 +101,11 @@ async function processCouponItem(
 
   // Extract the coupon ID from the URL
   const idInSite = extractIdFromUrl(couponUrl);
+
+  if (!idInSite) {
+    console.log('Coupon HTML:', $coupon.html());
+    throw new Error('ID in site is missing');
+  }
 
   // Extract the voucher title
   const titleElement = $coupon('p').first();
@@ -147,22 +158,9 @@ async function processCouponItem(
   if (expiryDateTxt) {
     validator.addValue('expiryDateAt', formatDateTime(expiryDateTxt));
   }
-  if (hasCode) {
-    // Add the coupon URL to the request queue
-    await requestQueue.addRequest(
-      {
-        url: couponUrl,
-        userData: {
-          label: Label.getCode,
-          validatorData: validator.getData(),
-        },
-        headers: CUSTOM_HEADERS,
-      },
-      { forefront: true }
-    );
-  } else {
-    await processAndStoreData(validator);
-  }
+  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+
+  return { generatedHash, hasCode, couponUrl, validator };
 }
 
 export const router = createCheerioRouter();
@@ -200,20 +198,29 @@ router.addHandler(Label.listing, async (context) => {
       }
       // console.log(`Merchant Name: ${merchantName}, Domain: ${domain}`);
 
+      const couponsWithCode: CouponHashMap = {};
+      const idsToCheck: string[] = [];
+      let result: CouponItemResult;
+
       // Extract valid coupons
       const validCoupons = $(
         'section#store-active-coupon > div:not([class^=nocode])[class*=code], section#store-active-coupon > div[class*=nocode]'
       );
       for (let i = 0; i < validCoupons.length; i++) {
         const element = validCoupons[i];
-        await processCouponItem(
-          crawler.requestQueue,
+        result = processCouponItem(
           merchantName,
           domain,
           false,
           element,
           request.url
         );
+        if (!result.hasCode) {
+          await processAndStoreData(result.validator);
+        } else {
+          couponsWithCode[result.generatedHash] = result;
+          idsToCheck.push(result.generatedHash);
+        }
       }
 
       // Extract expired coupons
@@ -222,14 +229,41 @@ router.addHandler(Label.listing, async (context) => {
       );
       for (let i = 0; i < expiredCoupons.length; i++) {
         const element = expiredCoupons[i];
-        await processCouponItem(
-          crawler.requestQueue,
+        result = processCouponItem(
           merchantName,
           domain,
           true,
           element,
           request.url
         );
+        if (!result.hasCode) {
+          await processAndStoreData(result.validator);
+        } else {
+          couponsWithCode[result.generatedHash] = result;
+          idsToCheck.push(result.generatedHash);
+        }
+      }
+
+      // Call the API to check if the coupon exists
+      const nonExistingIds = await checkCouponIds(idsToCheck);
+
+      if (nonExistingIds.length > 0) {
+        let currentResult: CouponItemResult;
+        for (const id of nonExistingIds) {
+          currentResult = couponsWithCode[id];
+          // Add the coupon URL to the request queue
+          await crawler.requestQueue.addRequest(
+            {
+              url: currentResult.couponUrl,
+              userData: {
+                label: Label.getCode,
+                validatorData: currentResult.validator.getData(),
+              },
+              headers: CUSTOM_HEADERS,
+            },
+            { forefront: true }
+          );
+        }
       }
     }
   } catch (error) {
