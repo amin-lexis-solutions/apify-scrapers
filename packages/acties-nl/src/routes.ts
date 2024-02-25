@@ -2,8 +2,20 @@ import * as cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { decode } from 'html-entities';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData, sleep } from 'shared/helpers';
-import { Label } from 'shared/actor-utils';
+import {
+  processAndStoreData,
+  sleep,
+  generateCouponId,
+  checkCouponIds,
+  CouponItemResult,
+  CouponHashMap,
+} from 'shared/helpers';
+import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
+
+const CUSTOM_HEADERS_LOCAL = {
+  ...CUSTOM_HEADERS,
+  'X-Requested-With': 'XMLHttpRequest',
+};
 
 type Voucher = {
   isCoupon: boolean;
@@ -13,6 +25,48 @@ type Voucher = {
   title: string;
 };
 
+function processCouponItem(
+  merchantName: string,
+  domain: string,
+  pageId: string,
+  voucher: Voucher,
+  sourceUrl: string
+): CouponItemResult {
+  // Create a new DataValidator instance
+  const validator = new DataValidator();
+
+  const idInSite = voucher.idInSite;
+
+  if (!idInSite) {
+    throw new Error('ID in site is missing');
+  }
+
+  const hasCode = voucher.isCoupon;
+
+  // Add required values to the validator
+  validator.addValue('sourceUrl', sourceUrl);
+  validator.addValue('merchantName', merchantName);
+  validator.addValue('title', voucher.title);
+  validator.addValue('idInSite', idInSite);
+
+  // Add optional values to the validator
+  validator.addValue('domain', domain);
+  validator.addValue('isExclusive', voucher.isExclusive);
+  validator.addValue('isExpired', voucher.isExpired);
+  validator.addValue('isShown', true);
+
+  // Determine if the code needs to be fetched or data stored
+  let couponUrl = '';
+  if (hasCode) {
+    // Get the code
+    couponUrl = `https://www.acties.nl/store-offer/ajax-popup/${idInSite}/${pageId}?_=${Date.now()}`;
+  }
+
+  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+
+  return { generatedHash, hasCode, couponUrl, validator };
+}
+
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
@@ -20,6 +74,10 @@ router.addHandler(Label.listing, async (context) => {
   const { request, $, crawler } = context;
 
   if (request.userData.label !== Label.listing) return;
+
+  if (!crawler.requestQueue) {
+    throw new Error('Request queue is not initialized');
+  }
 
   try {
     // Extracting request and body from context
@@ -127,52 +185,46 @@ router.addHandler(Label.listing, async (context) => {
       });
 
       // Process each voucher
+      const couponsWithCode: CouponHashMap = {};
+      const idsToCheck: string[] = [];
+      let result: CouponItemResult;
       for (const voucher of vouchers) {
         await sleep(1000); // Sleep for 3 seconds between requests to avoid rate limitings
 
-        // Create a new DataValidator instance
-        const validator = new DataValidator();
+        result = processCouponItem(
+          merchantName,
+          domain,
+          pageId,
+          voucher,
+          request.url
+        );
+        if (!result.hasCode) {
+          await processAndStoreData(result.validator);
+        } else {
+          couponsWithCode[result.generatedHash] = result;
+          idsToCheck.push(result.generatedHash);
+        }
+      }
 
-        // Add required values to the validator
-        validator.addValue('sourceUrl', request.url);
-        validator.addValue('merchantName', merchantName);
-        validator.addValue('title', voucher.title);
-        validator.addValue('idInSite', voucher.idInSite);
+      // Call the API to check if the coupon exists
+      const nonExistingIds = await checkCouponIds(idsToCheck);
 
-        // Add optional values to the validator
-        validator.addValue('domain', domain);
-        validator.addValue('isExclusive', voucher.isExclusive);
-        validator.addValue('isExpired', voucher.isExpired);
-        validator.addValue('isShown', true);
-
-        // Determine if the code needs to be fetched or data stored
-        if (voucher.isCoupon) {
-          // Get the code
-          const codeDetailsUrl = `https://www.acties.nl/store-offer/ajax-popup/${
-            voucher.idInSite
-          }/${pageId}?_=${Date.now()}`;
-          const validatorData = validator.getData();
-
-          // Add the request to the request queue
-          if (!crawler.requestQueue) {
-            throw new Error('Request queue is not initialized');
-          }
+      if (nonExistingIds.length > 0) {
+        let currentResult: CouponItemResult;
+        for (const id of nonExistingIds) {
+          currentResult = couponsWithCode[id];
+          // Add the coupon URL to the request queue
           await crawler.requestQueue.addRequest(
             {
-              url: codeDetailsUrl,
+              url: currentResult.couponUrl,
               userData: {
                 label: Label.getCode,
-                validatorData: validatorData,
+                validatorData: currentResult.validator.getData(),
               },
-              headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-              },
+              headers: CUSTOM_HEADERS_LOCAL,
             },
             { forefront: true }
           );
-        } else {
-          // Process and store the data
-          await processAndStoreData(validator);
         }
       }
     }
