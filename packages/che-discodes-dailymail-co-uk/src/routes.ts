@@ -1,12 +1,16 @@
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
-  formatDateTime,
-  getDomainName,
   processAndStoreData,
   sleep,
+  getDomainName,
+  generateCouponId,
+  checkCouponIds,
+  CouponItemResult,
+  CouponHashMap,
+  formatDateTime,
 } from 'shared/helpers';
-import { Label } from 'shared/actor-utils';
+import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
 function checkVoucherCode(code: string | null | undefined) {
   // Trim the code to remove any leading/trailing whitespace
@@ -47,13 +51,71 @@ function checkVoucherCode(code: string | null | undefined) {
   };
 }
 
-// Export the router function that determines which handler to use based on the request label
-const router = createCheerioRouter();
+function processCouponItem(
+  merchantName: string,
+  domain: string,
+  retailerId: string,
+  voucher: any,
+  sourceUrl: string
+): CouponItemResult {
+  // Create a new DataValidator instance
+  const validator = new DataValidator();
 
-router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
+  const idInSite = voucher.idVoucher.toString();
+  // console.log(`Processing voucher with ID: ${idInSite}`);
+
+  // Add required values to the validator
+  validator.addValue('sourceUrl', sourceUrl);
+  validator.addValue('merchantName', merchantName);
+  validator.addValue('title', voucher.title);
+  validator.addValue('idInSite', idInSite);
+
+  // Add optional values to the validator
+  validator.addValue('domain', domain);
+  validator.addValue('description', voucher.description);
+  validator.addValue('termsAndConditions', voucher.termsAndConditions);
+  validator.addValue('expiryDateAt', formatDateTime(voucher.endTime));
+  validator.addValue('startDateAt', formatDateTime(voucher.startTime));
+  validator.addValue('isExclusive', voucher.exclusiveVoucher);
+  validator.addValue('isExpired', voucher.isExpired);
+  validator.addValue('isShown', true);
+
+  // code must be checked to decide the next step
+  const codeType = checkVoucherCode(voucher.code);
+
+  // Add the code to the validator
+  let hasCode = false;
+  let couponUrl = '';
+  if (!codeType.isEmpty) {
+    if (!codeType.startsWithDots) {
+      validator.addValue('code', codeType.code);
+    } else {
+      hasCode = true;
+      const idPool = voucher.idPool;
+      couponUrl = `https://discountcode.dailymail.co.uk/api/voucher/country/uk/client/${retailerId}/id/${idPool}`;
+      // console.log(`Found code details URL: ${couponUrl}`);
+    }
+  }
+
+  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+
+  return { generatedHash, hasCode, couponUrl, validator };
+}
+
+export const router = createCheerioRouter();
+
+router.addHandler(Label.listing, async (context) => {
+  const { request, body, crawler } = context;
+
   if (request.userData.label !== Label.listing) return;
 
+  if (!crawler.requestQueue) {
+    throw new Error('Request queue is missing');
+  }
+
   try {
+    // Extracting request and body from context
+
     console.log(`\nProcessing URL: ${request.url}`);
 
     // Convert body to string if it's a Buffer
@@ -106,59 +168,47 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
     }));
     const vouchers = [...activeVouchers, ...expiredVouchers];
 
+    const couponsWithCode: CouponHashMap = {};
+    const idsToCheck: string[] = [];
+    let result: CouponItemResult;
     for (const voucher of vouchers) {
       await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings
+      result = processCouponItem(
+        merchantName,
+        domain,
+        retailerId,
+        voucher,
+        request.url
+      );
+      if (!result.hasCode) {
+        await processAndStoreData(result.validator);
+      } else {
+        couponsWithCode[result.generatedHash] = result;
+        idsToCheck.push(result.generatedHash);
+      }
+    }
+    // Call the API to check if the coupon exists
+    const nonExistingIds = await checkCouponIds(idsToCheck);
 
-      // Create a new DataValidator instance
-      const validator = new DataValidator();
-
-      // Add required values to the validator
-      validator.addValue('sourceUrl', request.url);
-      validator.addValue('merchantName', merchantName);
-      validator.addValue('title', voucher.title);
-      validator.addValue('idInSite', voucher.idVoucher);
-
-      // Add optional values to the validator
-      validator.addValue('domain', domain);
-      validator.addValue('description', voucher.description);
-      validator.addValue('termsAndConditions', voucher.termsAndConditions);
-      validator.addValue('expiryDateAt', formatDateTime(voucher.endTime));
-      validator.addValue('startDateAt', formatDateTime(voucher.startTime));
-      validator.addValue('isExclusive', voucher.exclusiveVoucher);
-      validator.addValue('isExpired', voucher.isExpired);
-      validator.addValue('isShown', true);
-
-      // code must be checked to decide the next step
-      const codeType = checkVoucherCode(voucher.code);
-
-      // Add the code to the validator
-      if (!codeType.isEmpty) {
-        if (!codeType.startsWithDots) {
-          validator.addValue('code', codeType.code);
-
-          // Process and store the data
-          await processAndStoreData(validator);
-        } else {
-          const idPool = voucher.idPool;
-          const codeDetailsUrl = `https://discountcode.dailymail.co.uk/api/voucher/country/uk/client/${retailerId}/id/${idPool}`;
-          const validatorData = validator.getData();
-
-          await enqueueLinks({
-            urls: [codeDetailsUrl],
+    if (nonExistingIds.length > 0) {
+      let currentResult: CouponItemResult;
+      for (const id of nonExistingIds) {
+        currentResult = couponsWithCode[id];
+        // Add the coupon URL to the request queue
+        await crawler.requestQueue.addRequest(
+          {
+            url: currentResult.couponUrl,
             userData: {
               label: Label.getCode,
-              validatorData: validatorData,
+              validatorData: currentResult.validator.getData(),
             },
-            forefront: true,
-          });
-        }
-      } else {
-        // If the code is empty, process and store the data
-        await processAndStoreData(validator);
+            headers: CUSTOM_HEADERS,
+          },
+          { forefront: true }
+        );
       }
     }
   } catch (error) {
-    // Handle any errors that occurred during processing
     console.error(
       `An error occurred while processing the URL ${request.url}:`,
       error
@@ -166,11 +216,14 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
   }
 });
 
-router.addHandler(Label.getCode, async ({ request, body }) => {
+router.addHandler(Label.getCode, async (context) => {
+  // context includes request, body, etc.
+  const { request, body } = context;
+
   if (request.userData.label !== Label.getCode) return;
 
   try {
-    // Sleep for 3 seconds between requests to avoid rate limitings
+    // Sleep for x seconds between requests to avoid rate limitings
     await sleep(1000);
 
     // Retrieve validatorData from request's userData
@@ -210,8 +263,5 @@ router.addHandler(Label.getCode, async ({ request, body }) => {
       `An error occurred while processing the URL ${request.url}:`,
       error
     );
-    // Depending on your use case, you might want to re-throw the error or handle it differently
   }
 });
-
-export { router };
