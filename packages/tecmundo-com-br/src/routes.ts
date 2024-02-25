@@ -1,17 +1,22 @@
 import { createCheerioRouter } from 'crawlee';
 import cheerio from 'cheerio';
 import * as he from 'he';
-import { RequestProvider } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData, sleep } from 'shared/helpers';
+import {
+  processAndStoreData,
+  sleep,
+  generateCouponId,
+  checkCouponIds,
+  CouponItemResult,
+  CouponHashMap,
+} from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
-async function processCouponItem(
-  requestQueue: RequestProvider,
+function processCouponItem(
   merchantName: string,
   couponElement: cheerio.Element,
   sourceUrl: string
-) {
+): CouponItemResult {
   const $coupon = cheerio.load(couponElement);
 
   let hasCode = false;
@@ -64,22 +69,14 @@ async function processCouponItem(
   validator.addValue('isExpired', isExpired);
   validator.addValue('isShown', true);
 
+  let couponUrl = '';
   if (hasCode) {
-    // Add the coupon URL to the request queue
-    await requestQueue.addRequest(
-      {
-        url: `https://www.tecmundo.com.br/cupons/modals/coupon_clickout?id=${idInSite}`,
-        userData: {
-          label: Label.getCode,
-          validatorData: validator.getData(),
-        },
-        headers: CUSTOM_HEADERS,
-      },
-      { forefront: true }
-    );
-  } else {
-    await processAndStoreData(validator);
+    couponUrl = `https://www.tecmundo.com.br/cupons/modals/coupon_clickout?id=${idInSite}`;
   }
+
+  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+
+  return { generatedHash, hasCode, couponUrl, validator };
 }
 
 export const router = createCheerioRouter();
@@ -112,15 +109,41 @@ router.addHandler(Label.listing, async (context) => {
     // console.log(`Merchant Name: ${merchantName}`);
 
     // Extract valid coupons
+    const couponsWithCode: CouponHashMap = {};
+    const idsToCheck: string[] = [];
+    let result: CouponItemResult;
     const validCoupons = $('div.coupons__list > div.coupons__item');
     for (let i = 0; i < validCoupons.length; i++) {
       const element = validCoupons[i];
-      await processCouponItem(
-        crawler.requestQueue,
-        merchantName,
-        element,
-        request.url
-      );
+      result = processCouponItem(merchantName, element, request.url);
+      if (!result.hasCode) {
+        await processAndStoreData(result.validator);
+      } else {
+        couponsWithCode[result.generatedHash] = result;
+        idsToCheck.push(result.generatedHash);
+      }
+    }
+
+    // Call the API to check if the coupon exists
+    const nonExistingIds = await checkCouponIds(idsToCheck);
+
+    if (nonExistingIds.length > 0) {
+      let currentResult: CouponItemResult;
+      for (const id of nonExistingIds) {
+        currentResult = couponsWithCode[id];
+        // Add the coupon URL to the request queue
+        await crawler.requestQueue.addRequest(
+          {
+            url: currentResult.couponUrl,
+            userData: {
+              label: Label.getCode,
+              validatorData: currentResult.validator.getData(),
+            },
+            headers: CUSTOM_HEADERS,
+          },
+          { forefront: true }
+        );
+      }
     }
   } catch (error) {
     console.error(
