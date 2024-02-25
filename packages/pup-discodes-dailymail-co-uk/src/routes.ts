@@ -1,9 +1,13 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
-  formatDateTime,
-  getDomainName,
   processAndStoreData,
+  getDomainName,
+  generateCouponId,
+  checkCouponIds,
+  CouponItemResult,
+  CouponHashMap,
+  formatDateTime,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
@@ -50,6 +54,57 @@ function checkVoucherCode(code: string | null | undefined) {
     code: trimmedCode,
     startsWithDots: false,
   };
+}
+
+function processCouponItem(
+  merchantName: string,
+  domain: string,
+  retailerId: string,
+  voucher: any,
+  sourceUrl: string
+): CouponItemResult {
+  // Create a new DataValidator instance
+  const validator = new DataValidator();
+
+  const idInSite = voucher.idVoucher.toString();
+  // console.log(`Processing voucher with ID: ${idInSite}`);
+
+  // Add required values to the validator
+  validator.addValue('sourceUrl', sourceUrl);
+  validator.addValue('merchantName', merchantName);
+  validator.addValue('title', voucher.title);
+  validator.addValue('idInSite', idInSite);
+
+  // Add optional values to the validator
+  validator.addValue('domain', domain);
+  validator.addValue('description', voucher.description);
+  validator.addValue('termsAndConditions', voucher.termsAndConditions);
+  validator.addValue('expiryDateAt', formatDateTime(voucher.endTime));
+  validator.addValue('startDateAt', formatDateTime(voucher.startTime));
+  validator.addValue('isExclusive', voucher.exclusiveVoucher);
+  validator.addValue('isExpired', voucher.isExpired);
+  validator.addValue('isShown', true);
+
+  // code must be checked to decide the next step
+  const codeType = checkVoucherCode(voucher.code);
+
+  // Add the code to the validator
+  let hasCode = false;
+  let couponUrl = '';
+  if (!codeType.isEmpty) {
+    if (!codeType.startsWithDots) {
+      validator.addValue('code', codeType.code);
+    } else {
+      hasCode = true;
+      const idPool = voucher.idPool;
+      couponUrl = `https://discountcode.dailymail.co.uk/api/voucher/country/uk/client/${retailerId}/id/${idPool}`;
+      // console.log(`Found code details URL: ${couponUrl}`);
+    }
+  }
+
+  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+
+  return { generatedHash, hasCode, couponUrl, validator };
 }
 
 // Export the router function that determines which handler to use based on the request label
@@ -103,44 +158,43 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
     }));
     const vouchers = [...activeVouchers, ...expiredVouchers];
 
+    const couponsWithCode: CouponHashMap = {};
+    const idsToCheck: string[] = [];
+    let result: CouponItemResult;
     for (const voucher of vouchers) {
-      const validator = new DataValidator();
-
-      // Add required values to the validator
-      validator.addValue('sourceUrl', request.url);
-      validator.addValue('merchantName', merchantName);
-      validator.addValue('title', voucher.title);
-      validator.addValue('idInSite', voucher.idVoucher);
-
-      // Add optional values to the validator
-      validator.addValue('domain', domain);
-      validator.addValue('description', voucher.description);
-      validator.addValue('termsAndConditions', voucher.termsAndConditions);
-      validator.addValue('expiryDateAt', formatDateTime(voucher.endTime));
-      validator.addValue('startDateAt', formatDateTime(voucher.startTime));
-      validator.addValue('isExclusive', voucher.exclusiveVoucher);
-      validator.addValue('isExpired', voucher.isExpired);
-      validator.addValue('isShown', true);
-
-      const codeType = checkVoucherCode(voucher.code);
-
-      if (!codeType.isEmpty) {
-        if (!codeType.startsWithDots) {
-          validator.addValue('code', codeType.code);
-          await processAndStoreData(validator);
-        } else {
-          const idPool = voucher.idPool;
-          const codeDetailsUrl = `https://discountcode.dailymail.co.uk/api/voucher/country/uk/client/${retailerId}/id/${idPool}`;
-          const validatorData = validator.getData();
-
-          await enqueueLinks({
-            urls: [codeDetailsUrl],
-            userData: { label: Label.getCode, validatorData },
-            forefront: true,
-          });
-        }
+      result = processCouponItem(
+        merchantName,
+        domain,
+        retailerId,
+        voucher,
+        request.url
+      );
+      if (!result.hasCode) {
+        await processAndStoreData(result.validator);
       } else {
-        await processAndStoreData(validator);
+        couponsWithCode[result.generatedHash] = result;
+        idsToCheck.push(result.generatedHash);
+      }
+    }
+
+    // Call the API to check if the coupon exists
+    const nonExistingIds = await checkCouponIds(idsToCheck);
+
+    if (nonExistingIds.length > 0) {
+      let currentResult: CouponItemResult;
+      let validatorData;
+      for (const id of nonExistingIds) {
+        currentResult = couponsWithCode[id];
+        validatorData = currentResult.validator.getData();
+
+        await enqueueLinks({
+          urls: [currentResult.couponUrl],
+          userData: {
+            label: Label.getCode,
+            validatorData,
+          },
+          forefront: true,
+        });
       }
     }
   } catch (error) {
