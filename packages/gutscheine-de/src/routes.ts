@@ -144,7 +144,6 @@ router.addHandler(Label.listing, async (context) => {
         // Extract the JSON string
         const jsonString = scriptContent.replace('window.nuxt =', '').trim();
         try {
-          // Parse the JSON string
           jsonData = JSON.parse(jsonString);
         } catch (error) {
           console.log('Error parsing JSON data:', error);
@@ -159,7 +158,7 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    if (jsonData.data.offers && jsonData.data.offers.length < 1) {
+    if (jsonData.data.offers || jsonData.data.offers.length < 1) {
       console.log(`No offers found: ${request.url}`);
       return;
     }
