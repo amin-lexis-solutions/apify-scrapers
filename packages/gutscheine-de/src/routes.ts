@@ -158,7 +158,7 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    if (jsonData.data.offers || jsonData.data.offers.length < 1) {
+    if (!jsonData.data.offers || jsonData.data.offers.length < 1) {
       console.log(`No offers found: ${request.url}`);
       return;
     }
