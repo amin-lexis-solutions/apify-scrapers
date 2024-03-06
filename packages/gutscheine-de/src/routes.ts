@@ -86,7 +86,7 @@ function processCouponItem(
   if (couponItem.node.voucher.savingType === 1) {
     savingValue = `${couponItem.node.voucher.savingValue}%`;
   } else {
-    savingValue = `CHF ${couponItem.node.voucher.savingValue}`;
+    savingValue = couponItem.node.voucher.savingValue;
   }
 
   const description = `Gutscheinwert: ${limitProduct}\nGilt für:\n    ${savingValue}\n    alle Kunden`;
@@ -144,7 +144,6 @@ router.addHandler(Label.listing, async (context) => {
         // Extract the JSON string
         const jsonString = scriptContent.replace('window.nuxt =', '').trim();
         try {
-          // Parse the JSON string
           jsonData = JSON.parse(jsonString);
         } catch (error) {
           console.log('Error parsing JSON data:', error);
@@ -156,56 +155,58 @@ router.addHandler(Label.listing, async (context) => {
       console.log(
         `No matching script tag found or JSON parsing failed: ${request.url}`
       );
-    } else if (jsonData.data.offers && jsonData.data.offers.length > 0) {
-      const offers = jsonData.data.offers;
-      console.log(`Found ${offers.length} offers`);
-      // console.log(offers[0]);
-      const merchantName = offers[0].node.partnerShoppingShop.title;
-      const domain = getDomainName(
-        offers[0].node.partnerShoppingShop.shoppingShop.domainUrl
-      );
+      return;
+    }
 
-      if (!merchantName) {
-        console.log(`Merchant name not found: ${request.url}`);
-      } else {
-        const couponsWithCode: CouponHashMap = {};
-        const idsToCheck: string[] = [];
-        let result: CouponItemResult;
-        for (let i = 0; i < offers.length; i++) {
-          const item = offers[i] as OfferItem;
-          result = processCouponItem(merchantName, domain, item, request.url);
-          if (!result.hasCode) {
-            await processAndStoreData(result.validator);
-          } else {
-            couponsWithCode[result.generatedHash] = result;
-            idsToCheck.push(result.generatedHash);
-          }
-        }
-
-        // Call the API to check if the coupon exists
-        const nonExistingIds = await checkCouponIds(idsToCheck);
-
-        if (nonExistingIds.length > 0) {
-          let currentResult: CouponItemResult;
-          for (const id of nonExistingIds) {
-            currentResult = couponsWithCode[id];
-            // Add the coupon URL to the request queue
-            await crawler.requestQueue.addRequest(
-              {
-                url: currentResult.couponUrl,
-                userData: {
-                  label: Label.getCode,
-                  validatorData: currentResult.validator.getData(),
-                },
-                headers: CUSTOM_HEADERS,
-              },
-              { forefront: true }
-            );
-          }
-        }
-      }
-    } else {
+    if (!jsonData.data.offers || jsonData.data.offers.length < 1) {
       console.log(`No offers found: ${request.url}`);
+      return;
+    }
+    const offers = jsonData.data.offers;
+    console.log(`Found ${offers.length} offers`);
+    const merchantName = offers[0].node.partnerShoppingShop.title;
+    const domain = getDomainName(
+      offers[0].node.partnerShoppingShop.shoppingShop.domainUrl
+    );
+
+    if (!merchantName) {
+      console.log(`Merchant name not found: ${request.url}`);
+      return;
+    }
+    const couponsWithCode: CouponHashMap = {};
+    const idsToCheck: string[] = [];
+    let result: CouponItemResult;
+    for (let i = 0; i < offers.length; i++) {
+      const item = offers[i] as OfferItem;
+      result = processCouponItem(merchantName, domain, item, request.url);
+      if (!result.hasCode) {
+        await processAndStoreData(result.validator);
+      } else {
+        couponsWithCode[result.generatedHash] = result;
+        idsToCheck.push(result.generatedHash);
+      }
+    }
+
+    // Call the API to check if the coupon exists
+    const nonExistingIds = await checkCouponIds(idsToCheck);
+
+    if (nonExistingIds.length > 0) {
+      let currentResult: CouponItemResult;
+      for (const id of nonExistingIds) {
+        currentResult = couponsWithCode[id];
+        // Add the coupon URL to the request queue
+        await crawler.requestQueue.addRequest(
+          {
+            url: currentResult.couponUrl,
+            userData: {
+              label: Label.getCode,
+              validatorData: currentResult.validator.getData(),
+            },
+            headers: CUSTOM_HEADERS,
+          },
+          { forefront: true }
+        );
+      }
     }
   } catch (error) {
     console.error(
