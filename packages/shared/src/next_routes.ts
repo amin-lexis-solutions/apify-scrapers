@@ -12,6 +12,12 @@ import {
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
+interface NextUserData {
+  label: string;
+  domain: string;
+  countryCode: string;
+}
+
 function checkVoucherCode(code: string | null | undefined) {
   // Trim the code to remove any leading/trailing whitespace
   const trimmedCode = code?.trim();
@@ -56,13 +62,14 @@ function processCouponItem(
   domain: string,
   retailerId: string,
   voucher: any,
-  sourceUrl: string
+  sourceUrl: string,
+  sourceDomain: string,
+  sourceCountryCode: string
 ): CouponItemResult {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
   const idInSite = voucher.idVoucher.toString();
-  // console.log(`Processing voucher with ID: ${idInSite}`);
 
   // Add required values to the validator
   validator.addValue('sourceUrl', sourceUrl);
@@ -92,8 +99,7 @@ function processCouponItem(
     } else {
       hasCode = true;
       const idPool = voucher.idPool;
-      couponUrl = `https://discountcode.dailymail.co.uk/api/voucher/country/uk/client/${retailerId}/id/${idPool}`;
-      // console.log(`Found code details URL: ${couponUrl}`);
+      couponUrl = `https://${sourceDomain}/api/voucher/country/${sourceCountryCode}/client/${retailerId}/id/${idPool}`;
     }
   }
 
@@ -112,6 +118,8 @@ router.addHandler(Label.listing, async (context) => {
   if (!crawler.requestQueue) {
     throw new Error('Request queue is missing');
   }
+
+  const userData = request.userData as NextUserData;
 
   try {
     // Extracting request and body from context
@@ -178,7 +186,9 @@ router.addHandler(Label.listing, async (context) => {
         domain,
         retailerId,
         voucher,
-        request.url
+        request.url,
+        userData.domain,
+        userData.countryCode
       );
       if (!result.hasCode) {
         await processAndStoreData(result.validator);
