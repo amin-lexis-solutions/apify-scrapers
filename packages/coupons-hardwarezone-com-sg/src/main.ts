@@ -1,6 +1,6 @@
 import { Actor } from 'apify';
 import { prepareCheerioScraper } from 'shared/actor-utils';
-import { router } from 'shared/next_routes';
+import { router } from 'shared/next-routes';
 
 async function main() {
   await Actor.init();

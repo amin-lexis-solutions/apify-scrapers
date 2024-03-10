@@ -6,8 +6,8 @@ async function main() {
   await Actor.init();
 
   const crawler = await prepareCheerioScraper(router, {
-    domain: 'gutscheine.blick.ch',
-    countryCode: 'ch',
+    domain: 'alennuskoodit.suomi24.fi',
+    countryCode: 'fi',
   });
 
   await crawler.run();
