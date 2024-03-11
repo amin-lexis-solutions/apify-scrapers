@@ -15,6 +15,9 @@ type Input = {
 type MainFunctionArgs = {
   // custom headers in a format of key-value pairs
   customHeaders?: Record<string, string>;
+  domain?: string;
+  countryCode?: string;
+  extractDomainAndCountryCode?: boolean;
 };
 
 const getStartUrlsArray = (startUrls) => {
@@ -70,12 +73,31 @@ export async function prepareCheerioScraper(
   }
 
   // Manually add each URL to the request queue
+  let userData;
+
+  userData = { label: Label.listing };
+
+  if (args.domain && args.countryCode) {
+    userData.domain = args.domain;
+    userData.countryCode = args.countryCode;
+  }
+
+  let domain;
+  let countryCode;
   for (const url of startUrls) {
+    if (args.extractDomainAndCountryCode) {
+      domain = new URL(url).hostname;
+      // Get the country code as the last part of the domain
+      countryCode = domain.split('.').slice(-1)[0]; // Equivalent to Python's [-1]
+      userData = {
+        label: Label.listing,
+        domain,
+        countryCode,
+      };
+    }
     await crawler.requestQueue.addRequest({
       url,
-      userData: {
-        label: Label.listing,
-      },
+      userData: userData,
       headers: customHeaders,
     });
   }

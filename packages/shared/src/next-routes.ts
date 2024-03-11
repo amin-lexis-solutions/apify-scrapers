@@ -1,5 +1,5 @@
 import { createCheerioRouter } from 'crawlee';
-import { DataValidator } from 'shared/data-validator';
+import { DataValidator } from './data-validator';
 import {
   processAndStoreData,
   sleep,
@@ -9,8 +9,14 @@ import {
   CouponItemResult,
   CouponHashMap,
   formatDateTime,
-} from 'shared/helpers';
-import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
+} from './helpers';
+import { Label, CUSTOM_HEADERS } from './actor-utils';
+
+interface NextUserData {
+  label: string;
+  domain: string;
+  countryCode: string;
+}
 
 function checkVoucherCode(code: string | null | undefined) {
   // Trim the code to remove any leading/trailing whitespace
@@ -56,13 +62,14 @@ function processCouponItem(
   domain: string,
   retailerId: string,
   voucher: any,
-  sourceUrl: string
+  sourceUrl: string,
+  sourceDomain: string,
+  sourceCountryCode: string
 ): CouponItemResult {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
   const idInSite = voucher.idVoucher.toString();
-  // console.log(`Processing voucher with ID: ${idInSite}`);
 
   // Add required values to the validator
   validator.addValue('sourceUrl', sourceUrl);
@@ -80,26 +87,23 @@ function processCouponItem(
   validator.addValue('isExpired', voucher.isExpired);
   validator.addValue('isShown', true);
 
+  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+
   // code must be checked to decide the next step
   const codeType = checkVoucherCode(voucher.code);
 
-  // Add the code to the validator
-  let hasCode = false;
-  let couponUrl = '';
-  if (!codeType.isEmpty) {
-    if (!codeType.startsWithDots) {
-      validator.addValue('code', codeType.code);
-    } else {
-      hasCode = true;
-      const idPool = voucher.idPool;
-      couponUrl = `https://discountcode.dailymail.co.uk/api/voucher/country/uk/client/${retailerId}/id/${idPool}`;
-      // console.log(`Found code details URL: ${couponUrl}`);
-    }
+  if (codeType.isEmpty) {
+    return { generatedHash, hasCode: false, couponUrl: '', validator };
   }
 
-  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+  if (!codeType.startsWithDots) {
+    validator.addValue('code', codeType.code);
+    return { generatedHash, hasCode: false, couponUrl: '', validator };
+  }
 
-  return { generatedHash, hasCode, couponUrl, validator };
+  const idPool = voucher.idPool;
+  const couponUrl = `https://${sourceDomain}/api/voucher/country/${sourceCountryCode}/client/${retailerId}/id/${idPool}`;
+  return { generatedHash, hasCode: true, couponUrl, validator };
 }
 
 export const router = createCheerioRouter();
@@ -112,6 +116,8 @@ router.addHandler(Label.listing, async (context) => {
   if (!crawler.requestQueue) {
     throw new Error('Request queue is missing');
   }
+
+  const userData = request.userData as NextUserData;
 
   try {
     // Extracting request and body from context
@@ -178,7 +184,9 @@ router.addHandler(Label.listing, async (context) => {
         domain,
         retailerId,
         voucher,
-        request.url
+        request.url,
+        userData.domain,
+        userData.countryCode
       );
       if (!result.hasCode) {
         await processAndStoreData(result.validator);
