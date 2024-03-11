@@ -1,5 +1,5 @@
 {
-  "name": "gutschein-ch",
+  "name": "api-sparwelt-de",
   "version": "0.0.1",
   "type": "commonjs",
   "description": "This is an example of a Crawlee project.",
@@ -24,7 +24,7 @@
   },
   "scripts": {
     "start": "yarn start:dev",
-    "start:prod": "node dist/gutschein-ch/src/main.js",
+    "start:prod": "node dist/api-sparwelt-de/src/main.js",
     "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
     "build": "tsc && tsc-alias",
     "test": "echo \"Error: no tests defined\" && exit 1"
