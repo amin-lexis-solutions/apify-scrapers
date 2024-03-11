@@ -74,17 +74,14 @@ export async function prepareCheerioScraper(
 
   // Manually add each URL to the request queue
   let userData;
+
+  userData = { label: Label.listing };
+
   if (args.domain && args.countryCode) {
-    userData = {
-      label: Label.listing,
-      domain: args.domain,
-      countryCode: args.countryCode,
-    };
-  } else {
-    userData = {
-      label: Label.listing,
-    };
+    userData.domain = args.domain;
+    userData.countryCode = args.countryCode;
   }
+
   let domain;
   let countryCode;
   for (const url of startUrls) {

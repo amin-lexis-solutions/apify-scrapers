@@ -1,5 +1,5 @@
 import { createCheerioRouter } from 'crawlee';
-import { DataValidator } from 'shared/data-validator';
+import { DataValidator } from './data-validator';
 import {
   processAndStoreData,
   sleep,
@@ -9,8 +9,8 @@ import {
   CouponItemResult,
   CouponHashMap,
   formatDateTime,
-} from 'shared/helpers';
-import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
+} from './helpers';
+import { Label, CUSTOM_HEADERS } from './actor-utils';
 
 interface NextUserData {
   label: string;
@@ -87,25 +87,23 @@ function processCouponItem(
   validator.addValue('isExpired', voucher.isExpired);
   validator.addValue('isShown', true);
 
+  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+
   // code must be checked to decide the next step
   const codeType = checkVoucherCode(voucher.code);
 
-  // Add the code to the validator
-  let hasCode = false;
-  let couponUrl = '';
-  if (!codeType.isEmpty) {
-    if (!codeType.startsWithDots) {
-      validator.addValue('code', codeType.code);
-    } else {
-      hasCode = true;
-      const idPool = voucher.idPool;
-      couponUrl = `https://${sourceDomain}/api/voucher/country/${sourceCountryCode}/client/${retailerId}/id/${idPool}`;
-    }
+  if (codeType.isEmpty) {
+    return { generatedHash, hasCode: false, couponUrl: '', validator };
   }
 
-  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+  if (!codeType.startsWithDots) {
+    validator.addValue('code', codeType.code);
+    return { generatedHash, hasCode: false, couponUrl: '', validator };
+  }
 
-  return { generatedHash, hasCode, couponUrl, validator };
+  const idPool = voucher.idPool;
+  const couponUrl = `https://${sourceDomain}/api/voucher/country/${sourceCountryCode}/client/${retailerId}/id/${idPool}`;
+  return { generatedHash, hasCode: true, couponUrl, validator };
 }
 
 export const router = createCheerioRouter();
