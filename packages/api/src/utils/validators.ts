@@ -119,10 +119,6 @@ export class FindTargetPagesBody {
 }
 
 export class RunTargetPagesBody {
-  @IsString()
-  locale: string;
-
-  @IsString()
-  @IsOptional()
-  domain?: string;
+  @IsNumber()
+  maxConcurrency: number;
 }
