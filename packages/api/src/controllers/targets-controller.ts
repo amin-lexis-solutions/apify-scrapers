@@ -106,6 +106,8 @@ export class TargetsController {
   ): Promise<StandardResponse> {
     const { maxConcurrency } = body;
 
+    console.log('maxConcurrency is ', maxConcurrency);
+
     const sources = await prisma.source.findMany({
       where: {
         isActive: true,
@@ -117,10 +119,14 @@ export class TargetsController {
       take: maxConcurrency,
     });
 
+    console.log('sources found are ', sources.length);
+
     await prisma.source.updateMany({
       where: { id: { in: sources.map((source) => source.id) } },
       data: { lastRunAt: new Date() },
     });
+
+    console.log('updated sources');
 
     const counts = await Promise.all(
       sources.map(async (source) => {
@@ -130,7 +136,13 @@ export class TargetsController {
           },
         });
 
-        if (pages.length === 0) return 0;
+
+        if (pages.length === 0) {
+          console.log('No pages for actor ' + source.apifyActorId + ' found. Skipping.');
+          return 0;
+        }
+
+        console.log('run apify request for actor' + source.apifyActorId);
 
         const localeId = pages[0]?.localeId;
         await apify.actor(source.apifyActorId).start(
