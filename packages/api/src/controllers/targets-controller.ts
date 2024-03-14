@@ -10,6 +10,7 @@ import {
   RunTargetPagesBody,
   StandardResponse,
 } from '../utils/validators';
+import moment from 'moment';
 
 @JsonController('/targets')
 @Authorized()
@@ -103,10 +104,22 @@ export class TargetsController {
   async runTargetPages(
     @Body() body: RunTargetPagesBody
   ): Promise<StandardResponse> {
-    const { locale, domain } = body;
+    const { maxConcurrency } = body;
 
     const sources = await prisma.source.findMany({
-      where: { isActive: true, domain },
+      where: {
+        isActive: true,
+        OR: [
+          { lastRunAt: null },
+          { lastRunAt: { lt: moment().startOf('day').toDate() } },
+        ],
+      },
+      take: maxConcurrency,
+    });
+
+    await prisma.source.updateMany({
+      where: { id: { in: sources.map((source) => source.id) } },
+      data: { lastRunAt: new Date() },
     });
 
     const counts = await Promise.all(
@@ -114,9 +127,10 @@ export class TargetsController {
         const pages = await prisma.targetPage.findMany({
           where: {
             domain: source.domain,
-            locale: { locale },
           },
         });
+
+        if (pages.length === 0) return 0;
 
         const localeId = pages[0]?.localeId;
         await apify.actor(source.apifyActorId).start(

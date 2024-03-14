@@ -54,6 +54,7 @@ model Source {
   name         String
   apifyActorId String
   isActive     Boolean        @default(true)
+  lastRunAt    DateTime?
   coupons      Coupon[]
   runs         ProcessedRun[]
 }

@@ -191,7 +191,7 @@ export class WebhooksController {
       }
 
       await prisma.processedRun.update({
-        where: { actorRunId: run.id },
+        where: { id: run.id },
         data: {
           createdCount,
           updatedCount,

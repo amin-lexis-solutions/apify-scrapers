@@ -10,6 +10,7 @@ declare global {
       BASE_URL?: string;
       OBERST_API_KEY?: string;
       API_KEY_APIFY?: string;
+      MAX_CONCURRENT_RUNS?: string;
     }
   }
 }
