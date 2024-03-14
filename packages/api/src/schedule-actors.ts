@@ -3,7 +3,7 @@ import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '.env.cron') });
 
-const MAX_CONCURRENT_RUNS = 2;
+const MAX_CONCURRENT_RUNS = Number(process.env.MAX_CONCURRENT_RUNS);
 const FINISHED_STATUSES = new Set([
   'SUCCEEDED',
   'FAILED',
@@ -28,7 +28,7 @@ const findActors = async () => {
 
   if (maxConcurrency < 1) return;
 
-  fetch(`${process.env.BASE_URL}/targets/run`, {
+  fetch(`${process.env.BASE_URL}targets/run`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
