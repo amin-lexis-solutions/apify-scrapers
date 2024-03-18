@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { Actor, RequestQueue } from 'apify';
 import {
   CheerioCrawler,
@@ -60,6 +61,15 @@ export async function prepareCheerioScraper(
     proxyConfiguration,
     requestHandler: router,
     requestQueue,
+    failedRequestHandler: async ({ request, error }) => {
+      // Log the error to Sentry
+      Sentry.captureException(error, {
+        extra: {
+          url: request.url,
+          numberOfRetries: request.retryCount,
+        },
+      });
+    },
   });
 
   let customHeaders = CUSTOM_HEADERS;
@@ -133,6 +143,15 @@ export async function preparePuppeteerScraper(
     },
     requestHandler: router as any,
     requestQueue,
+    failedRequestHandler: async ({ request, error }) => {
+      // Log the error to Sentry
+      Sentry.captureException(error, {
+        extra: {
+          url: request.url,
+          numberOfRetries: request.retryCount,
+        },
+      });
+    },
   });
 
   let customHeaders = CUSTOM_HEADERS;

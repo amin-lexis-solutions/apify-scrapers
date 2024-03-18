@@ -6,5 +6,8 @@
   "scripts": {},
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@sentry/node": "^7.107.0"
+  }
 }
