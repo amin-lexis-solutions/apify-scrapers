@@ -1,3 +1,4 @@
+import 'shared/sentry-init';
 import { Actor } from 'apify';
 import { preparePuppeteerScraper } from 'shared/actor-utils';
 

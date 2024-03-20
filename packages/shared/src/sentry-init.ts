@@ -1,9 +1,6 @@
 import * as Sentry from '@sentry/node';
+import { SENTRY_DSN } from './sentry-dsn';
 // import '@sentry/profiling-node'; // Import for performance monitoring, if needed.
-
-// This is only for testing. Normally, you would use an environment variable
-const SENTRY_DSN =
-  'https://87899ea721020ea71b712cb6e26b5861@o4506914093531136.ingest.us.sentry.io/4506930859278336';
 
 // Initialize Sentry with your DSN and configuration
 Sentry.init({

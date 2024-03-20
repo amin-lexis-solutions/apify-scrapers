@@ -16,11 +16,11 @@ async function processCouponItem(
   let titleCss = '';
   let codeCss = '';
   if (!isExpired) {
-    titleCss = 'div.partner-pg__offer-coupon__body';
-    codeCss = 'span.partner-pg__code-button__value';
+    titleCss = 'p.offer-cpn__title';
+    codeCss = 'span.code-btn__value';
   } else {
     titleCss = 'h3';
-    codeCss = 'span.partner-pg__expired-coupons-section__code';
+    codeCss = 'span.expired-cpn-sec__code';
   }
 
   const idInSite = $coupon('*').first().attr('data-offer-id');
@@ -106,24 +106,21 @@ router.addHandler(Label.listing, async (context) => {
       // console.log(`Merchant Name: ${merchantName}`);
       // Extract valid coupons
       const validCoupons = $(
-        'div.partner-pg__coupon-list__items > div[data-offer-id]'
+        'div.cpn-list__items > div[data-offer-id]'
       );
       for (let i = 0; i < validCoupons.length; i++) {
         const element = validCoupons[i];
         await processCouponItem(merchantName, false, element, request.url);
       }
       const expiredCoupons = $(
-        'ul.partner-pg__expired-coupons-section__items > li[data-offer-id]'
+        'ul.expired-cpn-sec__items > li[data-offer-id]'
       );
       for (let i = 0; i < expiredCoupons.length; i++) {
         const element = expiredCoupons[i];
         await processCouponItem(merchantName, true, element, request.url);
       }
     }
-  } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // Do nothing
   }
 });

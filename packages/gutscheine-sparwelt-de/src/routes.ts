@@ -24,9 +24,8 @@ async function fetchVoucherCode(
       return voucherCode;
     }
     return null;
-  } catch (error) {
-    console.error('Error fetching voucher code data:', error);
-    return null; // Or handle the error as per your application's needs
+  } finally {
+    // Do nothing
   }
 }
 
@@ -90,10 +89,8 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
               } else {
                 console.warn('Voucher ID is missing in a coupon div.');
               }
-            } catch (innerError) {
-              console.error(
-                `Error processing individual coupon: ${innerError}`
-              );
+            } finally {
+              // Do nothing
             }
           }
         } else {
@@ -102,11 +99,11 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
       } else {
         console.log('No section found with div#gutscheine');
       }
-    } catch (parsingError) {
-      throw new Error(`Error parsing HTML content: ${parsingError}`);
+    } finally {
+      // Do nothing
     }
-  } catch (error) {
-    console.error(`An error occurred while processing ${request.url}:`, error);
+  } finally {
+    // Do nothing
   }
 });
 
@@ -133,8 +130,8 @@ router.addHandler(Label.details, async ({ request, body }) => {
     let voucherJson;
     try {
       voucherJson = JSON.parse(htmlContent);
-    } catch (error) {
-      throw new Error('Failed to parse JSON from HTML content');
+    } finally {
+      // Do nothing
     }
 
     // Validate the necessary data is present
@@ -167,13 +164,8 @@ router.addHandler(Label.details, async ({ request, body }) => {
 
     // Process and store the data
     await processAndStoreData(validator);
-  } catch (error) {
-    // Handle any errors that occurred during the handler execution
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
-    // Depending on your use case, you might want to re-throw the error or handle it differently
+  } finally {
+    // Do nothing
   }
 });
 

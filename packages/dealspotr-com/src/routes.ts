@@ -102,8 +102,8 @@ router.addHandler(Label.listing, async (context) => {
           // Since we found our target, we stop processing further
           return false; // Break out of the .each loop
         }
-      } catch (error) {
-        console.error('Failed to parse JSON-LD script:', error);
+      } finally {
+        // Do nothing
       }
       return true; // Continue processing the next script tag
     });
@@ -164,11 +164,8 @@ router.addHandler(Label.listing, async (context) => {
         );
       }
     }
-  } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // Do nothing
   }
 });
 
@@ -211,11 +208,7 @@ router.addHandler(Label.getCode, async (context) => {
 
     // Process and store the data
     await processAndStoreData(validator);
-  } catch (error) {
-    // Handle any errors that occurred during the handler execution
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // Do nothing
   }
 });

@@ -40,14 +40,8 @@ export async function checkCouponIds(ids) {
     console.log('Non-existing IDs count:', nonExistingIds.length);
 
     return nonExistingIds;
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error('Error in API request:', error.message);
-    } else {
-      console.error('An unexpected error occurred');
-      // Handle the error without assuming it's an instance of Error
-    }
-    return ids; // Return the original IDs array in case of an error
+  } finally {
+    // Do something here if needed
   }
 }
 
@@ -119,9 +113,8 @@ export function getDomainName(url: string): string {
     }
 
     return hostname;
-  } catch (error) {
-    console.error('Invalid URL:', error);
-    return '';
+  } finally {
+    // Do something here if needed
   }
 }
 
@@ -135,13 +128,7 @@ export async function processAndStoreData(validator: DataValidator) {
     validator.finalCheck();
     console.log(validator.getData());
     await Dataset.pushData(validator.getData());
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Validation error:', error.message);
-      // Handle invalid entries or log them depending on your use case
-    } else {
-      console.error('An unexpected error occurred:', error);
-      // Handle or log the unknown error
-    }
+  } finally {
+    // Do something here if needed
   }
 }

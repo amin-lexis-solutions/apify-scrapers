@@ -199,11 +199,8 @@ router.addHandler(Label.listing, async (context) => {
         }
       }
     }
-  } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // Do nothing
   }
 });
 
@@ -249,11 +246,7 @@ router.addHandler(Label.getCode, async (context) => {
 
     // Process and store the data
     await processAndStoreData(validator);
-  } catch (error) {
-    // Handle any errors that occurred during the handler execution
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // Do nothing
   }
 });

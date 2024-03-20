@@ -197,8 +197,8 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
         });
       }
     }
-  } catch (error) {
-    console.error(`An error occurred while processing ${request.url}:`, error);
+  } finally {
+    // Do nothing
   }
 });
 
@@ -223,8 +223,8 @@ router.addHandler(Label.getCode, async ({ page, request }) => {
     } else {
       throw new Error('No matching pre tag found or no JSON content present');
     }
-  } catch (error) {
-    console.error(`An error occurred while processing ${request.url}:`, error);
+  } finally {
+    // Do nothing
   }
 });
 

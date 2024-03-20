@@ -148,10 +148,7 @@ router.addHandler(Label.listing, async (context) => {
         i + 1
       );
     }
-  } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // Do something here if needed
   }
 });

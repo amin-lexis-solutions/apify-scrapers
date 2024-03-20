@@ -100,11 +100,8 @@ router.addHandler(Label.listing, async ({ request, body }) => {
       const element = expiredCoupons[i];
       await processCouponItem(merchantName, true, element, request.url);
     }
-  } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // Do nothing
   }
 });
 

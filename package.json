@@ -47,5 +47,6 @@
       "style": "module",
       "parser": "typescript"
     }
-  }
+  },
+  "dependencies": {}
 }

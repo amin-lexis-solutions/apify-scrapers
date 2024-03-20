@@ -90,10 +90,7 @@ router.addHandler(Label.listing, async (context) => {
     for (const element of validCoupons) {
       await processCouponItem(merchantName, element, request.url);
     }
-  } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // Do nothing
   }
 });
