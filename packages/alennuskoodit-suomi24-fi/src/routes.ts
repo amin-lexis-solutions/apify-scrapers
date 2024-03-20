@@ -132,7 +132,8 @@ router.addHandler(Label.listing, async (context) => {
         // Parse the JSON string
         jsonData = JSON.parse(match[1]);
       } finally {
-        // Do nothing
+        // We don't catch so that the error is logged in Sentry, but use finally
+        // since we want the Apify actor to end successfully and not waste resources by retrying.
       }
       retailerId = jsonData.query.clientId;
       jsonData = jsonData.props.pageProps;
@@ -207,7 +208,8 @@ router.addHandler(Label.listing, async (context) => {
       }
     }
   } finally {
-    // Do something here if needed
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
 
@@ -236,7 +238,8 @@ router.addHandler(Label.getCode, async (context) => {
     try {
       jsonCodeData = JSON.parse(htmlContent);
     } finally {
-      // Do nothing
+      // We don't catch so that the error is logged in Sentry, but use finally
+      // since we want the Apify actor to end successfully and not waste resources by retrying.
     }
 
     // Validate the necessary data is present
@@ -253,6 +256,7 @@ router.addHandler(Label.getCode, async (context) => {
     // Process and store the data
     await processAndStoreData(validator);
   } finally {
-    // Do something here if needed
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });

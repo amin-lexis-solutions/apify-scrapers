@@ -41,7 +41,8 @@ export async function checkCouponIds(ids) {
 
     return nonExistingIds;
   } finally {
-    // Do something here if needed
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 }
 
@@ -114,7 +115,8 @@ export function getDomainName(url: string): string {
 
     return hostname;
   } finally {
-    // Do something here if needed
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 }
 
@@ -129,6 +131,7 @@ export async function processAndStoreData(validator: DataValidator) {
     console.log(validator.getData());
     await Dataset.pushData(validator.getData());
   } finally {
-    // Do something here if needed
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 }

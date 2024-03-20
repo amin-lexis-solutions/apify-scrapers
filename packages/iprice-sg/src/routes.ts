@@ -267,7 +267,8 @@ router.addHandler(Label.listing, async (context) => {
       }
     }
   } finally {
-    // Do nothing
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
 
@@ -311,6 +312,7 @@ router.addHandler(Label.getCode, async (context) => {
     // Process and store the data
     await processAndStoreData(validator);
   } finally {
-    // Do nothing
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });

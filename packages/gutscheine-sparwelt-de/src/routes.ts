@@ -25,7 +25,8 @@ async function fetchVoucherCode(
     }
     return null;
   } finally {
-    // Do nothing
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 }
 
@@ -90,7 +91,8 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
                 console.warn('Voucher ID is missing in a coupon div.');
               }
             } finally {
-              // Do nothing
+              // We don't catch so that the error is logged in Sentry, but use finally
+              // since we want the Apify actor to end successfully and not waste resources by retrying.
             }
           }
         } else {
@@ -100,10 +102,12 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
         console.log('No section found with div#gutscheine');
       }
     } finally {
-      // Do nothing
+      // We don't catch so that the error is logged in Sentry, but use finally
+      // since we want the Apify actor to end successfully and not waste resources by retrying.
     }
   } finally {
-    // Do nothing
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
 
@@ -131,7 +135,8 @@ router.addHandler(Label.details, async ({ request, body }) => {
     try {
       voucherJson = JSON.parse(htmlContent);
     } finally {
-      // Do nothing
+      // We don't catch so that the error is logged in Sentry, but use finally
+      // since we want the Apify actor to end successfully and not waste resources by retrying.
     }
 
     // Validate the necessary data is present
@@ -165,7 +170,8 @@ router.addHandler(Label.details, async ({ request, body }) => {
     // Process and store the data
     await processAndStoreData(validator);
   } finally {
-    // Do nothing
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
 

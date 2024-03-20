@@ -198,7 +198,8 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       }
     }
   } finally {
-    // Do nothing
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
 
@@ -224,7 +225,8 @@ router.addHandler(Label.getCode, async ({ page, request }) => {
       throw new Error('No matching pre tag found or no JSON content present');
     }
   } finally {
-    // Do nothing
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
 

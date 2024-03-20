@@ -105,22 +105,19 @@ router.addHandler(Label.listing, async (context) => {
     } else {
       // console.log(`Merchant Name: ${merchantName}`);
       // Extract valid coupons
-      const validCoupons = $(
-        'div.cpn-list__items > div[data-offer-id]'
-      );
+      const validCoupons = $('div.cpn-list__items > div[data-offer-id]');
       for (let i = 0; i < validCoupons.length; i++) {
         const element = validCoupons[i];
         await processCouponItem(merchantName, false, element, request.url);
       }
-      const expiredCoupons = $(
-        'ul.expired-cpn-sec__items > li[data-offer-id]'
-      );
+      const expiredCoupons = $('ul.expired-cpn-sec__items > li[data-offer-id]');
       for (let i = 0; i < expiredCoupons.length; i++) {
         const element = expiredCoupons[i];
         await processCouponItem(merchantName, true, element, request.url);
       }
     }
   } finally {
-    // Do nothing
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
