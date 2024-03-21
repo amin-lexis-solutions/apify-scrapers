@@ -67,7 +67,6 @@ function processCouponItem(
   const validator = new DataValidator();
 
   const idInSite = voucher.idVoucher.toString();
-  // console.log(`Processing voucher with ID: ${idInSite}`);
 
   // Add required values to the validator
   validator.addValue('sourceUrl', sourceUrl);
@@ -98,7 +97,6 @@ function processCouponItem(
       hasCode = true;
       const idPool = voucher.idPool;
       couponUrl = `https://discountcode.dailymail.co.uk/api/voucher/country/uk/client/${retailerId}/id/${idPool}`;
-      // console.log(`Found code details URL: ${couponUrl}`);
     }
   }
 

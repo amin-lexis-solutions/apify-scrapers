@@ -104,8 +104,6 @@ router.addHandler(Label.listing, async (context) => {
       if (!merchantName) {
         console.log(`Not Merchant URL: ${request.url}`);
       } else {
-        // console.log(`Merchant Name: ${merchantName}`);
-        // console.log('Domain:', domain);
         // Extract valid coupons
         const validCoupons = $('ul.sc-a8fe2b69-0 > li > div');
         for (let i = 0; i < validCoupons.length; i++) {

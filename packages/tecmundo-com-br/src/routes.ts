@@ -106,7 +106,6 @@ router.addHandler(Label.listing, async (context) => {
     if (!merchantName) {
       throw new Error('Merchant name is missing');
     }
-    // console.log(`Merchant Name: ${merchantName}`);
 
     // Extract valid coupons
     const couponsWithCode: CouponHashMap = {};

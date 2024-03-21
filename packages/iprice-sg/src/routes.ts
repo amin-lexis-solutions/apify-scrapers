@@ -196,7 +196,6 @@ router.addHandler(Label.listing, async (context) => {
       if (!merchantName) {
         throw new Error('Unable to find merchant name');
       }
-      // console.log(`Merchant Name: ${merchantName}, Domain: ${domain}`);
 
       const couponsWithCode: CouponHashMap = {};
       const idsToCheck: string[] = [];

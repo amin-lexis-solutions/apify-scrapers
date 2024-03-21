@@ -124,7 +124,6 @@ router.addHandler(Label.listing, async (context) => {
       }
 
       const pageId = jsonData.id;
-      // console.log(`Page ID: ${pageId}`);
 
       // Extract merchant name and domain
       const storeLogoElement = $('#store-logo');
@@ -145,7 +144,6 @@ router.addHandler(Label.listing, async (context) => {
       if (!domain) {
         throw new Error('Domain information not found');
       }
-      // console.log(`Merchant Name: ${merchantName}, Domain: ${domain}`);
 
       // Extract coupons and offers
       const vouchers: Voucher[] = [];

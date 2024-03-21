@@ -131,7 +131,6 @@ router.addHandler(Label.listing, async (context) => {
     if (!merchantName) {
       throw new Error('Merchant name is missing');
     }
-    // console.log(`Merchant Name: ${merchantName}`);
 
     const domainSpan = $('p.BrandUrl > span');
 
@@ -142,7 +141,6 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     const domain = getDomainName(domainUrl);
-    // console.log(`Merchant Domain: ${domain}`);
 
     // Extract valid coupons
     const couponsWithCode: CouponHashMap = {};
@@ -212,7 +210,6 @@ router.addHandler(Label.getCode, async (context) => {
     // Extract the coupon code
     const codeDiv = $('div#CodeCoupon');
     if (codeDiv.length === 0) {
-      // console.log('Coupon HTML:', $.html());
       throw new Error('Coupon code div is missing');
     }
 

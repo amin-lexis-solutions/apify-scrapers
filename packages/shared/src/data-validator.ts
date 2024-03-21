@@ -108,11 +108,3 @@ class DataValidator {
 }
 
 export { DataValidator };
-
-// Usage example:
-// let validator = new DataValidator();
-// console.log(validator.addValue('name', ' John Doe ')); // Should trim and add
-// console.log(validator.addValue('age', '30')); // Should convert to number and add
-// console.log(validator.addValue('isEmployed', null)); // Should be invalid
-// validator.finalCheck(); // Should throw an error if required fields are missing
-// console.log(validator.getData()); // Should return the populated object

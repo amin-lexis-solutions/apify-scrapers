@@ -112,13 +112,11 @@ router.addHandler(Label.listing, async (context) => {
     if (!merchantName) {
       throw new Error('Merchant name is missing');
     }
-    // console.log(`Merchant Name: ${merchantName}`);
 
     // const domain = extractDomainFromUrl(request.url);
     if (!domain) {
       throw new Error('Domain is missing');
     }
-    // console.log(`Domain: ${domain}`);
 
     // Assuming processCouponItem is an async function
     // Extract valid coupons with non-empty id attributes

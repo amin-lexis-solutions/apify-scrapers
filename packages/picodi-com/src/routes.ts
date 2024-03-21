@@ -147,7 +147,6 @@ router.addHandler(Label.listing, async (context) => {
     if (!merchantName) {
       console.log(`Not Merchant URL: ${request.url}`);
     } else {
-      // console.log(`Merchant Name: ${merchantName}`);
       // Extract valid coupons
       const validCoupons = $(
         'section.card-offers > ul > li.type-promo, section.card-offers > ul > li.type-code'

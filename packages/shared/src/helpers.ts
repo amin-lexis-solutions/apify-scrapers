@@ -28,15 +28,12 @@ export async function checkCouponIds(ids) {
 
     // response.data contains the array of indices of coupons that exist
     const existingIdsIndices = response.data;
-    // console.log('Existing IDs indices:', existingIdsIndices);
 
     // Convert indices back to IDs
     const existingIds = existingIdsIndices.map((index) => ids[index]);
-    // console.log('Existing IDs:', existingIds);
 
     // Filter the original IDs array to get only the non-existing IDs
     const nonExistingIds = ids.filter((id) => !existingIds.includes(id));
-    // console.log('Non-existing IDs:', nonExistingIds);
     console.log('Non-existing IDs count:', nonExistingIds.length);
 
     return nonExistingIds;

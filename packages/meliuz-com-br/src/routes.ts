@@ -103,7 +103,6 @@ router.addHandler(Label.listing, async (context) => {
     if (!merchantName) {
       console.log(`Not Merchant URL: ${request.url}`);
     } else {
-      // console.log(`Merchant Name: ${merchantName}`);
       // Extract valid coupons
       const validCoupons = $('div.cpn-list__items > div[data-offer-id]');
       for (let i = 0; i < validCoupons.length; i++) {
