@@ -60,12 +60,10 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
       const voucherId = couponDiv.getAttribute('data-ssr-vouchers-item');
       if (!voucherId) {
         console.warn('Voucher ID is missing in a coupon div.');
-        continue
+        continue;
       }
       console.log(`Found voucher ID: ${voucherId}`);
-      const hasCode = !couponDiv.querySelector(
-        'button.ui-btn--ci-blue-600'
-      );
+      const hasCode = !couponDiv.querySelector('button.ui-btn--ci-blue-600');
       console.log(`Voucher ID ${voucherId} has code: ${hasCode}`);
 
       const detailsUrl = `https://www.sparwelt.de/hinge/graphql?query=%0A++query+VoucherById($id:+ID!)+%7B%0A++++voucher(id:+$id)+%7B%0A++++++id%0A++++++title%0A++++++provider+%7B%0A++++++++id%0A++++++++title%0A++++++++slug%0A++++++++domainUrl%0A++++++++image%0A++++++++affiliateDeeplink+%7B%0A++++++++++url%0A++++++++++id%0A++++++++%7D%0A++++++++minOrderValueWording%0A++++++%7D%0A++++++affiliateDeeplink+%7B%0A++++++++id%0A++++++++url%0A++++++%7D%0A++++++teaserDescription%0A++++++savingValue%0A++++++savingType%0A++++++minOrderValue%0A++++++limitProduct%0A++++++limitCustomer%0A++++++dateEnd%0A++++%7D%0A++%7D%0A&variables=%7B%22id%22:%22%2Fhinge%2Fvouchers%2F${voucherId}%22%7D`;
