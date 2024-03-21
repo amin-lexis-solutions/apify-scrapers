@@ -1,4 +1,5 @@
-require('dotenv').config(); // This line should be at the very top of your main file
+// At the very top of src/server.ts
+require('dotenv').config({ path: '../.env' });
 
 import 'reflect-metadata'; // Required for routing-controllers
 
