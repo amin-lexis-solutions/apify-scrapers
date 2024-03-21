@@ -119,10 +119,8 @@ router.addHandler(Label.listing, async (context) => {
     for (const validCoupon of validCoupons) {
       await processCouponItem(validCoupon, request.url);
     }
-  } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });

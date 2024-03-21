@@ -4,3 +4,4 @@ node_modules
 *.log
 .env
 packages/*/yarn.lock
+sentry-dsn.ts

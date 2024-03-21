@@ -124,7 +124,6 @@ router.addHandler(Label.listing, async (context) => {
       }
 
       const pageId = jsonData.id;
-      // console.log(`Page ID: ${pageId}`);
 
       // Extract merchant name and domain
       const storeLogoElement = $('#store-logo');
@@ -145,7 +144,6 @@ router.addHandler(Label.listing, async (context) => {
       if (!domain) {
         throw new Error('Domain information not found');
       }
-      // console.log(`Merchant Name: ${merchantName}, Domain: ${domain}`);
 
       // Extract coupons and offers
       const vouchers: Voucher[] = [];
@@ -228,11 +226,9 @@ router.addHandler(Label.listing, async (context) => {
         }
       }
     }
-  } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
 
@@ -277,11 +273,8 @@ router.addHandler(Label.getCode, async (context) => {
 
     // Process and store the data
     await processAndStoreData(validator);
-  } catch (error) {
-    // Handle any errors that occurred during the handler execution
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });

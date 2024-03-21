@@ -136,9 +136,10 @@ export class TargetsController {
           },
         });
 
-
         if (pages.length === 0) {
-          console.log('No pages for actor ' + source.apifyActorId + ' found. Skipping.');
+          console.log(
+            'No pages for actor ' + source.apifyActorId + ' found. Skipping.'
+          );
           return 0;
         }
 

@@ -19,6 +19,19 @@ function normalizeString(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+export async function fetchSentryUrl() {
+  try {
+    const response = await axios.get(
+      'https://codes-api-d9jbl.ondigitalocean.app/sentry/dsn'
+    );
+    console.log('Sentry URL:', response.data.url);
+    return response.data.url as string;
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
+  }
+}
+
 export async function checkCouponIds(ids) {
   try {
     const response = await axios.post(
@@ -28,26 +41,18 @@ export async function checkCouponIds(ids) {
 
     // response.data contains the array of indices of coupons that exist
     const existingIdsIndices = response.data;
-    // console.log('Existing IDs indices:', existingIdsIndices);
 
     // Convert indices back to IDs
     const existingIds = existingIdsIndices.map((index) => ids[index]);
-    // console.log('Existing IDs:', existingIds);
 
     // Filter the original IDs array to get only the non-existing IDs
     const nonExistingIds = ids.filter((id) => !existingIds.includes(id));
-    // console.log('Non-existing IDs:', nonExistingIds);
     console.log('Non-existing IDs count:', nonExistingIds.length);
 
     return nonExistingIds;
-  } catch (error: unknown) {
-    if (error instanceof Error) {
-      console.error('Error in API request:', error.message);
-    } else {
-      console.error('An unexpected error occurred');
-      // Handle the error without assuming it's an instance of Error
-    }
-    return ids; // Return the original IDs array in case of an error
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 }
 
@@ -119,9 +124,9 @@ export function getDomainName(url: string): string {
     }
 
     return hostname;
-  } catch (error) {
-    console.error('Invalid URL:', error);
-    return '';
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 }
 
@@ -135,13 +140,8 @@ export async function processAndStoreData(validator: DataValidator) {
     validator.finalCheck();
     console.log(validator.getData());
     await Dataset.pushData(validator.getData());
-  } catch (error) {
-    if (error instanceof Error) {
-      console.error('Validation error:', error.message);
-      // Handle invalid entries or log them depending on your use case
-    } else {
-      console.error('An unexpected error occurred:', error);
-      // Handle or log the unknown error
-    }
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 }

@@ -128,13 +128,11 @@ router.addHandler(Label.listing, async (context) => {
     if (!merchantName) {
       throw new Error('Merchant name is missing');
     }
-    // console.log(`Merchant Name: ${merchantName}`);
 
     const domain = extractDomainFromUrl(request.url);
     if (!domain) {
       throw new Error('Domain is missing');
     }
-    // console.log(`Domain: ${domain}`);
 
     // Extract valid coupons
     const validCoupons = $('div.promotion-list__promotions > div');
@@ -148,10 +146,8 @@ router.addHandler(Label.listing, async (context) => {
         i + 1
       );
     }
-  } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });

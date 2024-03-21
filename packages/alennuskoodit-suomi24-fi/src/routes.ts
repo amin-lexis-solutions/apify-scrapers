@@ -131,8 +131,9 @@ router.addHandler(Label.listing, async (context) => {
       try {
         // Parse the JSON string
         jsonData = JSON.parse(match[1]);
-      } catch (error) {
-        throw new Error('Failed to parse JSON from HTML content');
+      } finally {
+        // We don't catch so that the error is logged in Sentry, but use finally
+        // since we want the Apify actor to end successfully and not waste resources by retrying.
       }
       retailerId = jsonData.query.clientId;
       jsonData = jsonData.props.pageProps;
@@ -206,11 +207,9 @@ router.addHandler(Label.listing, async (context) => {
         );
       }
     }
-  } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
 
@@ -238,8 +237,9 @@ router.addHandler(Label.getCode, async (context) => {
     let jsonCodeData;
     try {
       jsonCodeData = JSON.parse(htmlContent);
-    } catch (error) {
-      throw new Error('Failed to parse JSON from HTML content');
+    } finally {
+      // We don't catch so that the error is logged in Sentry, but use finally
+      // since we want the Apify actor to end successfully and not waste resources by retrying.
     }
 
     // Validate the necessary data is present
@@ -255,11 +255,8 @@ router.addHandler(Label.getCode, async (context) => {
 
     // Process and store the data
     await processAndStoreData(validator);
-  } catch (error) {
-    // Handle any errors that occurred during the handler execution
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });

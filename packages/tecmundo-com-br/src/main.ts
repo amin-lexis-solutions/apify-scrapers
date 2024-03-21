@@ -1,3 +1,4 @@
+import 'shared/sentry-init';
 import { Actor } from 'apify';
 import { prepareCheerioScraper } from 'shared/actor-utils';
 import { router } from './routes';

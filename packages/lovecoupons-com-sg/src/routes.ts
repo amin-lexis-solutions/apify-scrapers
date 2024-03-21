@@ -131,7 +131,6 @@ router.addHandler(Label.listing, async (context) => {
     if (!merchantName) {
       throw new Error('Merchant name is missing');
     }
-    // console.log(`Merchant Name: ${merchantName}`);
 
     const domainSpan = $('p.BrandUrl > span');
 
@@ -142,7 +141,6 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     const domain = getDomainName(domainUrl);
-    // console.log(`Merchant Domain: ${domain}`);
 
     // Extract valid coupons
     const couponsWithCode: CouponHashMap = {};
@@ -186,11 +184,9 @@ router.addHandler(Label.listing, async (context) => {
         );
       }
     }
-  } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
 
@@ -214,7 +210,6 @@ router.addHandler(Label.getCode, async (context) => {
     // Extract the coupon code
     const codeDiv = $('div#CodeCoupon');
     if (codeDiv.length === 0) {
-      // console.log('Coupon HTML:', $.html());
       throw new Error('Coupon code div is missing');
     }
 
@@ -233,11 +228,8 @@ router.addHandler(Label.getCode, async (context) => {
 
     // Process and store the data
     await processAndStoreData(validator);
-  } catch (error) {
-    // Handle any errors that occurred during the handler execution
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });

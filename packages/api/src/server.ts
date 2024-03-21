@@ -16,12 +16,18 @@ import swaggerUi from 'swagger-ui-express';
 import { CouponsController } from './controllers/coupons-controller';
 import { TargetsController } from './controllers/targets-controller';
 import { WebhooksController } from './controllers/webhooks-controller';
+import { SentryController } from './controllers/sentry-controller';
 import { useNgrok } from './lib/ngrok';
 import { CustomErrorHandler } from './middlewares/custom-error-handler';
 import { authorizationChecker } from './utils/auth';
 
 const routingControllersOptions: RoutingControllersOptions = {
-  controllers: [WebhooksController, CouponsController, TargetsController],
+  controllers: [
+    WebhooksController,
+    CouponsController,
+    TargetsController,
+    SentryController,
+  ],
   middlewares: [
     CustomErrorHandler, // Registering your custom error handler
   ],
