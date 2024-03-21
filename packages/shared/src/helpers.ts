@@ -19,6 +19,19 @@ function normalizeString(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
+export async function fetchSentryUrl() {
+  try {
+    const response = await axios.get(
+      'https://codes-api-d9jbl.ondigitalocean.app/sentry/dsn'
+    );
+    console.log('Sentry URL:', response.data.url);
+    return response.data.url as string;
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
+  }
+}
+
 export async function checkCouponIds(ids) {
   try {
     const response = await axios.post(

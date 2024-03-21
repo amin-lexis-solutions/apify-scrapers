@@ -43,54 +43,54 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
       '.providerpage__section:has(div#gutscheine)'
     );
 
-    if (sectionWithCoupons) {
-      const selCoupons = sectionWithCoupons.querySelectorAll(
-        'div.voucher-teaser-list > div'
-      );
-      if (selCoupons.length > 0) {
-        console.log(`Found ${selCoupons.length} coupons`);
-
-        for (const couponDiv of selCoupons) {
-          const voucherId = couponDiv.getAttribute('data-ssr-vouchers-item');
-          if (voucherId) {
-            console.log(`Found voucher ID: ${voucherId}`);
-            const hasCode = !couponDiv.querySelector(
-              'button.ui-btn--ci-blue-600'
-            );
-            console.log(`Voucher ID ${voucherId} has code: ${hasCode}`);
-
-            const detailsUrl = `https://www.sparwelt.de/hinge/graphql?query=%0A++query+VoucherById($id:+ID!)+%7B%0A++++voucher(id:+$id)+%7B%0A++++++id%0A++++++title%0A++++++provider+%7B%0A++++++++id%0A++++++++title%0A++++++++slug%0A++++++++domainUrl%0A++++++++image%0A++++++++affiliateDeeplink+%7B%0A++++++++++url%0A++++++++++id%0A++++++++%7D%0A++++++++minOrderValueWording%0A++++++%7D%0A++++++affiliateDeeplink+%7B%0A++++++++id%0A++++++++url%0A++++++%7D%0A++++++teaserDescription%0A++++++savingValue%0A++++++savingType%0A++++++minOrderValue%0A++++++limitProduct%0A++++++limitCustomer%0A++++++dateEnd%0A++++%7D%0A++%7D%0A&variables=%7B%22id%22:%22%2Fhinge%2Fvouchers%2F${voucherId}%22%7D`;
-            const validator = new DataValidator();
-            validator.addValue('sourceUrl', request.url);
-            validator.addValue('idInSite', voucherId);
-            const validatorData = validator.getData();
-
-            if (hasCode) {
-              const voucherCodeURL = `https://www.sparwelt.de/hinge/vouchercodes/${voucherId}`;
-              const voucherCode = await fetchVoucherCode(voucherCodeURL);
-              if (voucherCode) {
-                validator.addValue('code', voucherCode);
-              }
-            }
-
-            // Forward to the details page
-            await enqueueLinks({
-              urls: [detailsUrl],
-              userData: {
-                label: Label.details,
-                validatorData: validatorData,
-              },
-              forefront: true,
-            });
-          } else {
-            console.warn('Voucher ID is missing in a coupon div.');
-          }
-        }
-      } else {
-        console.log('No coupons found in the specified section');
-      }
-    } else {
+    if (!sectionWithCoupons) {
       console.log('No section found with div#gutscheine');
+      return;
+    }
+    const selCoupons = sectionWithCoupons.querySelectorAll(
+      'div.voucher-teaser-list > div'
+    );
+    if (selCoupons.length < 1) {
+      console.log('No coupons found in the specified section');
+      return;
+    }
+    console.log(`Found ${selCoupons.length} coupons`);
+
+    for (const couponDiv of selCoupons) {
+      const voucherId = couponDiv.getAttribute('data-ssr-vouchers-item');
+      if (!voucherId) {
+        console.warn('Voucher ID is missing in a coupon div.');
+        continue
+      }
+      console.log(`Found voucher ID: ${voucherId}`);
+      const hasCode = !couponDiv.querySelector(
+        'button.ui-btn--ci-blue-600'
+      );
+      console.log(`Voucher ID ${voucherId} has code: ${hasCode}`);
+
+      const detailsUrl = `https://www.sparwelt.de/hinge/graphql?query=%0A++query+VoucherById($id:+ID!)+%7B%0A++++voucher(id:+$id)+%7B%0A++++++id%0A++++++title%0A++++++provider+%7B%0A++++++++id%0A++++++++title%0A++++++++slug%0A++++++++domainUrl%0A++++++++image%0A++++++++affiliateDeeplink+%7B%0A++++++++++url%0A++++++++++id%0A++++++++%7D%0A++++++++minOrderValueWording%0A++++++%7D%0A++++++affiliateDeeplink+%7B%0A++++++++id%0A++++++++url%0A++++++%7D%0A++++++teaserDescription%0A++++++savingValue%0A++++++savingType%0A++++++minOrderValue%0A++++++limitProduct%0A++++++limitCustomer%0A++++++dateEnd%0A++++%7D%0A++%7D%0A&variables=%7B%22id%22:%22%2Fhinge%2Fvouchers%2F${voucherId}%22%7D`;
+      const validator = new DataValidator();
+      validator.addValue('sourceUrl', request.url);
+      validator.addValue('idInSite', voucherId);
+      const validatorData = validator.getData();
+
+      if (hasCode) {
+        const voucherCodeURL = `https://www.sparwelt.de/hinge/vouchercodes/${voucherId}`;
+        const voucherCode = await fetchVoucherCode(voucherCodeURL);
+        if (voucherCode) {
+          validator.addValue('code', voucherCode);
+        }
+      }
+
+      // Forward to the details page
+      await enqueueLinks({
+        urls: [detailsUrl],
+        userData: {
+          label: Label.details,
+          validatorData: validatorData,
+        },
+        forefront: true,
+      });
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
