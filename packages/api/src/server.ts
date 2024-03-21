@@ -1,5 +1,7 @@
 // At the very top of src/server.ts
 require('dotenv').config({ path: '../.env' });
+console.log(process.env.SENTRY_DSN); // Should output the DSN if .env is loaded correctly
+
 
 import 'reflect-metadata'; // Required for routing-controllers
 
