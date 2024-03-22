@@ -18,21 +18,14 @@ jobs:
         id: check-shared
         run: |
           if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q 'packages/shared'; then
-            echo "Rebuild all actors due to changes in shared directory."
             echo "::set-output name=rebuild-all::true"
           else
-            echo "No changes detected in shared directory."
             echo "::set-output name=rebuild-all::false"
           fi
 
   deploy-actors:
     needs: check-changes
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include: # Dynamically create this matrix based on your actors' directories and the logic in the previous job
-          - actor: dummyValue # Placeholder, will be dynamically determined
     steps:
       - uses: actions/checkout@v3
 
@@ -45,17 +38,16 @@ jobs:
         run: yarn install
 
       - name: Determine actor type and deploy
-        if: ${{ needs.check-changes.outputs.rebuild-all == 'true' }}
         run: |
+          REBUILD_ALL="${{ needs.check-changes.outputs.rebuild-all }}"
           for dir in packages/*; do
             if [[ -d "$dir" && "$dir" != "packages/api" && "$dir" != "packages/shared" ]]; then
               ACTOR_NAME=$(basename "$dir")
               MAIN_TS="$dir/src/main.ts"
-              if [ -f "$MAIN_TS" ]; then
+              if [ "$REBUILD_ALL" == "true" ] || [ -f "$MAIN_TS" ]; then
+                TYPE="puppeteer" # Default type
                 if grep -q "prepareCheerioScraper" "$MAIN_TS"; then
                   TYPE="cheerio"
-                else
-                  TYPE="puppeteer"
                 fi
                 echo "Deploying $ACTOR_NAME with $TYPE"
                 ./scripts/deploy-apify.js "$ACTOR_NAME" "$TYPE"
