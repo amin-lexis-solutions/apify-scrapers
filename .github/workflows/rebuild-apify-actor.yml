@@ -1,4 +1,4 @@
-name: Simple Apify Actor Deployment
+name: Conditional Apify Actor Deployment
 
 on:
   push:
@@ -7,34 +7,61 @@ on:
       - 'scripts/**'
 
 jobs:
-  deploy:
+  check-changes:
     runs-on: ubuntu-latest
+    outputs:
+      rebuild-all: ${{ steps.check-shared.outputs.rebuild-all }}
     steps:
       - uses: actions/checkout@v3
-      
+
+      - name: Check if shared directory has changes
+        id: check-shared
+        run: |
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q 'packages/shared'; then
+            echo "Rebuild all actors due to changes in shared directory."
+            echo "::set-output name=rebuild-all::true"
+          else
+            echo "No changes detected in shared directory."
+            echo "::set-output name=rebuild-all::false"
+          fi
+
+  deploy-actors:
+    needs: check-changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: # Dynamically create this matrix based on your actors' directories and the logic in the previous job
+          - actor: dummyValue # Placeholder, will be dynamically determined
+    steps:
+      - uses: actions/checkout@v3
+
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '16' # Updated to use Node.js version 16
+          node-version: '18'
 
       - name: Install dependencies
         run: yarn install
 
-      - name: Check for changes in specific directories
-        id: changes
+      - name: Determine actor type and deploy
+        if: ${{ needs.check-changes.outputs.rebuild-all == 'true' }}
         run: |
-          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^packages/|^scripts/' || true)
-          if [ -n "$CHANGED" ]; then
-            echo "Changes detected in packages or scripts directories."
-            echo "::set-output name=triggered::true"
-          else
-            echo "No changes detected in monitored directories."
-            echo "::set-output name=triggered::false"
-          fi
-
-      - name: Deploy if changes detected
-        if: steps.changes.outputs.triggered == 'true'
-        run: |
-          echo "Deploying changes..."
-          # Replace the following line with your actual deployment command
-          ./scripts/deploy-apify.js
+          for dir in packages/*; do
+            if [[ -d "$dir" && "$dir" != "packages/api" && "$dir" != "packages/shared" ]]; then
+              ACTOR_NAME=$(basename "$dir")
+              MAIN_TS="$dir/src/main.ts"
+              if [ -f "$MAIN_TS" ]; then
+                if grep -q "prepareCheerioScraper" "$MAIN_TS"; then
+                  TYPE="cheerio"
+                else
+                  TYPE="puppeteer"
+                fi
+                echo "Deploying $ACTOR_NAME with $TYPE"
+                ./scripts/deploy-apify.js "$ACTOR_NAME" "$TYPE"
+              else
+                echo "$MAIN_TS does not exist, skipping $ACTOR_NAME"
+              fi
+            fi
+          done
+        shell: bash
