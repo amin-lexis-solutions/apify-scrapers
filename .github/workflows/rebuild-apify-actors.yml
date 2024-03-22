@@ -1,0 +1,75 @@
+name: Conditional Apify Actor Deployment
+
+on:
+  push:
+    paths:
+      - 'packages/**'
+      - 'scripts/**'
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get list of changed files
+        id: get_changed_files
+        uses: jitterbit/get-changed-files@v1
+        with:
+          format: 'json'
+
+      - name: Set matrix for deployment
+        id: set-matrix
+        run: |
+          const changedFiles = JSON.parse('${{ steps.get_changed_files.outputs.files }}');
+          let rebuildAll = false;
+          const actors = new Set();
+
+          changedFiles.forEach(file => {
+            if (file.startsWith('packages/shared')) {
+              rebuildAll = true;
+            } else {
+              const match = file.match(/^packages\/(.*?)\//);
+              if (match && match[1] !== 'api' && match[1] !== 'shared') {
+                actors.add(match[1]);
+              }
+            }
+          });
+
+          const matrix = { include: [] };
+
+          if (rebuildAll) {
+            console.log("Rebuilding all actors");
+            // Add logic here to populate matrix.include with all actors if needed
+            // This example assumes a placeholder actor list ['actor1', 'actor2']
+            ['actor1', 'actor2'].forEach(actor => matrix.include.push({ actor }));
+          } else {
+            console.log(`Rebuilding specific actors: ${[...actors].join(', ')}`);
+            actors.forEach(actor => matrix.include.push({ actor }));
+          }
+
+          console.log(`::set-output name=matrix::${JSON.stringify(matrix)}`);
+        shell: bash
+
+  deploy:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.prepare.outputs.matrix)}}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Deploy Actor
+        run: ./scripts/deploy-apify.js ${{ matrix.actor }} puppeteer
