@@ -1,4 +1,4 @@
-name: Conditional Apify Actor Deployment
+name: Simple Apify Actor Deployment
 
 on:
   push:
@@ -7,51 +7,34 @@ on:
       - 'scripts/**'
 
 jobs:
-  prepare:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: Get list of changed files
-        id: get_changed_files
-        uses: jitterbit/get-changed-files@v1
-        with:
-          format: 'json'
-
-      - name: Process changes and set matrix
-        run: node ./scripts/process-changes.js '${{ steps.get_changed_files.outputs.files }}'
-        env:
-          GITHUB_ENV: ${{ env.GITHUB_ENV }}
-
   deploy:
-    needs: prepare
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
+      
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '14'
-          cache: 'yarn'
 
       - name: Install dependencies
         run: yarn install
 
-      - name: Deploy Actors Based on Matrix
+      - name: Check for changes in specific directories
+        id: changes
         run: |
-          if [[ "${{ env.ACTOR_MATRIX }}" == "all" ]]; then
-            # Deploy all actors, adjust the command to your needs
-            echo "Deploying all actors..."
-            # Example: ./scripts/deploy-all-actors.sh
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^packages/|^scripts/' || true)
+          if [ -n "$CHANGED" ]; then
+            echo "Changes detected in packages or scripts directories."
+            echo "::set-output name=triggered::true"
           else
-            IFS=',' read -ra ADDR <<< "${{ env.ACTOR_MATRIX }}"
-            for actor in "${ADDR[@]}"; do
-              echo "Deploying actor: $actor"
-              ./scripts/deploy-apify.js "$actor" puppeteer
-            done
+            echo "No changes detected in monitored directories."
+            echo "::set-output name=triggered::false"
           fi
-        env:
-          ACTOR_MATRIX: ${{ env.ACTOR_MATRIX }}
+
+      - name: Deploy if changes detected
+        if: steps.changes.outputs.triggered == 'true'
+        run: |
+          echo "Deploying changes..."
+          # Replace the following line with your actual deployment command
+          ./scripts/deploy-apify.js
