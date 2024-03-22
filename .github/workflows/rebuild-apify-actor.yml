@@ -37,6 +37,9 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
+      - name: Install Apify CLI
+        run: npm install -g apify-cli
+
       - name: Determine actor type and deploy
         run: |
           REBUILD_ALL="${{ needs.check-changes.outputs.rebuild-all }}"
@@ -45,7 +48,7 @@ jobs:
               ACTOR_NAME=$(basename "$dir")
               MAIN_TS="$dir/src/main.ts"
               if [ "$REBUILD_ALL" == "true" ] || [ -f "$MAIN_TS" ]; then
-                TYPE="puppeteer" # Default type
+                TYPE="puppeteer" # Default to Puppeteer
                 if grep -q "prepareCheerioScraper" "$MAIN_TS"; then
                   TYPE="cheerio"
                 fi
