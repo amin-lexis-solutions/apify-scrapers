@@ -10,27 +10,22 @@ jobs:
   check-changes:
     runs-on: ubuntu-latest
     outputs:
-      rebuild-all: ${{ steps.check-shared.outputs.rebuild-all }}
-      changed-actors: ${{ steps.list-changed-actors.outputs.list }}
+      rebuild-all: ${{ steps.determine-rebuild.outputs.rebuild-all }}
     steps:
       - uses: actions/checkout@v3
 
-      - name: Check if shared directory has changes
-        id: check-shared
+      - name: Determine if rebuild is needed
+        id: determine-rebuild
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q 'packages/shared'; then
+          if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" || "${{ github.event.commits[0].message }}" == *"initial commit"* ]]; then
+            echo "This is the first commit or a new branch."
+            echo "rebuild-all=true" >> $GITHUB_ENV
+          elif git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q 'packages/shared'; then
+            echo "Changes detected in shared directory."
             echo "rebuild-all=true" >> $GITHUB_ENV
           else
+            echo "No changes detected in shared directory."
             echo "rebuild-all=false" >> $GITHUB_ENV
-          fi
-
-      - name: List changed actors
-        id: list-changed-actors
-        if: env.rebuild-all == 'false'
-        run: |
-          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^packages/' | grep -vE '(packages/shared|packages/api)' | awk -F'/' '{print $2}' | sort -u | tr '\n' ',' | sed 's/,$//')
-          if [ -n "$CHANGED" ]; then
-            echo "::set-output name=list::$CHANGED"
           fi
 
   deploy-actors:
@@ -38,41 +33,36 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '18'
-
       - name: Install dependencies
         run: yarn install
-
       - name: Install Apify CLI
         run: npm install -g apify-cli
-
       - name: Authenticate with Apify using API token
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
         run: apify login --token $APIFY_TOKEN
-
       - name: Deploy actors based on changes
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
         run: |
           REBUILD_ALL="${{ needs.check-changes.outputs.rebuild-all }}"
-          CHANGED_ACTORS="${{ needs.check-changes.outputs.changed-actors }}"
-          IFS=',' read -ra ADDR <<< "$CHANGED_ACTORS"
           for dir in packages/*; do
-            ACTOR_NAME=$(basename "$dir")
-            if [[ "$REBUILD_ALL" == "true" ]] || [[ " ${ADDR[*]} " =~ " ${ACTOR_NAME} " ]]; then
-              if [[ "$dir" != "packages/api" && "$dir" != "packages/shared" ]]; then
-                MAIN_TS="$dir/src/main.ts"
-                TYPE="puppeteer"
+            if [[ -d "$dir" && "$dir" != "packages/api" && "$dir" != "packages/shared" ]]; then
+              ACTOR_NAME=$(basename "$dir")
+              MAIN_TS="$dir/src/main.ts"
+              if [ "$REBUILD_ALL" == "true" ] || [ -f "$MAIN_TS" ]; then
+                TYPE="puppeteer" # Default type
                 if grep -q "prepareCheerioScraper" "$MAIN_TS"; then
                   TYPE="cheerio"
                 fi
                 echo "Deploying $ACTOR_NAME with $TYPE"
                 ./scripts/deploy-apify.js "$ACTOR_NAME" "$TYPE"
+              else
+                echo "$MAIN_TS does not exist, skipping $ACTOR_NAME"
               fi
             fi
           done
