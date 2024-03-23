@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       rebuild-all: ${{ steps.check-shared.outputs.rebuild-all }}
+      changed-actors: ${{ steps.list-changed-actors.outputs.list }}
     steps:
       - uses: actions/checkout@v3
 
@@ -18,9 +19,18 @@ jobs:
         id: check-shared
         run: |
           if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q 'packages/shared'; then
-            echo "::set-output name=rebuild-all::true"
+            echo "rebuild-all=true" >> $GITHUB_ENV
           else
-            echo "::set-output name=rebuild-all::false"
+            echo "rebuild-all=false" >> $GITHUB_ENV
+          fi
+
+      - name: List changed actors
+        id: list-changed-actors
+        if: env.rebuild-all == 'false'
+        run: |
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^packages/' | grep -vE '(packages/shared|packages/api)' | awk -F'/' '{print $2}' | sort -u | tr '\n' ',' | sed 's/,$//')
+          if [ -n "$CHANGED" ]; then
+            echo "::set-output name=list::$CHANGED"
           fi
 
   deploy-actors:
@@ -45,24 +55,24 @@ jobs:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
         run: apify login --token $APIFY_TOKEN
 
-      - name: Determine actor type and deploy
+      - name: Deploy actors based on changes
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
         run: |
           REBUILD_ALL="${{ needs.check-changes.outputs.rebuild-all }}"
+          CHANGED_ACTORS="${{ needs.check-changes.outputs.changed-actors }}"
+          IFS=',' read -ra ADDR <<< "$CHANGED_ACTORS"
           for dir in packages/*; do
-            if [[ -d "$dir" && "$dir" != "packages/api" && "$dir" != "packages/shared" ]]; then
-              ACTOR_NAME=$(basename "$dir")
-              MAIN_TS="$dir/src/main.ts"
-              if [ "$REBUILD_ALL" == "true" ] || [ -f "$MAIN_TS" ]; then
-                TYPE="puppeteer" # Default type
+            ACTOR_NAME=$(basename "$dir")
+            if [[ "$REBUILD_ALL" == "true" ]] || [[ " ${ADDR[*]} " =~ " ${ACTOR_NAME} " ]]; then
+              if [[ "$dir" != "packages/api" && "$dir" != "packages/shared" ]]; then
+                MAIN_TS="$dir/src/main.ts"
+                TYPE="puppeteer"
                 if grep -q "prepareCheerioScraper" "$MAIN_TS"; then
                   TYPE="cheerio"
                 fi
                 echo "Deploying $ACTOR_NAME with $TYPE"
                 ./scripts/deploy-apify.js "$ACTOR_NAME" "$TYPE"
-              else
-                echo "$MAIN_TS does not exist, skipping $ACTOR_NAME"
               fi
             fi
           done
