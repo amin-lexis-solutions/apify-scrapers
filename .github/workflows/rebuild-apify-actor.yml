@@ -40,7 +40,14 @@ jobs:
       - name: Install Apify CLI
         run: npm install -g apify-cli
 
+      - name: Authenticate with Apify using API token
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: apify login --token $APIFY_TOKEN
+
       - name: Determine actor type and deploy
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
         run: |
           REBUILD_ALL="${{ needs.check-changes.outputs.rebuild-all }}"
           for dir in packages/*; do
@@ -48,7 +55,7 @@ jobs:
               ACTOR_NAME=$(basename "$dir")
               MAIN_TS="$dir/src/main.ts"
               if [ "$REBUILD_ALL" == "true" ] || [ -f "$MAIN_TS" ]; then
-                TYPE="puppeteer" # Default to Puppeteer
+                TYPE="puppeteer" # Default type
                 if grep -q "prepareCheerioScraper" "$MAIN_TS"; then
                   TYPE="cheerio"
                 fi
