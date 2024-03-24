@@ -208,12 +208,12 @@ router.addHandler(Label.getCode, async (context) => {
     validator.loadData(validatorData);
 
     // Extract the coupon code
-    const codeDiv = $('div#CodeCoupon');
-    if (codeDiv.length === 0) {
-      throw new Error('Coupon code div is missing');
+    const codeInput = $('div.RevealCoupon > input');
+    if (codeInput.length === 0) {
+      throw new Error('Coupon code input is missing');
     }
 
-    const code = codeDiv.text().trim();
+    const code = codeInput.val().trim();
 
     // Check if the code is found
     if (!code) {
