@@ -190,12 +190,7 @@ router.addHandler(Label.listing, async (context) => {
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
     for (const item of offers) {
-      let offerNode: OfferNode;
-      if (noNode) {
-        offerNode = item;
-      } else {
-        offerNode = item.node;
-      }
+      const offerNode: OfferNode = noNode ? item : item.node;
       result = processCouponItem(merchantName, domain, offerNode, request.url);
       if (!result.hasCode) {
         await processAndStoreData(result.validator);
