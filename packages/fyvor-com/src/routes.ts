@@ -175,23 +175,25 @@ router.addHandler(Label.listing, async (context) => {
     // Call the API to check if the coupon exists
     const nonExistingIds = await checkCouponIds(idsToCheck);
 
-    if (nonExistingIds.length > 0) {
-      let currentResult: CouponItemResult;
-      for (const id of nonExistingIds) {
-        currentResult = couponsWithCode[id];
-        // Add the coupon URL to the request queue
-        await crawler.requestQueue.addRequest(
-          {
-            url: currentResult.couponUrl,
-            userData: {
-              label: Label.getCode,
-              validatorData: currentResult.validator.getData(),
-            },
-            headers: CUSTOM_HEADERS,
+    if (nonExistingIds.length <= 0) {
+      return;
+    }
+
+    let currentResult: CouponItemResult;
+    for (const id of nonExistingIds) {
+      currentResult = couponsWithCode[id];
+      // Add the coupon URL to the request queue
+      await crawler.requestQueue.addRequest(
+        {
+          url: currentResult.couponUrl,
+          userData: {
+            label: Label.getCode,
+            validatorData: currentResult.validator.getData(),
           },
-          { forefront: true }
-        );
-      }
+          headers: CUSTOM_HEADERS,
+        },
+        { forefront: true }
+      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
