@@ -48,10 +48,12 @@ const spec = routingControllersToSpec(storage, routingControllersOptions, {
   components: {
     schemas: schemas as any,
     securitySchemes: {
-      token: {
-        type: 'apiKey',
-        in: 'header',
-        name: 'authorization',
+      bearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        // If your token does not adhere to a specific format like JWT, you can omit the bearerFormat field
+        // Or provide a general description if there's a specific format or guideline you follow
+        // bearerFormat: 'YourCustomFormat', // Optional, describe your token format if needed
       },
     },
   },
