@@ -122,9 +122,7 @@ router.addHandler(Label.listing, async (context) => {
 
     console.log(`\nProcessing URL: ${request.url}`);
 
-    const merchantLink = $(
-      'ol.breadcrumb > li:last-child > a.breadcrumb-item__link'
-    );
+    const merchantLink = $('ol.breadcrumb > li:last-child');
 
     const merchantName = he.decode(
       merchantLink ? merchantLink.text().trim() : ''
