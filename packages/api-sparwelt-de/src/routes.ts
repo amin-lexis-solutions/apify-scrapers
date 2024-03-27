@@ -64,29 +64,29 @@ interface ShoppingShop {
 function processCouponItem(
   merchantName: string,
   domain: string,
-  couponItem: OfferItem,
+  couponItem: OfferNode,
   sourceUrl: string
 ): CouponItemResult {
-  const voucherTitle = couponItem.node.title;
+  const voucherTitle = couponItem.title;
 
-  const idInSite = couponItem.node.voucher.id.split(':')[3]; // value is like ":hinge:vouchers:123456"
+  const idInSite = couponItem.voucher.id.split(':')[3]; // value is like ":hinge:vouchers:123456"
 
-  let hasCode = couponItem.node.voucher.hasVoucherCode;
+  let hasCode = couponItem.voucher.hasVoucherCode;
 
-  const code = couponItem.node.voucher.code;
+  const code = couponItem.voucher.code;
 
-  const isExclusive = couponItem.node.voucher.exclusive;
+  const isExclusive = couponItem.voucher.exclusive;
 
-  let limitProduct = couponItem.node.voucher.limitProduct.trim();
+  let limitProduct = couponItem.voucher.limitProduct.trim();
   if (limitProduct === '') {
     limitProduct = 'keine';
   }
 
   let savingValue = '';
-  if (couponItem.node.voucher.savingType === 1) {
-    savingValue = `${couponItem.node.voucher.savingValue}%`;
+  if (couponItem.voucher.savingType === 1) {
+    savingValue = `${couponItem.voucher.savingValue}%`;
   } else {
-    savingValue = couponItem.node.voucher.savingValue;
+    savingValue = couponItem.voucher.savingValue;
   }
 
   const description = `Gutscheinwert: ${limitProduct}\nGilt für:\n    ${savingValue}\n    alle Kunden`;
@@ -159,16 +159,28 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    if (!jsonData.data.offers || jsonData.data.offers.length < 1) {
+    let offers;
+    let merchantName: string;
+    let domain: string;
+    let noNode = false;
+    if (jsonData.data.offers && jsonData.data.offers.length > 0) {
+      offers = jsonData.data.offers as OfferItem[];
+      merchantName = offers[0].node.partnerShoppingShop.title;
+      domain = getDomainName(
+        offers[0].node.partnerShoppingShop.shoppingShop.domainUrl
+      );
+    } else if (jsonData.data.vouchers && jsonData.data.vouchers.length > 0) {
+      noNode = true;
+      offers = jsonData.data.vouchers as OfferNode[];
+      merchantName = jsonData.data.vouchers[0].partnerShoppingShop.title;
+      domain = getDomainName(
+        jsonData.data.vouchers[0].partnerShoppingShop.shoppingShop.domainUrl
+      );
+    } else {
       console.log(`No offers found: ${request.url}`);
       return;
     }
-    const offers = jsonData.data.offers;
     console.log(`Found ${offers.length} offers`);
-    const merchantName = offers[0].node.partnerShoppingShop.title;
-    const domain = getDomainName(
-      offers[0].node.partnerShoppingShop.shoppingShop.domainUrl
-    );
 
     if (!merchantName) {
       console.log(`Merchant name not found: ${request.url}`);
@@ -177,9 +189,9 @@ router.addHandler(Label.listing, async (context) => {
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
-    for (let i = 0; i < offers.length; i++) {
-      const item = offers[i] as OfferItem;
-      result = processCouponItem(merchantName, domain, item, request.url);
+    for (const item of offers) {
+      const offerNode: OfferNode = noNode ? item : item.node;
+      result = processCouponItem(merchantName, domain, offerNode, request.url);
       if (!result.hasCode) {
         await processAndStoreData(result.validator);
       } else {

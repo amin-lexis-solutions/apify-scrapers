@@ -19,6 +19,7 @@ type MainFunctionArgs = {
   domain?: string;
   countryCode?: string;
   extractDomainAndCountryCode?: boolean;
+  maxRequestRetries?: number;
 };
 
 const getStartUrlsArray = (startUrls) => {
@@ -61,6 +62,7 @@ export async function prepareCheerioScraper(
     proxyConfiguration,
     requestHandler: router,
     requestQueue,
+    maxRequestRetries: args.maxRequestRetries || 3,
     failedRequestHandler: async ({ request, error }) => {
       // Log the error to Sentry
       Sentry.captureException(error, {
@@ -143,6 +145,7 @@ export async function preparePuppeteerScraper(
     },
     requestHandler: router as any,
     requestQueue,
+    maxRequestRetries: args.maxRequestRetries || 3,
     failedRequestHandler: async ({ request, error }) => {
       // Log the error to Sentry
       Sentry.captureException(error, {
