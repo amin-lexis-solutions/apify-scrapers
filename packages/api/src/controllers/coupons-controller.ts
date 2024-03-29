@@ -19,7 +19,7 @@ import {
   StandardResponse,
 } from '../utils/validators';
 
-@JsonController('/coupons')
+@JsonController('/items')
 export class CouponsController {
   @Get('/')
   @OpenAPI({
