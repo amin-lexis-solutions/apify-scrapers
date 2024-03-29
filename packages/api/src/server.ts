@@ -14,6 +14,7 @@ import { routingControllersToSpec } from 'routing-controllers-openapi';
 import swaggerUi from 'swagger-ui-express';
 
 import { CouponsController } from './controllers/coupons-controller';
+import { ExportController } from './controllers/export-controller';
 import { TargetsController } from './controllers/targets-controller';
 import { WebhooksController } from './controllers/webhooks-controller';
 import { SentryController } from './controllers/sentry-controller';
@@ -27,6 +28,7 @@ const routingControllersOptions: RoutingControllersOptions = {
     CouponsController,
     TargetsController,
     SentryController,
+    ExportController,
   ],
   middlewares: [
     CustomErrorHandler, // Registering your custom error handler
