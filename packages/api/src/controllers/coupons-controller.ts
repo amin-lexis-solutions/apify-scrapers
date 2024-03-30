@@ -40,6 +40,7 @@ export class CouponsController {
       merchantName,
       sourceName,
       sourceDomain,
+      locale,
     } = params;
 
     const where: Prisma.CouponWhereInput = {};
@@ -66,6 +67,10 @@ export class CouponsController {
       where.sourceUrl = {
         contains: sourceDomain,
       };
+    }
+
+    if (locale) {
+      where.locale = { locale: locale.toLowerCase() };
     }
 
     const offset = (page - 1) * pageSize;

@@ -10,6 +10,7 @@ import {
   Max,
   Min,
   MinLength,
+  Length,
   ValidateNested,
 } from 'class-validator';
 
@@ -68,6 +69,11 @@ export class ListRequestBody {
   @IsOptional()
   @MinLength(1)
   sourceDomain?: string;
+
+  @IsString()
+  @IsOptional()
+  @Length(5)
+  locale?: string;
 }
 
 export class CouponMatchRequestBody {
