@@ -12,6 +12,8 @@ import {
 } from '../utils/validators';
 import moment from 'moment';
 
+const RESULTS_NEEDED_PER_LOCALE = 25;
+
 @JsonController('/targets')
 @Authorized()
 @OpenAPI({ security: [{ token: [] }] })
@@ -59,7 +61,7 @@ export class TargetsController {
               countryCode,
               languageCode,
               maxPagesPerQuery: 1,
-              resultsPerPage: 10,
+              resultsPerPage: RESULTS_NEEDED_PER_LOCALE,
               saveHtml: false,
               saveHtmlToKeyValueStore: false,
               mobileResults: false,
