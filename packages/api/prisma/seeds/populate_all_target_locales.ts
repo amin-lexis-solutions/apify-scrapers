@@ -39,7 +39,7 @@ const localesToImport = [
 
 async function main() {
   for (const locale of localesToImport) {
-    let [languageCode, countryCode] = locale.split('_');
+    const [languageCode, countryCode] = locale.split('_');
     const searchTemplate = '{{website}} coupon codes'; // Default search template
     const isActive = false; // Default to false
 
