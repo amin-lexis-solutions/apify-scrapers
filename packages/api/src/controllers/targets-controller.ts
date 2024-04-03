@@ -14,7 +14,7 @@ import moment from 'moment';
 
 @JsonController('/targets')
 @Authorized()
-@OpenAPI({ security: [{ token: [] }] })
+@OpenAPI({ security: [{ bearerAuth: [] }] })
 export class TargetsController {
   @Post('/find')
   @OpenAPI({

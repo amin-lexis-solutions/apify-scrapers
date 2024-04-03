@@ -28,7 +28,7 @@ export class CouponsController {
   })
   @ResponseSchema(StandardResponse)
   @Authorized()
-  @OpenAPI({ security: [{ token: [] }] })
+  @OpenAPI({ security: [{ bearerAuth: [] }] })
   async getList(
     @QueryParams() params: ListRequestBody
   ): Promise<StandardResponse> {
