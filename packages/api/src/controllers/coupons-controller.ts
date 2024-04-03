@@ -70,7 +70,7 @@ export class CouponsController {
     }
 
     if (locale) {
-      where.locale = { locale: locale.toLowerCase() };
+      where.locale = { locale };
     }
 
     const offset = (page - 1) * pageSize;
