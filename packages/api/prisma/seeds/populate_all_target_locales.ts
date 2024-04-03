@@ -44,11 +44,7 @@ async function main() {
     const isActive = false; // Default to false
 
     const exists = await prisma.targetLocale.findFirst({
-      where: {
-        locale,
-        countryCode,
-        languageCode,
-      },
+      where: { locale },
     });
 
     if (exists) {
