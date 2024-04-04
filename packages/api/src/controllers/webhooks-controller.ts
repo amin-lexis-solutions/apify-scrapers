@@ -231,7 +231,7 @@ export class WebhooksController {
     }
 
     const actorRunData: ApifyRunDetails = await fetch(
-      `https://api.apify.com/v2/actor-runs/${actorRunId}?token=${process.env.APIFY_TOKEN}`
+      `https://api.apify.com/v2/actor-runs/${actorRunId}`
     ).then((res) => res.json());
 
     const data: ApifyGoogleSearchResult[] = await fetch(
