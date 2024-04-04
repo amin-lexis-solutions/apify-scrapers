@@ -1,6 +1,5 @@
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
-
 import { apify } from '../lib/apify';
 import { getMerchantsForLocale } from '../lib/oberst-api';
 import { prisma } from '../lib/prisma';
@@ -11,6 +10,7 @@ import {
   StandardResponse,
 } from '../utils/validators';
 import moment from 'moment';
+import log from '@apify/log';
 
 const RESULTS_NEEDED_PER_LOCALE = 25;
 
@@ -77,7 +77,7 @@ export class TargetsController {
                   ],
                   requestUrl: getWebhookUrl('/webhooks/serp'),
                   payloadTemplate: `{"localeId":"${id}","resource":{{resource}},"eventData":{{eventData}}}`,
-                  headersTemplate: `{"authorization":"${process.env.API_SECRET}"}`,
+                  headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
                 },
               ],
             }
@@ -108,7 +108,30 @@ export class TargetsController {
   ): Promise<StandardResponse> {
     const { maxConcurrency } = body;
 
-    console.log('maxConcurrency is ', maxConcurrency);
+    log.debug(
+      `Will attempt to schedule ${maxConcurrency} sources (domains) for scraping.`
+    );
+
+    const maxApifyRunFinishedAtForEachDomain = await prisma.targetPage.groupBy({
+      by: ['domain'],
+      where: {
+        apifyRunFinishedAt: {
+          gt: moment().subtract(30, 'day').toDate(),
+          not: null,
+        },
+      },
+      _max: {
+        apifyRunFinishedAt: true,
+      },
+    });
+
+    const domainToMaxApifyRunFinishedAt = maxApifyRunFinishedAtForEachDomain.reduce(
+      (acc, item) => {
+        acc[item.domain] = item._max.apifyRunFinishedAt;
+        return acc;
+      },
+      {} as Record<string, null | Date>
+    );
 
     const sources = await prisma.source.findMany({
       where: {
@@ -121,31 +144,36 @@ export class TargetsController {
       take: maxConcurrency,
     });
 
-    console.log('sources found are ', sources.length);
+    log.info(
+      `${sources.length} sources (domains) are to be scheduled for scraping`
+    );
 
     await prisma.source.updateMany({
       where: { id: { in: sources.map((source) => source.id) } },
       data: { lastRunAt: new Date() },
     });
 
-    console.log('updated sources');
-
     const counts = await Promise.all(
       sources.map(async (source) => {
-        const pages = await prisma.targetPage.findMany({
-          where: {
-            domain: source.domain,
-          },
-        });
+        const apifyRunFinishedAt = domainToMaxApifyRunFinishedAt[source.domain];
 
-        if (pages.length === 0) {
-          console.log(
-            'No pages for actor ' + source.apifyActorId + ' found. Skipping.'
+        if (apifyRunFinishedAt === undefined) {
+          log.info(
+            `There are no fresh target pages (max 30 days old) for domain ${source.domain}. Skipping coupon scraping for actor ${source.apifyActorId}`
           );
           return 0;
         }
 
-        console.log('run apify request for actor' + source.apifyActorId);
+        const pages = await prisma.targetPage.findMany({
+          where: {
+            domain: source.domain,
+            apifyRunFinishedAt,
+          },
+        });
+
+        log.info(
+          `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.domain}.`
+        );
 
         const localeId = pages[0]?.localeId;
         await apify.actor(source.apifyActorId).start(
@@ -161,7 +189,7 @@ export class TargetsController {
                 ],
                 requestUrl: getWebhookUrl('/webhooks/coupons'),
                 payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}}}`,
-                headersTemplate: `{"authorization":"${process.env.API_SECRET}"}`,
+                headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
               },
             ],
           }
