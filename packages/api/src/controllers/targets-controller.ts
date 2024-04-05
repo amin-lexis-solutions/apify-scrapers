@@ -44,46 +44,52 @@ export class TargetsController {
       );
     }
 
+    const scheduleTime = moment().toISOString();
+
     const counts = await Promise.all(
       locales.map(
         async ({ id, countryCode, languageCode, locale, searchTemplate }) => {
-          const domains = await getMerchantsForLocale(locale);
+          let domains = await getMerchantsForLocale(locale);
+          domains = domains.slice(0, limit);
 
-          const queries = domains
-            .map(({ domain }) => {
+          const chunkSize = 1_000;
+          for (let i = 0; i < domains.length; i += chunkSize) {
+            const domainsChunk = domains.slice(i, i + chunkSize);
+
+            const queries = domainsChunk.map(({ domain }) => {
               return searchTemplate.replace('{{website}}', domain);
-            })
-            .slice(0, limit);
+            });
 
-          await apify.actor('apify/google-search-scraper').start(
-            {
-              queries: queries.join('\n'),
-              countryCode,
-              languageCode,
-              maxPagesPerQuery: 1,
-              resultsPerPage: RESULTS_NEEDED_PER_LOCALE,
-              saveHtml: false,
-              saveHtmlToKeyValueStore: false,
-              mobileResults: false,
-            },
-            {
-              webhooks: [
-                {
-                  eventTypes: [
-                    'ACTOR.RUN.SUCCEEDED',
-                    'ACTOR.RUN.FAILED',
-                    'ACTOR.RUN.TIMED_OUT',
-                    'ACTOR.RUN.ABORTED',
-                  ],
-                  requestUrl: getWebhookUrl('/webhooks/serp'),
-                  payloadTemplate: `{"localeId":"${id}","resource":{{resource}},"eventData":{{eventData}}}`,
-                  headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
-                },
-              ],
-            }
-          );
+            await apify.actor('apify/google-search-scraper').start(
+              {
+                queries: queries.join('\n'),
+                countryCode,
+                languageCode,
+                maxPagesPerQuery: 1,
+                resultsPerPage: RESULTS_NEEDED_PER_LOCALE,
+                saveHtml: false,
+                saveHtmlToKeyValueStore: false,
+                mobileResults: false,
+              },
+              {
+                webhooks: [
+                  {
+                    eventTypes: [
+                      'ACTOR.RUN.SUCCEEDED',
+                      'ACTOR.RUN.FAILED',
+                      'ACTOR.RUN.TIMED_OUT',
+                      'ACTOR.RUN.ABORTED',
+                    ],
+                    requestUrl: getWebhookUrl('/webhooks/serp'),
+                    payloadTemplate: `{"localeId":"${id}","resource":{{resource}},"eventData":{{eventData}},"scheduledAt":"${scheduleTime}"}`,
+                    headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
+                  },
+                ],
+              }
+            );
+          }
 
-          return queries.length;
+          return domains.length;
         }
       )
     );
@@ -112,22 +118,24 @@ export class TargetsController {
       `Will attempt to schedule ${maxConcurrency} sources (domains) for scraping.`
     );
 
-    const maxApifyRunFinishedAtForEachDomain = await prisma.targetPage.groupBy({
-      by: ['domain'],
-      where: {
-        apifyRunFinishedAt: {
-          gt: moment().subtract(30, 'day').toDate(),
-          not: null,
+    const maxApifyRunScheduledAtForEachDomain = await prisma.targetPage.groupBy(
+      {
+        by: ['domain'],
+        where: {
+          apifyRunScheduledAt: {
+            gt: moment().subtract(30, 'day').toDate(),
+            not: null,
+          },
         },
-      },
-      _max: {
-        apifyRunFinishedAt: true,
-      },
-    });
+        _max: {
+          apifyRunScheduledAt: true,
+        },
+      }
+    );
 
-    const domainToMaxApifyRunFinishedAt = maxApifyRunFinishedAtForEachDomain.reduce(
+    const domainToMaxApifyRunScheduledAt = maxApifyRunScheduledAtForEachDomain.reduce(
       (acc, item) => {
-        acc[item.domain] = item._max.apifyRunFinishedAt;
+        acc[item.domain] = item._max.apifyRunScheduledAt;
         return acc;
       },
       {} as Record<string, null | Date>
@@ -155,9 +163,10 @@ export class TargetsController {
 
     const counts = await Promise.all(
       sources.map(async (source) => {
-        const apifyRunFinishedAt = domainToMaxApifyRunFinishedAt[source.domain];
+        const apifyRunScheduledAt =
+          domainToMaxApifyRunScheduledAt[source.domain];
 
-        if (apifyRunFinishedAt === undefined) {
+        if (apifyRunScheduledAt === undefined) {
           log.info(
             `There are no fresh target pages (max 30 days old) for domain ${source.domain}. Skipping coupon scraping for actor ${source.apifyActorId}`
           );
@@ -167,7 +176,7 @@ export class TargetsController {
         const pages = await prisma.targetPage.findMany({
           where: {
             domain: source.domain,
-            apifyRunFinishedAt,
+            apifyRunScheduledAt,
           },
         });
 
