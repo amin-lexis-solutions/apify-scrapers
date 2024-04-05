@@ -76,6 +76,13 @@ export class TargetsController {
   async findNLocales(@Body() body: RunNLocalesBody): Promise<StandardResponse> {
     const { limitDomainsPerLocale, localesCount } = body;
 
+    log.info(
+      `Parsing request to run ${localesCount} locales` +
+        (limitDomainsPerLocale
+          ? ` with ${limitDomainsPerLocale} domains per locale`
+          : '')
+    );
+
     const localeIdsOldestFirst = await prisma.targetPage
       .groupBy({
         by: ['localeId'],
@@ -116,11 +123,8 @@ export class TargetsController {
       log.info(
         'Not enough locales without run history. Adding oldest locales.'
       );
-      for (
-        let index = 0;
-        index < localesCount - localeIdsToRun.length;
-        index++
-      ) {
+      const localeIdsToAdd = localesCount - localeIdsToRun.length;
+      for (let index = 0; index < localeIdsToAdd; index++) {
         localeIdsToRun.push(localeIdsOldestFirst[index]);
       }
     }
