@@ -144,6 +144,15 @@ export class FindTargetPagesBody {
   locale?: string;
 }
 
+export class RunNLocalesBody {
+  @IsNumber()
+  localesCount: number;
+
+  @IsNumber()
+  @IsOptional()
+  limitDomainsPerLocale?: number;
+}
+
 export class RunTargetPagesBody {
   @IsNumber()
   maxConcurrency: number;
