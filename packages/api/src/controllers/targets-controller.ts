@@ -48,6 +48,11 @@ export class TargetsController {
 
     const counts = await Promise.all(
       locales.map(async (locale) => {
+        await prisma.targetLocale.update({
+          where: { id: locale.id },
+          data: { lastSerpRunAt: new Date() },
+        });
+
         let domains = await getMerchantsForLocale(locale.locale);
         domains = domains.slice(0, limit);
 
@@ -83,51 +88,30 @@ export class TargetsController {
           : '')
     );
 
-    const localeIdsOldestFirst = await prisma.targetPage
-      .groupBy({
-        by: ['localeId'],
-        _max: {
-          apifyRunScheduledAt: true,
-        },
-        orderBy: {
-          _max: {
-            apifyRunScheduledAt: 'asc',
-          },
-        },
-      })
-      .then((locales) => locales.map((locale) => locale.localeId));
-
-    log.info(
-      'Locales with run history - oldest first: ' +
-        JSON.stringify(localeIdsOldestFirst)
-    );
-
-    const localeIdsToRun = await prisma.targetLocale
+    const localeIdWithoutRunHistory = await prisma.targetLocale
       .findMany({
         where: {
           isActive: true,
-          id: { notIn: localeIdsOldestFirst },
+          lastSerpRunAt: null,
         },
         take: localesCount,
       })
-      .then((locales: Array<TargetLocale>) =>
-        locales.map((locale: TargetLocale) => locale.id)
-      );
+      .then((locales) => locales.map((locale) => locale.id));
 
-    log.info(
-      'Locales without run history - to be run with priority: ' +
-        JSON.stringify(localeIdsToRun)
+    const localeIdsOldestFirst = await prisma.targetLocale
+      .findMany({
+        where: {
+          isActive: true,
+          lastSerpRunAt: { not: null },
+        },
+        orderBy: { lastSerpRunAt: 'asc' },
+        take: localesCount - localeIdWithoutRunHistory.length,
+      })
+      .then((locales) => locales.map((locale) => locale.id));
+
+    const localeIdsToRun = localeIdWithoutRunHistory.concat(
+      localeIdsOldestFirst
     );
-
-    if (localeIdsToRun.length < localesCount) {
-      log.info(
-        'Not enough locales without run history. Adding oldest locales.'
-      );
-      const localeIdsToAdd = localesCount - localeIdsToRun.length;
-      for (let index = 0; index < localeIdsToAdd; index++) {
-        localeIdsToRun.push(localeIdsOldestFirst[index]);
-      }
-    }
 
     log.info('Final list of locales to run' + JSON.stringify(localeIdsToRun));
 
@@ -152,6 +136,11 @@ export class TargetsController {
 
     const counts = await Promise.all(
       locales.map(async (locale) => {
+        await prisma.targetLocale.update({
+          where: { id: locale.id },
+          data: { lastSerpRunAt: new Date() },
+        });
+
         let domains = await getMerchantsForLocale(locale.locale);
         if (limitDomainsPerLocale) {
           domains = domains.slice(0, limitDomainsPerLocale);

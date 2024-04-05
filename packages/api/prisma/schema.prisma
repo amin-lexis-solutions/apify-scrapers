@@ -85,6 +85,7 @@ model TargetLocale {
   languageCode   String
   searchTemplate String // e.g. "{{website}} coupon codes"
   isActive       Boolean      @default(true)
+  lastSerpRunAt  DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @default(now())
   pages          TargetPage[]
