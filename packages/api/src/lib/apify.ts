@@ -62,14 +62,3 @@ export type ApifyGoogleSearchResult = {
   type: string;
   position: number;
 };
-
-export type ApifyRunDetails = {
-  data: {
-    id: string;
-    actId: string;
-    userId: string;
-    startedAt: string;
-    finishedAt: string;
-    status: string;
-  };
-};

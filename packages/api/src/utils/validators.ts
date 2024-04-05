@@ -114,6 +114,26 @@ export class WebhookRequestBody {
   localeId: string;
 }
 
+export class SerpWebhookRequestBody {
+  @ValidateNested()
+  @Type(() => EventData)
+  eventData: EventData;
+
+  @ValidateNested()
+  @Type(() => Resource)
+  resource: Resource;
+
+  @IsString()
+  @IsOptional()
+  sourceId?: string;
+
+  @IsString()
+  localeId: string;
+
+  @IsString()
+  scheduledAt: string;
+}
+
 export class FindTargetPagesBody {
   @IsNumber()
   @IsOptional()
