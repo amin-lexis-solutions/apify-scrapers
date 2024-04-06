@@ -179,7 +179,7 @@ export class TargetsController {
   ): Promise<StandardResponse> {
     const { maxConcurrency } = body;
 
-    log.debug(
+    console.log(
       `Will attempt to schedule ${maxConcurrency} sources (maps to actor) for scraping.`
     );
 
