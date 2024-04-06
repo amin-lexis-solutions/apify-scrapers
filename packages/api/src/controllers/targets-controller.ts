@@ -14,6 +14,11 @@ import moment from 'moment';
 import log from '@apify/log';
 import { TargetLocale } from '@prisma/client';
 
+type LocaleLastRun = {
+  apifyRunScheduledAt: string;
+  localeId: string;
+};
+
 const RESULTS_NEEDED_PER_LOCALE = 25;
 
 @JsonController('/targets')
@@ -226,10 +231,20 @@ export class TargetsController {
           return 0;
         }
 
+        const uniqueLocalesLastRuns = await prisma.$queryRaw<LocaleLastRun[]>`
+          SELECT MAX(t."apifyRunScheduledAt") as "apifyRunScheduledAt", t."localeId" FROM (
+            SELECT "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId" FROM "TargetPage"
+            WHERE "TargetPage"."domain" = 'radins.com' AND "TargetPage"."apifyRunScheduledAt" IS NOT NULL
+            GROUP BY "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId"
+            ORDER BY "apifyRunScheduledAt" DESC
+          ) AS t
+          GROUP BY t."localeId";
+        `;
+
         const pages = await prisma.targetPage.findMany({
           where: {
             domain: source.domain,
-            apifyRunScheduledAt: localeMaxApifyRunScheduledAt,
+            OR: uniqueLocalesLastRuns,
           },
         });
 
