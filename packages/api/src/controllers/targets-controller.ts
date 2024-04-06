@@ -48,15 +48,15 @@ export class TargetsController {
 
     const counts = await Promise.all(
       locales.map(async (locale) => {
-        await prisma.targetLocale.update({
-          where: { id: locale.id },
-          data: { lastSerpRunAt: new Date() },
-        });
-
         let domains = await getMerchantsForLocale(locale.locale);
         domains = domains.slice(0, limit);
 
         await findSerpForLocaleAndDomains(locale, domains);
+
+        await prisma.targetLocale.update({
+          where: { id: locale.id },
+          data: { lastSerpRunAt: new Date() },
+        });
 
         return domains.length;
       })
@@ -136,17 +136,17 @@ export class TargetsController {
 
     const counts = await Promise.all(
       locales.map(async (locale) => {
-        await prisma.targetLocale.update({
-          where: { id: locale.id },
-          data: { lastSerpRunAt: new Date() },
-        });
-
         let domains = await getMerchantsForLocale(locale.locale);
         if (limitDomainsPerLocale) {
           domains = domains.slice(0, limitDomainsPerLocale);
         }
 
         await findSerpForLocaleAndDomains(locale, domains);
+
+        await prisma.targetLocale.update({
+          where: { id: locale.id },
+          data: { lastSerpRunAt: new Date() },
+        });
 
         return domains.length;
       })
@@ -173,7 +173,7 @@ export class TargetsController {
     const { maxConcurrency } = body;
 
     log.debug(
-      `Will attempt to schedule ${maxConcurrency} sources (domains) for scraping.`
+      `Will attempt to schedule ${maxConcurrency} sources (maps to actor) for scraping.`
     );
 
     const sources = await prisma.source.findMany({
@@ -188,22 +188,35 @@ export class TargetsController {
     });
 
     log.info(
-      `${sources.length} sources (domains) are to be scheduled for scraping`
+      `Found ${sources.length} potential sources (domains) to be scheduled for scraping`
     );
 
-    await prisma.source.updateMany({
-      where: { id: { in: sources.map((source) => source.id) } },
-      data: { lastRunAt: new Date() },
-    });
-
-    const domainToMaxApifyRunScheduledAt = await domainToMaxApifyRunScheduledAtMapping();
+    let actorsStarted = 0;
 
     const counts = await Promise.all(
       sources.map(async (source) => {
-        const apifyRunScheduledAt =
-          domainToMaxApifyRunScheduledAt[source.domain];
+        if (maxConcurrency <= actorsStarted) {
+          log.info(
+            `Already scheduled the maximum number of actors. Skipping source ${source.id}.`
+          );
+          return 0;
+        }
 
-        if (apifyRunScheduledAt === undefined) {
+        const localeMaxApifyRunScheduledAt = await prisma.targetPage
+          .findMany({
+            where: {
+              domain: source.domain,
+              apifyRunScheduledAt: {
+                gt: moment().subtract(30, 'day').toDate(),
+                not: null,
+              },
+            },
+            orderBy: { apifyRunScheduledAt: 'desc' },
+            take: 1,
+          })
+          .then((targetPages) => targetPages[0]?.apifyRunScheduledAt);
+
+        if (localeMaxApifyRunScheduledAt === undefined) {
           log.info(
             `There are no fresh target pages (max 30 days old) for domain ${source.domain}. Skipping coupon scraping for actor ${source.apifyActorId}`
           );
@@ -213,33 +226,50 @@ export class TargetsController {
         const pages = await prisma.targetPage.findMany({
           where: {
             domain: source.domain,
-            apifyRunScheduledAt,
+            apifyRunScheduledAt: localeMaxApifyRunScheduledAt,
           },
         });
 
         log.info(
-          `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.domain}.`
+          `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.domain}. Will be chunking the start URLs in groups of 1000.`
         );
 
+        await prisma.source.update({
+          where: { id: source.id },
+          data: { lastRunAt: new Date() },
+        });
+
         const localeId = pages[0]?.localeId;
-        await apify.actor(source.apifyActorId).start(
-          { startUrls: pages.map((page) => ({ url: page.url })) },
-          {
-            webhooks: [
-              {
-                eventTypes: [
-                  'ACTOR.RUN.SUCCEEDED',
-                  'ACTOR.RUN.FAILED',
-                  'ACTOR.RUN.TIMED_OUT',
-                  'ACTOR.RUN.ABORTED',
-                ],
-                requestUrl: getWebhookUrl('/webhooks/coupons'),
-                payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}}}`,
-                headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
-              },
-            ],
-          }
-        );
+
+        const chunkSize = 1_000;
+        for (let i = 0; i < pages.length; i += chunkSize) {
+          const pagesChunk = pages.slice(i, i + chunkSize);
+
+          actorsStarted++;
+
+          log.info(
+            `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.domain}.`
+          );
+
+          await apify.actor(source.apifyActorId).start(
+            { startUrls: pagesChunk.map((page) => ({ url: page.url })) },
+            {
+              webhooks: [
+                {
+                  eventTypes: [
+                    'ACTOR.RUN.SUCCEEDED',
+                    'ACTOR.RUN.FAILED',
+                    'ACTOR.RUN.TIMED_OUT',
+                    'ACTOR.RUN.ABORTED',
+                  ],
+                  requestUrl: getWebhookUrl('/webhooks/coupons'),
+                  payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}}}`,
+                  headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
+                },
+              ],
+            }
+          );
+        }
 
         return pages.length;
       })
@@ -252,31 +282,6 @@ export class TargetsController {
 
     return new StandardResponse('Scraping job enqueued', false, result);
   }
-}
-
-async function domainToMaxApifyRunScheduledAtMapping() {
-  const maxApifyRunScheduledAtForEachDomain = await prisma.targetPage.groupBy({
-    by: ['domain'],
-    where: {
-      apifyRunScheduledAt: {
-        gt: moment().subtract(30, 'day').toDate(),
-        not: null,
-      },
-    },
-    _max: {
-      apifyRunScheduledAt: true,
-    },
-  });
-
-  const domainToMaxApifyRunScheduledAt = maxApifyRunScheduledAtForEachDomain.reduce(
-    (acc, item) => {
-      acc[item.domain] = item._max.apifyRunScheduledAt;
-      return acc;
-    },
-    {} as Record<string, null | Date>
-  );
-
-  return domainToMaxApifyRunScheduledAt;
 }
 
 async function findSerpForLocaleAndDomains(
