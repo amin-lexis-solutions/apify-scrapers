@@ -11,7 +11,6 @@ import {
   StandardResponse,
 } from '../utils/validators';
 import moment from 'moment';
-import log from '@apify/log';
 import { TargetLocale } from '@prisma/client';
 
 type LocaleLastRun = {
@@ -86,7 +85,7 @@ export class TargetsController {
   async findNLocales(@Body() body: RunNLocalesBody): Promise<StandardResponse> {
     const { limitDomainsPerLocale, localesCount } = body;
 
-    log.info(
+    console.log(
       `Parsing request to run ${localesCount} locales` +
         (limitDomainsPerLocale
           ? ` with ${limitDomainsPerLocale} domains per locale`
@@ -121,7 +120,7 @@ export class TargetsController {
       localeIdsOldestFirst
     );
 
-    log.info('Final list of locales to run' + JSON.stringify(localeIdsToRun));
+    console.log('Final list of locales to run' + JSON.stringify(localeIdsToRun));
 
     const locales = await prisma.targetLocale.findMany({
       where: {
@@ -195,7 +194,7 @@ export class TargetsController {
       take: maxConcurrency,
     });
 
-    log.info(
+    console.log(
       `Found ${sources.length} potential sources (domains) to be scheduled for scraping`
     );
 
@@ -204,7 +203,7 @@ export class TargetsController {
     const counts = await Promise.all(
       sources.map(async (source) => {
         if (maxConcurrency <= actorsStarted) {
-          log.info(
+          console.log(
             `Already scheduled the maximum number of actors. Skipping source ${source.id}.`
           );
           return 0;
@@ -233,13 +232,13 @@ export class TargetsController {
         });
 
         if (pages.length === 0) {
-          log.info(
+          console.log(
             `There are no fresh target pages for domain ${source.domain}. Skipping coupon scraping for actor ${source.apifyActorId}`
           );
           return 0;
         }
 
-        log.info(
+        console.log(
           `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.domain}. Will be chunking the start URLs in groups of 1000.`
         );
 
@@ -256,7 +255,7 @@ export class TargetsController {
 
           actorsStarted++;
 
-          log.info(
+          console.log(
             `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.domain}.`
           );
 
@@ -297,7 +296,7 @@ async function findSerpForLocaleAndDomains(
   locale: TargetLocale,
   domains: Array<{ domain: string }>
 ) {
-  log.info(
+  console.log(
     `Locale ${locale.id} has ${domains.length} domains to search. Chunking into a few request with 1 000 domains each`
   );
 
