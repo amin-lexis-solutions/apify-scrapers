@@ -210,31 +210,15 @@ export class TargetsController {
           return 0;
         }
 
-        const localeMaxApifyRunScheduledAt = await prisma.targetPage
-          .findMany({
-            where: {
-              domain: source.domain,
-              apifyRunScheduledAt: {
-                gt: moment().subtract(30, 'day').toDate(),
-                not: null,
-              },
-            },
-            orderBy: { apifyRunScheduledAt: 'desc' },
-            take: 1,
-          })
-          .then((targetPages) => targetPages[0]?.apifyRunScheduledAt);
-
-        if (localeMaxApifyRunScheduledAt === undefined) {
-          log.info(
-            `There are no fresh target pages (max 30 days old) for domain ${source.domain}. Skipping coupon scraping for actor ${source.apifyActorId}`
-          );
-          return 0;
-        }
+        const twoWeeksAgo = moment().subtract(30, 'day').toDate();
 
         const uniqueLocalesLastRuns = await prisma.$queryRaw<LocaleLastRun[]>`
           SELECT MAX(t."apifyRunScheduledAt") as "apifyRunScheduledAt", t."localeId" FROM (
-            SELECT "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId" FROM "TargetPage"
-            WHERE "TargetPage"."domain" = 'radins.com' AND "TargetPage"."apifyRunScheduledAt" IS NOT NULL
+            SELECT "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId"
+            FROM "TargetPage"
+            WHERE "TargetPage"."domain" = 'radins.com'
+              AND "TargetPage"."apifyRunScheduledAt" IS NOT NULL
+              AND "TargetPage"."apifyRunScheduledAt" > ${twoWeeksAgo}
             GROUP BY "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId"
             ORDER BY "apifyRunScheduledAt" DESC
           ) AS t
@@ -247,6 +231,13 @@ export class TargetsController {
             OR: uniqueLocalesLastRuns,
           },
         });
+
+        if (pages.length === 0) {
+          log.info(
+            `There are no fresh target pages for domain ${source.domain}. Skipping coupon scraping for actor ${source.apifyActorId}`
+          );
+          return 0;
+        }
 
         log.info(
           `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.domain}. Will be chunking the start URLs in groups of 1000.`
