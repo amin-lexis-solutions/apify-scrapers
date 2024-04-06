@@ -102,7 +102,10 @@ export class TargetsController {
       .findMany({
         where: {
           isActive: true,
-          lastSerpRunAt: { not: null },
+          lastSerpRunAt: {
+            not: null,
+            lt: moment().subtract(2, 'weeks').toDate(),
+          },
         },
         orderBy: { lastSerpRunAt: 'asc' },
         take: localesCount - localeIdWithoutRunHistory.length,
