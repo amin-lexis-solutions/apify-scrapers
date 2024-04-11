@@ -80,7 +80,7 @@ model ProcessedRun {
 // Maps to a locale we are targeting
 model TargetLocale {
   id             String       @id @default(uuid())
-  locale         String
+  locale         String       @unique
   countryCode    String
   languageCode   String
   searchTemplate String // e.g. "{{website}} coupon codes"
