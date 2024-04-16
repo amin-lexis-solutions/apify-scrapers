@@ -1,0 +1,21 @@
+{
+  "extends": "@apify/tsconfig",
+  "compilerOptions": {
+    "paths": {
+      "src/*": ["./src/*"],
+      "shared/*": ["../shared/src/*"]
+    },
+    "module": "CommonJS",
+    "target": "ES2022",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "lib": ["DOM", "ES2022"],
+    "noImplicitAny": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  },
+  "include": ["./src/**/*", "../shared/**/*"]
+}
