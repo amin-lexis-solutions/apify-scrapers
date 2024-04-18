@@ -5,3 +5,7 @@ node_modules
 .env
 packages/*/yarn.lock
 sentry-dsn.ts
+
+packages/*
+!packages/shared/
+!packages/retailmenot-com/
