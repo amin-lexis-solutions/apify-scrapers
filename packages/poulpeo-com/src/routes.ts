@@ -1,6 +1,12 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData } from 'shared/helpers';
+import {
+  processAndStoreData,
+  generateCouponId,
+  CouponHashMap,
+  checkCouponIds,
+  CouponItemResult,
+} from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 // Export the router function that determines which handler to use based on the request label
@@ -15,11 +21,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       return name;
     });
   }
-  async function extractIdInSite(element) {
-    return await element.evaluate((block) =>
-      block.getAttribute('data-offer-id')
-    );
-  }
+
   async function makeRequest(couponUrl, validatorData) {
     await enqueueLinks({
       urls: [couponUrl],
@@ -31,6 +33,12 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
     });
   }
 
+  async function extractIdInSite(element) {
+    return await element.evaluate((selector) =>
+      selector.getAttribute('data-offer-id')
+    );
+  }
+
   try {
     await page.waitForSelector('.-grid');
 
@@ -40,14 +48,20 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       throw new Error('merchan name not found');
     }
 
-    const validCoupons = await page.$$('.m-offer');
+    const validCoupons = await page.$$('.-horizontal.m-offer');
 
     if (!validCoupons) {
       throw new Error('Valid coupons not found');
     }
+
     // Extract validCoupons
+
+    const couponsWithCode: CouponHashMap = {};
+    const idsToCheck: string[] = [];
+    let result: CouponItemResult;
+
     for (const element of validCoupons) {
-      const hasCode = await element.$(
+      const codeElement = await element.$(
         '.m-offer__action .a-btnSlide__truncateCode'
       );
       let idInSite;
@@ -56,28 +70,55 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
         (node) => node.querySelector('.m-offer__title')?.textContent
       );
 
-      const validator = new DataValidator();
-
-      if (hasCode) {
+      if (codeElement) {
         idInSite = await element.evaluate((block) =>
           block.getAttribute('data-offer-id')
         );
-        validator.addValue('idInSite', idInSite);
-        validator.addValue('isExpired', !hasCode);
       }
+
+      const validator = new DataValidator();
 
       validator.addValue('merchantName', merchantName);
       validator.addValue('title', couponTitle);
       validator.addValue('sourceUrl', request.url);
       validator.addValue('isShown', true);
+      validator.addValue('isExpired', false);
 
       let couponUrl;
-      const validatorData = validator.getData();
 
       if (idInSite) {
         idInSite = await extractIdInSite(element);
+        validator.addValue('idInSite', idInSite);
+
         couponUrl = `https://www.poulpeo.com/o.htm?c=${idInSite}`;
-        await makeRequest(couponUrl, validatorData);
+
+        const generatedHash = generateCouponId(
+          merchantName,
+          idInSite,
+          request.url
+        );
+        const hasCode = codeElement ? true : false;
+
+        result = { generatedHash, hasCode, couponUrl, validator };
+
+        if (!result.hasCode) {
+          await processAndStoreData(result.validator);
+        } else {
+          couponsWithCode[result.generatedHash] = result;
+          idsToCheck.push(result.generatedHash);
+        }
+      }
+    }
+    // Call the API to check if the coupon exists
+    const nonExistingIds = await checkCouponIds(idsToCheck);
+
+    if (nonExistingIds.length > 0) {
+      let currentResult: CouponItemResult;
+
+      for (const id of nonExistingIds) {
+        currentResult = couponsWithCode[id];
+        // Add the coupon URL to the request queue
+        await makeRequest(currentResult.couponUrl, currentResult.validator);
       }
     }
   } finally {
@@ -85,6 +126,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
     // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
+
 router.addHandler(Label.getCode, async ({ page, request }) => {
   if (request.userData.label !== Label.getCode) return;
 
