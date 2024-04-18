@@ -4,10 +4,8 @@
   "type": "commonjs",
   "description": "This is an example of a Crawlee project.",
   "dependencies": {
-    "@types/cheerio": "^0.22.34",
-    "axios": "^1.6.2",
-    "cheerio": "^1.0.0-rc.12",
-    "node-html-parser": "^6.1.11",
+    "@types/puppeteer": "^7.0.4",
+    "puppeteer": "*",
     "html-entities": "^2.4.0",
     "chrono-node": "^2.7.3",
     "apify": "3.1.14",
