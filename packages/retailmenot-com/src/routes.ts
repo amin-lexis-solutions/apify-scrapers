@@ -6,29 +6,12 @@ import {
   CouponHashMap,
   checkCouponIds,
   CouponItemResult,
+  extractDomainFromUrl,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 // Export the router function that determines which handler to use based on the request label
 const router = Router.create<PuppeteerCrawlingContext>();
-
-function extractDomainFromUrl(url: string): string {
-  // Regular expression to extract the domain name
-  const regex = /https?:\/\/[^/]+\/[^/]+\/([^/]+)/;
-
-  // Find matches
-  const matches = url.match(regex);
-
-  if (matches && matches[1]) {
-    // Remove 'www.' if present
-    if (matches[1].startsWith('www.')) {
-      return matches[1].substring(4);
-    }
-    return matches[1];
-  }
-
-  return '';
-}
 
 // Add a handler for a specific label using router.addHandler()
 router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
@@ -67,6 +50,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
 
       // Initialize variables
       const isExpired = false;
+      let hasCode = false;
 
       // Extract unique ID for the coupon
       const idInSite = await element.evaluate((node) =>
@@ -74,12 +58,15 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       );
 
       // Check if the coupon has a code associated with it
-      const hasCode = await element.evaluate((node) => {
-        if (node?.textContent?.includes('Show Code')) {
-          return true;
+      // it returns boolean | undefined
+      const elementCode: boolean | undefined = await element.evaluate(
+        (node) => {
+          // element node may no appear
+          return node?.textContent?.includes('Show Code');
         }
-        return false;
-      });
+      );
+
+      hasCode = elementCode ? true : false;
 
       // Throw an error if ID is not found
       if (!idInSite) {
@@ -89,9 +76,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       // Extract title of the coupon
       const couponTitle = await element.evaluate((node) => {
         const titleElement = node.querySelector('h3');
-        let title = titleElement?.textContent;
-        title = title?.replace('\n', '');
-        return title;
+        return titleElement?.textContent?.replace('\n', '');
       });
 
       // Construct coupon URL
