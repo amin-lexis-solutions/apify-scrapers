@@ -8,27 +8,11 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  extractDomainFromUrl,
 } from 'shared/helpers';
 
 export const router = createCheerioRouter();
 
-function extractDomainFromUrl(url: string): string {
-  // Regular expression to extract the domain name
-  const regex = /https?:\/\/[^/]+\/[^/]+\/([^/]+)/;
-
-  // Find matches
-  const matches = url.match(regex);
-
-  if (matches && matches[1]) {
-    // Remove 'www.' if present
-    if (matches[1].startsWith('www.')) {
-      return matches[1].substring(4);
-    }
-    return matches[1];
-  }
-
-  return '';
-}
 // Function to process a single coupon item from the webpage
 function processCouponItem(
   merchantName: string,
@@ -48,31 +32,18 @@ function processCouponItem(
   }
   // Function to extract the description of the coupon
   function extractDescription() {
-    const descElement = $coupon('p.show-txt');
-    if (descElement) {
-      return descElement.text();
-    }
-    return;
+    return $coupon('p.show-txt')?.text();
   }
   // Function to extract the coupon code (if available)
   function extractCode() {
     const codeElement = $coupon('.item-code .hiddenCode');
     const code = codeElement.text();
-
-    if (code.length == 0 || code.includes('no code need')) {
-      return false;
-    }
-    return code;
+    return code.length == 0 || code.includes('no code need') ? null : code;
   }
   // Function to check if the coupon is expired
   function extractExpired() {
     const expireElement = $coupon('.expires span').first();
     return expireElement?.text()?.includes('expired');
-  }
-  // Function to extract the ID of the coupon from the data-cid attribute
-  function extractId() {
-    const id = $coupon('*').attr('data-cid');
-    return id;
   }
   // Initialize variables
 
@@ -82,7 +53,7 @@ function processCouponItem(
   const code = extractCode();
   const isExpired = extractExpired();
 
-  const idInSite = extractId();
+  const idInSite = $coupon('*')?.attr('data-cid');
   // Throw an error if ID is not found
   if (!idInSite) {
     throw new Error('idInSite not found');
@@ -111,18 +82,10 @@ function processCouponItem(
 }
 // Handler function for processing coupon listings
 router.addHandler(Label.listing, async ({ request, $ }) => {
-  // Function to extract the merchant name from the webpage
-  function extractMerchantName() {
-    const logoElement = $('img.merchant-logo');
-    if (logoElement) {
-      return logoElement.attr('title');
-    }
-    return;
-  }
   try {
     console.log(`Listing ${request.url}`);
     // Extract the merchant name
-    const merchantName = extractMerchantName();
+    const merchantName = $('img.merchant-logo')?.attr('title');
     // Throw an error if merchant name is not found
     if (!merchantName) {
       throw new Error('merchantName not found');
@@ -152,13 +115,14 @@ router.addHandler(Label.listing, async ({ request, $ }) => {
     // Call the API to check if the coupon exists
     const nonExistingIds = await checkCouponIds(idsToCheck);
     // If non-existing coupons are found, process and store their data
-    if (nonExistingIds.length > 0) {
-      let currentResult: CouponItemResult;
-      for (const id of nonExistingIds) {
-        currentResult = couponsWithCode[id];
-        // Add the coupon URL to the request queue
-        await processAndStoreData(currentResult?.validator);
-      }
+    if (nonExistingIds?.length <= 0) return;
+
+    let currentResult: CouponItemResult;
+    // Loop through each nonExistingIds and process it
+    for (const id of nonExistingIds) {
+      currentResult = couponsWithCode[id];
+      // Add the coupon URL to the request queue
+      await processAndStoreData(currentResult?.validator);
     }
   } finally {
     // Use finally to ensure the actor ends successfully
