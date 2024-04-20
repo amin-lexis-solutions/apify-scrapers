@@ -120,7 +120,9 @@ export class TargetsController {
       localeIdsOldestFirst
     );
 
-    console.log('Final list of locales to run' + JSON.stringify(localeIdsToRun));
+    console.log(
+      'Final list of locales to run' + JSON.stringify(localeIdsToRun)
+    );
 
     const locales = await prisma.targetLocale.findMany({
       where: {
