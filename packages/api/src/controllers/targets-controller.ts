@@ -227,7 +227,7 @@ export class TargetsController {
           GROUP BY t."localeId";
         `;
 
-        // Find all target pages for the source domains that have not been scraped in the last two weeks or domain match Wildcard Domains
+        // Find all target pages for the source domains that have not been scraped in the last two weeks
         const pages = await prisma.targetPage.findMany({
           where: {
             domain: {
