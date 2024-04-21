@@ -87,9 +87,9 @@ export class TargetsController {
 
     console.log(
       `Parsing request to run ${localesCount} locales` +
-        (limitDomainsPerLocale
-          ? ` with ${limitDomainsPerLocale} domains per locale`
-          : '')
+      (limitDomainsPerLocale
+        ? ` with ${limitDomainsPerLocale} domains per locale`
+        : '')
     );
 
     const localeIdWithoutRunHistory = await prisma.targetLocale
@@ -191,6 +191,9 @@ export class TargetsController {
           { lastRunAt: { lt: moment().startOf('day').toDate() } },
         ],
       },
+      include: {
+        domains: true,
+      },
       take: maxConcurrency,
     });
 
@@ -211,12 +214,12 @@ export class TargetsController {
 
         const twoWeeksAgo = moment().subtract(30, 'day').toDate();
 
+        // Find the latest run for each locale
         const uniqueLocalesLastRuns = await prisma.$queryRaw<LocaleLastRun[]>`
           SELECT MAX(t."apifyRunScheduledAt") as "apifyRunScheduledAt", t."localeId" FROM (
             SELECT "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId"
             FROM "TargetPage"
-            WHERE "TargetPage"."domain" = 'radins.com'
-              AND "TargetPage"."apifyRunScheduledAt" IS NOT NULL
+            WHERE "TargetPage"."apifyRunScheduledAt" IS NOT NULL
               AND "TargetPage"."apifyRunScheduledAt" > ${twoWeeksAgo}
             GROUP BY "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId"
             ORDER BY "apifyRunScheduledAt" DESC
@@ -224,12 +227,16 @@ export class TargetsController {
           GROUP BY t."localeId";
         `;
 
+        // Find all target pages for the source domains that have not been scraped in the last two weeks or domain match Wildcard Domains
         const pages = await prisma.targetPage.findMany({
           where: {
-            domain: source.domain,
+            domain: {
+              in: source.domains.map((domain) => domain.domain),
+            },
             OR: uniqueLocalesLastRuns,
           },
         });
+
 
         if (pages.length === 0) {
           console.log(

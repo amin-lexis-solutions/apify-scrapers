@@ -51,12 +51,20 @@ model Coupon {
 model Source {
   id           String         @id @default(uuid())
   domain       String
+  domains SourceDomain[]
   name         String
   apifyActorId String
   isActive     Boolean        @default(true)
   lastRunAt    DateTime?
   coupons      Coupon[]
   runs         ProcessedRun[]
+}
+
+model SourceDomain {
+  id      String    @id @default(uuid())
+  domain  String
+  source  Source @relation(fields: [sourceId], references: [id])
+  sourceId String
 }
 
 // Maps to a single Apify actor run
