@@ -87,9 +87,9 @@ export class TargetsController {
 
     console.log(
       `Parsing request to run ${localesCount} locales` +
-        (limitDomainsPerLocale
-          ? ` with ${limitDomainsPerLocale} domains per locale`
-          : '')
+      (limitDomainsPerLocale
+        ? ` with ${limitDomainsPerLocale} domains per locale`
+        : '')
     );
 
     const localeIdWithoutRunHistory = await prisma.targetLocale
@@ -218,24 +218,28 @@ export class TargetsController {
 
         // Find the last run for each locale
         const uniqueLocalesLastRuns = await prisma.$queryRaw<LocaleLastRun[]>`
-          SELECT MAX(t."apifyRunScheduledAt") as "apifyRunScheduledAt", t."localeId" FROM (
-            SELECT "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId"
+            SELECT MAX("apifyRunScheduledAt") as "apifyRunScheduledAt", "localeId" 
             FROM "TargetPage"
-            WHERE "TargetPage"."apifyRunScheduledAt" IS NOT NULL
-              AND "TargetPage"."apifyRunScheduledAt" > ${twoWeeksAgo}
-            GROUP BY "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId"
-            ORDER BY "apifyRunScheduledAt" DESC
-          ) AS t
-          GROUP BY t."localeId";
-        `;
+            WHERE "apifyRunScheduledAt" IS NOT NULL
+              AND "apifyRunScheduledAt" > ${twoWeeksAgo}
+            GROUP BY "localeId";
+            `;
 
-        // Find all target pages for the source domains that have not been scraped in the last two weeks
+        // Find the target pages for the source that have not been scraped in the last two weeks
         const pages = await prisma.targetPage.findMany({
           where: {
             domain: {
               in: source.domains.map((domain) => domain.domain),
             },
-            OR: uniqueLocalesLastRuns,
+            OR: uniqueLocalesLastRuns.map((run) => ({
+              AND: [
+                { localeId: run.localeId },
+                { apifyRunScheduledAt: run.apifyRunScheduledAt },
+              ],
+            })),
+          },
+          orderBy: {
+            apifyRunScheduledAt: 'desc',
           },
         });
 
