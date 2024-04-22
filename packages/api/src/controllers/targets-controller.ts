@@ -87,9 +87,9 @@ export class TargetsController {
 
     console.log(
       `Parsing request to run ${localesCount} locales` +
-      (limitDomainsPerLocale
-        ? ` with ${limitDomainsPerLocale} domains per locale`
-        : '')
+        (limitDomainsPerLocale
+          ? ` with ${limitDomainsPerLocale} domains per locale`
+          : '')
     );
 
     const localeIdWithoutRunHistory = await prisma.targetLocale
@@ -120,7 +120,9 @@ export class TargetsController {
       localeIdsOldestFirst
     );
 
-    console.log('Final list of locales to run' + JSON.stringify(localeIdsToRun));
+    console.log(
+      'Final list of locales to run' + JSON.stringify(localeIdsToRun)
+    );
 
     const locales = await prisma.targetLocale.findMany({
       where: {
@@ -214,7 +216,7 @@ export class TargetsController {
 
         const twoWeeksAgo = moment().subtract(30, 'day').toDate();
 
-        // Find the latest run for each locale
+        // Find the last run for each locale
         const uniqueLocalesLastRuns = await prisma.$queryRaw<LocaleLastRun[]>`
           SELECT MAX(t."apifyRunScheduledAt") as "apifyRunScheduledAt", t."localeId" FROM (
             SELECT "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId"
@@ -227,7 +229,7 @@ export class TargetsController {
           GROUP BY t."localeId";
         `;
 
-        // Find all target pages for the source domains that have not been scraped in the last two weeks
+        // Find all target pages for the domains of the source that have not been scraped in the last two weeks
         const pages = await prisma.targetPage.findMany({
           where: {
             domain: {
@@ -236,7 +238,6 @@ export class TargetsController {
             OR: uniqueLocalesLastRuns,
           },
         });
-
 
         if (pages.length === 0) {
           console.log(

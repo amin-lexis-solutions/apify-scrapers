@@ -14,7 +14,7 @@
     "prisma:reset": "./node_modules/.bin/prisma migrate reset --schema prisma/schema.prisma",
     "prisma:reset:testing": "source .env.testing && export $(cut -d= -f1 .env.testing) && yarn prisma:reset",
     "prisma:seed": "ts-node prisma/seeds/populate_all_target_locales.ts",
-    "prisma:migrateDomains": "ts-node prisma/seeds/migrateDomains.ts",
+    "prisma:seed:source-domains": "ts-node prisma/seeds/source_domains.ts",
     "prisma:seed:target-locales": "ts-node prisma/seeds/populate_all_target_locales.ts",
     "prisma:studio": "./node_modules/.bin/prisma studio --schema prisma/schema.prisma",
     "schedule:actors": "./node_modules/.bin/ts-node ./src/crons/schedule-actors.ts",

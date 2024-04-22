@@ -50,10 +50,9 @@ model Coupon {
 // A source of coupons, handled by an Apify actor
 model Source {
   id           String         @id @default(uuid())
-  domain       String
-  domains SourceDomain[]
+  apifyActorId String @unique
   name         String
-  apifyActorId String
+  domains SourceDomain[]
   isActive     Boolean        @default(true)
   lastRunAt    DateTime?
   coupons      Coupon[]
