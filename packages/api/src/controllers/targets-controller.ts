@@ -229,7 +229,7 @@ export class TargetsController {
           GROUP BY t."localeId";
         `;
 
-        // Find all target pages for the domains of the source that have not been scraped in the last two weeks
+        // Find all target pages for the source domains that have not been scraped in the last two weeks
         const pages = await prisma.targetPage.findMany({
           where: {
             domain: {
@@ -241,13 +241,13 @@ export class TargetsController {
 
         if (pages.length === 0) {
           console.log(
-            `There are no fresh target pages for domain ${source.domain}. Skipping coupon scraping for actor ${source.apifyActorId}`
+            `There are no fresh target pages for domain ${source.name}. Skipping coupon scraping for actor ${source.apifyActorId}`
           );
           return 0;
         }
 
         console.log(
-          `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.domain}. Will be chunking the start URLs in groups of 1000.`
+          `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.name}. Will be chunking the start URLs in groups of 1000.`
         );
 
         await prisma.source.update({
@@ -264,7 +264,7 @@ export class TargetsController {
           actorsStarted++;
 
           console.log(
-            `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.domain}.`
+            `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.name}.`
           );
 
           await apify.actor(source.apifyActorId).start(
@@ -292,7 +292,7 @@ export class TargetsController {
     );
 
     const result = sources.reduce((acc, actor, index) => {
-      acc[actor.domain] = counts[index];
+      acc[actor.name] = counts[index];
       return acc;
     }, {} as Record<string, number>);
 
