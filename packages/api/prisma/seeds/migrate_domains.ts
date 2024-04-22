@@ -275,22 +275,39 @@ const SOURCES_DATA = [
 
 async function seedSources() {
   for (const { apifyActorId, domains, name } of SOURCES_DATA) {
+    const existingSource = await prisma.source.findUnique({
+      where: { apifyActorId: apifyActorId },
+      include: { domains: true },
+    });
+
+    const existingDomains = existingSource?.domains.map((d) => d.domain) || [];
+    const domainsToCreate = domains.filter(
+      (domain) => !existingDomains.includes(domain)
+    );
+    const domainsToDelete = existingDomains.filter(
+      (domain) => !domains.includes(domain)
+    );
     await prisma.source.upsert({
       where: { apifyActorId: apifyActorId },
       update: {
         name,
         domains: {
-          create: domains.map((domain) => ({ domain })),
+          create: domainsToCreate.map((domain) => ({ domain })),
+          deleteMany: { domain: { in: domainsToDelete } },
         },
       },
       create: {
         name,
-        apifyActorId, // Add this line
+        apifyActorId,
         domains: {
           create: domains.map((domain) => ({ domain })),
         },
       },
     });
+
+    console.log(
+      `🌱 Seeded source ${name} with ${domains.length} domains : \n   ${domainsToCreate.length} domains created, ${domainsToDelete.length} domains deleted`
+    );
   }
 }
 
