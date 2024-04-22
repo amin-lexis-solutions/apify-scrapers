@@ -87,9 +87,9 @@ export class TargetsController {
 
     console.log(
       `Parsing request to run ${localesCount} locales` +
-      (limitDomainsPerLocale
-        ? ` with ${limitDomainsPerLocale} domains per locale`
-        : '')
+        (limitDomainsPerLocale
+          ? ` with ${limitDomainsPerLocale} domains per locale`
+          : '')
     );
 
     const localeIdWithoutRunHistory = await prisma.targetLocale
