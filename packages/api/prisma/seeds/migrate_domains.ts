@@ -174,7 +174,12 @@ const SOURCES_DATA = [
   },
   {
     apifyActorId: 'pV9a5g0NeXaCtuuts',
-    domains: ['sparheld-gmbh.*'],
+    domains: [
+      'signorsconto.it',
+      'cupones.es',
+      'rabathelten.dk',
+      'rabattkalas.se',
+    ],
     name: 'sparheld-gmbh',
   },
   {
@@ -184,7 +189,12 @@ const SOURCES_DATA = [
   },
   {
     apifyActorId: '53fGllHXsa6FgT0li',
-    domains: ['cuponation.*'],
+    domains: [
+      'cuponation.ch',
+      'cuponation.com.au',
+      'cuponation.com.br',
+      'cuponation.com.sg',
+    ],
     name: 'cuponation',
   },
   {
@@ -199,17 +209,41 @@ const SOURCES_DATA = [
   },
   {
     apifyActorId: '6YqT5Fr9b8BsQAEnG',
-    domains: ['save-up.*'],
+    domains: [
+      'save-up.ch',
+      'save-up.cz',
+      'save-up.de',
+      'saveup.fr',
+      'save-up.co.no',
+      'save-up.es',
+      'save-up.it',
+      'save-up.at',
+    ],
     name: 'save-up',
   },
   {
     apifyActorId: 'C536JcEAK0Bo5Ojlz',
-    domains: ['vouchercloud.*'],
+    domains: [
+      'vouchercloud.de',
+      'vouchercloud.com',
+      'vouchercloud.ie',
+      'vouchercloud.fr',
+      'voucher-cloud.com.au',
+      'vouchercloudbr.com.br',
+    ],
     name: 'vouchercloud',
   },
   {
     apifyActorId: 'L8DbgP00QG8VpUbC8',
-    domains: ['vouchercodes.*'],
+    domains: [
+      'vouchercodes.my',
+      'vouchercodes.sg',
+      'vouchercodes.ph',
+      'vouchercodes.co.in',
+      'vouchercodes.hk',
+      'vouchercodes.id',
+      'myvouchercodes.ae',
+    ],
     name: 'vouchercodes',
   },
   {
@@ -240,8 +274,7 @@ const SOURCES_DATA = [
 ];
 
 async function seedSources() {
-  for (const source of SOURCES_DATA) {
-    const { apifyActorId, domains, name } = source;
+  for (const { apifyActorId, domains, name } of SOURCES_DATA) {
     await prisma.source.upsert({
       where: { apifyActorId: apifyActorId },
       update: {
