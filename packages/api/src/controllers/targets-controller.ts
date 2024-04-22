@@ -214,32 +214,21 @@ export class TargetsController {
           return 0;
         }
 
+        const sourceDomains = source.domains.map((domain) => domain.domain);
         const twoWeeksAgo = moment().subtract(30, 'day').toDate();
-
-        // Find the last run for each locale
-        const uniqueLocalesLastRuns = await prisma.$queryRaw<LocaleLastRun[]>`
-            SELECT MAX("apifyRunScheduledAt") as "apifyRunScheduledAt", "localeId" 
-            FROM "TargetPage"
-            WHERE "apifyRunScheduledAt" IS NOT NULL
-              AND "apifyRunScheduledAt" > ${twoWeeksAgo}
-            GROUP BY "localeId";
-            `;
 
         // Find the target pages for the source that have not been scraped in the last two weeks
         const pages = await prisma.targetPage.findMany({
           where: {
-            domain: {
-              in: source.domains.map((domain) => domain.domain),
-            },
-            OR: uniqueLocalesLastRuns.map((run) => ({
-              AND: [
-                { localeId: run.localeId },
-                { apifyRunScheduledAt: run.apifyRunScheduledAt },
-              ],
-            })),
-          },
-          orderBy: {
-            apifyRunScheduledAt: 'desc',
+            AND: [
+              { domain: { in: sourceDomains } },
+              {
+                OR: [
+                  { apifyRunScheduledAt: null },
+                  { apifyRunScheduledAt: { lt: twoWeeksAgo } },
+                ],
+              },
+            ],
           },
         });
 
@@ -265,6 +254,7 @@ export class TargetsController {
         for (let i = 0; i < pages.length; i += chunkSize) {
           const pagesChunk = pages.slice(i, i + chunkSize);
 
+          // could potentually start more actors than maxConcurrency; should be fine since the maxConcurrency actually keep a buffer
           actorsStarted++;
 
           console.log(
