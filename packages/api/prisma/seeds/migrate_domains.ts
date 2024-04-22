@@ -306,7 +306,10 @@ async function seedSources() {
     });
 
     console.log(
-      `🌱 Seeded source ${name} with ${domains.length} domains : \n   ${domainsToCreate.length} domains created, ${domainsToDelete.length} domains deleted`
+      `🌱 Seeded source ${name} with ${domains.length} domain(s):
+    ${existingDomains.length} domain(s) already present
+    ${domainsToCreate.length} domain(s) created
+    ${domainsToDelete.length} domain(s) deleted`
     );
   }
 }
