@@ -13,11 +13,6 @@ import {
 import moment from 'moment';
 import { TargetLocale } from '@prisma/client';
 
-type LocaleLastRun = {
-  apifyRunScheduledAt: string;
-  localeId: string;
-};
-
 const RESULTS_NEEDED_PER_LOCALE = 25;
 
 @JsonController('/targets')
@@ -120,7 +115,9 @@ export class TargetsController {
       localeIdsOldestFirst
     );
 
-    console.log('Final list of locales to run' + JSON.stringify(localeIdsToRun));
+    console.log(
+      'Final list of locales to run' + JSON.stringify(localeIdsToRun)
+    );
 
     const locales = await prisma.targetLocale.findMany({
       where: {
@@ -191,6 +188,9 @@ export class TargetsController {
           { lastRunAt: { lt: moment().startOf('day').toDate() } },
         ],
       },
+      include: {
+        domains: true,
+      },
       take: maxConcurrency,
     });
 
@@ -209,37 +209,33 @@ export class TargetsController {
           return 0;
         }
 
+        const sourceDomains = source.domains.map((domain) => domain.domain);
         const twoWeeksAgo = moment().subtract(30, 'day').toDate();
 
-        const uniqueLocalesLastRuns = await prisma.$queryRaw<LocaleLastRun[]>`
-          SELECT MAX(t."apifyRunScheduledAt") as "apifyRunScheduledAt", t."localeId" FROM (
-            SELECT "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId"
-            FROM "TargetPage"
-            WHERE "TargetPage"."domain" = 'radins.com'
-              AND "TargetPage"."apifyRunScheduledAt" IS NOT NULL
-              AND "TargetPage"."apifyRunScheduledAt" > ${twoWeeksAgo}
-            GROUP BY "TargetPage"."apifyRunScheduledAt", "TargetPage"."localeId"
-            ORDER BY "apifyRunScheduledAt" DESC
-          ) AS t
-          GROUP BY t."localeId";
-        `;
-
+        // Find the target pages for the source that have not been scraped in the last two weeks
         const pages = await prisma.targetPage.findMany({
           where: {
-            domain: source.domain,
-            OR: uniqueLocalesLastRuns,
+            AND: [
+              { domain: { in: sourceDomains } },
+              {
+                OR: [
+                  { apifyRunScheduledAt: null },
+                  { apifyRunScheduledAt: { lt: twoWeeksAgo } },
+                ],
+              },
+            ],
           },
         });
 
         if (pages.length === 0) {
           console.log(
-            `There are no fresh target pages for domain ${source.domain}. Skipping coupon scraping for actor ${source.apifyActorId}`
+            `There are no fresh target pages for domain ${source.name}. Skipping coupon scraping for actor ${source.apifyActorId}`
           );
           return 0;
         }
 
         console.log(
-          `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.domain}. Will be chunking the start URLs in groups of 1000.`
+          `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.name}. Will be chunking the start URLs in groups of 1000.`
         );
 
         await prisma.source.update({
@@ -253,10 +249,11 @@ export class TargetsController {
         for (let i = 0; i < pages.length; i += chunkSize) {
           const pagesChunk = pages.slice(i, i + chunkSize);
 
+          // could potentually start more actors than maxConcurrency; should be fine since the maxConcurrency actually keep a buffer
           actorsStarted++;
 
           console.log(
-            `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.domain}.`
+            `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.name}.`
           );
 
           await apify.actor(source.apifyActorId).start(
@@ -284,7 +281,7 @@ export class TargetsController {
     );
 
     const result = sources.reduce((acc, actor, index) => {
-      acc[actor.domain] = counts[index];
+      acc[actor.name] = counts[index];
       return acc;
     }, {} as Record<string, number>);
 
