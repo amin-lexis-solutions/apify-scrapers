@@ -61,10 +61,8 @@ router.addHandler(Label.listing, async ({ request, $ }) => {
     }
     // Extract the merchant name
     const merchantName = domain?.split('.com')?.[0];
-
-      // Extract valid coupons
+    // Extract valid coupons
     const validCoupons = $('.couponcards-container .couponcard-container');
-
     // Initialize variables
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
