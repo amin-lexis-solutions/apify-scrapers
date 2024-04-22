@@ -5,3 +5,6 @@ node_modules
 .env
 packages/*/yarn.lock
 sentry-dsn.ts
+**/null
+_NOTES
+test-volumes
