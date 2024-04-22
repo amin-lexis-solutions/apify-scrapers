@@ -13,11 +13,6 @@ import {
 import moment from 'moment';
 import { TargetLocale } from '@prisma/client';
 
-type LocaleLastRun = {
-  apifyRunScheduledAt: string;
-  localeId: string;
-};
-
 const RESULTS_NEEDED_PER_LOCALE = 25;
 
 @JsonController('/targets')
