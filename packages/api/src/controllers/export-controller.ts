@@ -18,7 +18,7 @@ export class ExportController {
   })
   @ResponseSchema(StandardResponse)
   @Authorized()
-  @OpenAPI({ security: [{ token: [] }] })
+  @OpenAPI({ security: [{ bearerAuth: [] }] })
   async getTest(): Promise<StandardResponse> {
     return new StandardResponse(
       `You can import this JSON in Postman to test the API.`,

@@ -7,7 +7,11 @@ import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { ApifyGoogleSearchResult } from '../lib/apify';
 import { prisma } from '../lib/prisma';
 import { generateHash, validDateOrNull } from '../utils/utils';
-import { StandardResponse, WebhookRequestBody } from '../utils/validators';
+import {
+  SerpWebhookRequestBody,
+  StandardResponse,
+  WebhookRequestBody,
+} from '../utils/validators';
 
 const updatableFields: (keyof Coupon)[] = [
   'domain',
@@ -216,12 +220,12 @@ export class WebhooksController {
   })
   @ResponseSchema(StandardResponse)
   async receiveSerpData(
-    @Body() webhookData: WebhookRequestBody
+    @Body() webhookData: SerpWebhookRequestBody
   ): Promise<StandardResponse> {
     const datasetId = webhookData.resource.defaultDatasetId;
     const actorRunId = webhookData.eventData.actorRunId;
     const status = webhookData.resource.status;
-    const { localeId } = webhookData;
+    const { localeId, scheduledAt } = webhookData;
 
     if (status !== 'SUCCEEDED') {
       return new StandardResponse(
@@ -231,7 +235,7 @@ export class WebhooksController {
     }
 
     const data: ApifyGoogleSearchResult[] = await fetch(
-      `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&limit=1000&view=organic_results`
+      `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&view=organic_results`
     ).then((res) => res.json());
 
     await prisma.targetPage.createMany({
@@ -245,6 +249,7 @@ export class WebhooksController {
             searchPosition: item.position,
             searchDomain: item.searchQuery.domain,
             apifyRunId: actorRunId,
+            apifyRunScheduledAt: scheduledAt,
             domain: new URL(item.url).hostname.replace('www.', ''),
             localeId,
           };

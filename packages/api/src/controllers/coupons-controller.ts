@@ -28,7 +28,7 @@ export class CouponsController {
   })
   @ResponseSchema(StandardResponse)
   @Authorized()
-  @OpenAPI({ security: [{ token: [] }] })
+  @OpenAPI({ security: [{ bearerAuth: [] }] })
   async getList(
     @QueryParams() params: ListRequestBody
   ): Promise<StandardResponse> {
@@ -70,7 +70,7 @@ export class CouponsController {
     }
 
     if (locale) {
-      where.locale = { locale: locale };
+      where.locale = { locale };
     }
 
     const offset = (page - 1) * pageSize;

@@ -1,20 +1,23 @@
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
-
 import { apify } from '../lib/apify';
 import { getMerchantsForLocale } from '../lib/oberst-api';
 import { prisma } from '../lib/prisma';
 import { getWebhookUrl } from '../utils/utils';
 import {
+  RunNLocalesBody,
   FindTargetPagesBody,
   RunTargetPagesBody,
   StandardResponse,
 } from '../utils/validators';
 import moment from 'moment';
+import { TargetLocale } from '@prisma/client';
+
+const RESULTS_NEEDED_PER_LOCALE = 25;
 
 @JsonController('/targets')
 @Authorized()
-@OpenAPI({ security: [{ token: [] }] })
+@OpenAPI({ security: [{ bearerAuth: [] }] })
 export class TargetsController {
   @Post('/find')
   @OpenAPI({
@@ -43,47 +46,114 @@ export class TargetsController {
     }
 
     const counts = await Promise.all(
-      locales.map(
-        async ({ id, countryCode, languageCode, locale, searchTemplate }) => {
-          const domains = await getMerchantsForLocale(locale);
+      locales.map(async (locale) => {
+        let domains = await getMerchantsForLocale(locale.locale);
+        domains = domains.slice(0, limit);
 
-          const queries = domains
-            .map(({ domain }) => {
-              return searchTemplate.replace('{{website}}', domain);
-            })
-            .slice(0, limit);
+        await findSerpForLocaleAndDomains(locale, domains);
 
-          await apify.actor('apify/google-search-scraper').start(
-            {
-              queries: queries.join('\n'),
-              countryCode,
-              languageCode,
-              maxPagesPerQuery: 1,
-              resultsPerPage: 10,
-              saveHtml: false,
-              saveHtmlToKeyValueStore: false,
-              mobileResults: false,
-            },
-            {
-              webhooks: [
-                {
-                  eventTypes: [
-                    'ACTOR.RUN.SUCCEEDED',
-                    'ACTOR.RUN.FAILED',
-                    'ACTOR.RUN.TIMED_OUT',
-                    'ACTOR.RUN.ABORTED',
-                  ],
-                  requestUrl: getWebhookUrl('/webhooks/serp'),
-                  payloadTemplate: `{"localeId":"${id}","resource":{{resource}},"eventData":{{eventData}}}`,
-                  headersTemplate: `{"authorization":"${process.env.API_SECRET}"}`,
-                },
-              ],
-            }
-          );
+        await prisma.targetLocale.update({
+          where: { id: locale.id },
+          data: { lastSerpRunAt: new Date() },
+        });
 
-          return queries.length;
+        return domains.length;
+      })
+    );
+
+    const result = locales.reduce((acc, locale, index) => {
+      const lc = `${locale.languageCode}_${locale.countryCode}`;
+      acc[lc] = counts[index];
+      return acc;
+    }, {} as Record<string, number>);
+
+    return new StandardResponse('Target pages search started', false, result);
+  }
+
+  @Post('/find-n-locales')
+  @OpenAPI({
+    summary: 'Find target pages for a specified numner of locales',
+    description:
+      'Provide a number of locales to find target pages for. Outdated locales will be searched first',
+  })
+  @ResponseSchema(StandardResponse)
+  async findNLocales(@Body() body: RunNLocalesBody): Promise<StandardResponse> {
+    const { limitDomainsPerLocale, localesCount } = body;
+
+    console.log(
+      `Parsing request to run ${localesCount} locales` +
+        (limitDomainsPerLocale
+          ? ` with ${limitDomainsPerLocale} domains per locale`
+          : '')
+    );
+
+    const localeIdWithoutRunHistory = await prisma.targetLocale
+      .findMany({
+        where: {
+          isActive: true,
+          lastSerpRunAt: null,
+        },
+        take: localesCount,
+      })
+      .then((locales) => locales.map((locale) => locale.id));
+
+    const localeIdsOldestFirst = await prisma.targetLocale
+      .findMany({
+        where: {
+          isActive: true,
+          lastSerpRunAt: {
+            not: null,
+            lt: moment().subtract(2, 'weeks').toDate(),
+          },
+        },
+        orderBy: { lastSerpRunAt: 'asc' },
+        take: localesCount - localeIdWithoutRunHistory.length,
+      })
+      .then((locales) => locales.map((locale) => locale.id));
+
+    const localeIdsToRun = localeIdWithoutRunHistory.concat(
+      localeIdsOldestFirst
+    );
+
+    console.log(
+      'Final list of locales to run' + JSON.stringify(localeIdsToRun)
+    );
+
+    const locales = await prisma.targetLocale.findMany({
+      where: {
+        id: {
+          in: localeIdsToRun,
+        },
+      },
+    });
+
+    const unusableLocaleIndex = locales.findIndex(
+      (locale) => !locale.searchTemplate.includes('{{website}}')
+    );
+
+    if (unusableLocaleIndex > -1) {
+      return new StandardResponse(
+        `Locale with ID ${locales[unusableLocaleIndex].id} does not contain '{{website}}' in the search template. Aborting.`,
+        true
+      );
+    }
+
+    const counts = await Promise.all(
+      locales.map(async (locale) => {
+        let domains = await getMerchantsForLocale(locale.locale);
+        if (limitDomainsPerLocale) {
+          domains = domains.slice(0, limitDomainsPerLocale);
         }
-      )
+
+        await findSerpForLocaleAndDomains(locale, domains);
+
+        await prisma.targetLocale.update({
+          where: { id: locale.id },
+          data: { lastSerpRunAt: new Date() },
+        });
+
+        return domains.length;
+      })
     );
 
     const result = locales.reduce((acc, locale, index) => {
@@ -106,7 +176,9 @@ export class TargetsController {
   ): Promise<StandardResponse> {
     const { maxConcurrency } = body;
 
-    console.log('maxConcurrency is ', maxConcurrency);
+    console.log(
+      `Will attempt to schedule ${maxConcurrency} sources (maps to actor) for scraping.`
+    );
 
     const sources = await prisma.source.findMany({
       where: {
@@ -116,64 +188,151 @@ export class TargetsController {
           { lastRunAt: { lt: moment().startOf('day').toDate() } },
         ],
       },
+      include: {
+        domains: true,
+      },
       take: maxConcurrency,
     });
 
-    console.log('sources found are ', sources.length);
+    console.log(
+      `Found ${sources.length} potential sources (domains) to be scheduled for scraping`
+    );
 
-    await prisma.source.updateMany({
-      where: { id: { in: sources.map((source) => source.id) } },
-      data: { lastRunAt: new Date() },
-    });
-
-    console.log('updated sources');
+    let actorsStarted = 0;
 
     const counts = await Promise.all(
       sources.map(async (source) => {
+        if (maxConcurrency <= actorsStarted) {
+          console.log(
+            `Already scheduled the maximum number of actors. Skipping source ${source.id}.`
+          );
+          return 0;
+        }
+
+        const sourceDomains = source.domains.map((domain) => domain.domain);
+        const twoWeeksAgo = moment().subtract(30, 'day').toDate();
+
+        // Find the target pages for the source that have not been scraped in the last two weeks
         const pages = await prisma.targetPage.findMany({
           where: {
-            domain: source.domain,
+            AND: [
+              { domain: { in: sourceDomains } },
+              {
+                OR: [
+                  { apifyRunScheduledAt: null },
+                  { apifyRunScheduledAt: { lt: twoWeeksAgo } },
+                ],
+              },
+            ],
           },
         });
 
         if (pages.length === 0) {
           console.log(
-            'No pages for actor ' + source.apifyActorId + ' found. Skipping.'
+            `There are no fresh target pages for domain ${source.name}. Skipping coupon scraping for actor ${source.apifyActorId}`
           );
           return 0;
         }
 
-        console.log('run apify request for actor' + source.apifyActorId);
+        console.log(
+          `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.name}. Will be chunking the start URLs in groups of 1000.`
+        );
+
+        await prisma.source.update({
+          where: { id: source.id },
+          data: { lastRunAt: new Date() },
+        });
 
         const localeId = pages[0]?.localeId;
-        await apify.actor(source.apifyActorId).start(
-          { startUrls: pages.map((page) => ({ url: page.url })) },
-          {
-            webhooks: [
-              {
-                eventTypes: [
-                  'ACTOR.RUN.SUCCEEDED',
-                  'ACTOR.RUN.FAILED',
-                  'ACTOR.RUN.TIMED_OUT',
-                  'ACTOR.RUN.ABORTED',
-                ],
-                requestUrl: getWebhookUrl('/webhooks/coupons'),
-                payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}}}`,
-                headersTemplate: `{"authorization":"${process.env.API_SECRET}"}`,
-              },
-            ],
-          }
-        );
+
+        const chunkSize = 1_000;
+        for (let i = 0; i < pages.length; i += chunkSize) {
+          const pagesChunk = pages.slice(i, i + chunkSize);
+
+          // could potentually start more actors than maxConcurrency; should be fine since the maxConcurrency actually keep a buffer
+          actorsStarted++;
+
+          console.log(
+            `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.name}.`
+          );
+
+          await apify.actor(source.apifyActorId).start(
+            { startUrls: pagesChunk.map((page) => ({ url: page.url })) },
+            {
+              webhooks: [
+                {
+                  eventTypes: [
+                    'ACTOR.RUN.SUCCEEDED',
+                    'ACTOR.RUN.FAILED',
+                    'ACTOR.RUN.TIMED_OUT',
+                    'ACTOR.RUN.ABORTED',
+                  ],
+                  requestUrl: getWebhookUrl('/webhooks/coupons'),
+                  payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}}}`,
+                  headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
+                },
+              ],
+            }
+          );
+        }
 
         return pages.length;
       })
     );
 
     const result = sources.reduce((acc, actor, index) => {
-      acc[actor.domain] = counts[index];
+      acc[actor.name] = counts[index];
       return acc;
     }, {} as Record<string, number>);
 
     return new StandardResponse('Scraping job enqueued', false, result);
+  }
+}
+
+async function findSerpForLocaleAndDomains(
+  locale: TargetLocale,
+  domains: Array<{ domain: string }>
+) {
+  console.log(
+    `Locale ${locale.id} has ${domains.length} domains to search. Chunking into a few request with 1 000 domains each`
+  );
+
+  const scheduleTime = moment().toISOString();
+
+  const chunkSize = 1_000;
+  for (let i = 0; i < domains.length; i += chunkSize) {
+    const domainsChunk = domains.slice(i, i + chunkSize);
+
+    const queries = domainsChunk.map(({ domain }) => {
+      return locale.searchTemplate.replace('{{website}}', domain);
+    });
+
+    await apify.actor('apify/google-search-scraper').start(
+      {
+        queries: queries.join('\n'),
+        countryCode: locale.countryCode.toLowerCase(),
+        languageCode: locale.languageCode,
+        maxPagesPerQuery: 1,
+        resultsPerPage: RESULTS_NEEDED_PER_LOCALE,
+        saveHtml: false,
+        saveHtmlToKeyValueStore: false,
+        mobileResults: false,
+      },
+      {
+        webhooks: [
+          {
+            eventTypes: [
+              'ACTOR.RUN.SUCCEEDED',
+              'ACTOR.RUN.FAILED',
+              'ACTOR.RUN.TIMED_OUT',
+              'ACTOR.RUN.ABORTED',
+            ],
+            requestUrl: getWebhookUrl('/webhooks/serp'),
+            payloadTemplate: `{"localeId":"${locale.id}","resource":{{resource}},"eventData":{{eventData}},"scheduledAt":"${scheduleTime}"}`,
+            headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
+          },
+        ],
+      }
+    );
   }
 }

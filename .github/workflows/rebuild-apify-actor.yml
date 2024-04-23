@@ -2,11 +2,12 @@ name: Conditional Apify Actor Deployment
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'packages/**'
 
 jobs:
-
   deploy-actors:
     runs-on: ubuntu-latest
     steps:
@@ -27,18 +28,25 @@ jobs:
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
         run: |
-          changed_dirs=$(git diff --name-only HEAD^ HEAD | grep '/' | cut -d'/' -f1 | sort -u)
-          echo "Changed directories: $changed_dirs"
-          for dir in $changed_dirs; do
-            ACTOR_NAME=$(basename "$dir")
-            MAIN_TS="$dir/src/main.ts"
-            if [ -f "$MAIN_TS" ]; then
-              TYPE="puppeteer" # Default type
-              if grep -q "prepareCheerioScraper" "$MAIN_TS"; then
-                TYPE="cheerio"
+          changed_dirs=$(git diff --name-only HEAD~1 HEAD | grep -v "packages/api" | grep -v "packages/shared" | cut -d'/' -f2 | sort -u)
+          echo "Changed directories: $changed_dirs\n\n"
+
+          for actor_name in $changed_dirs; do
+              MAIN_TS="$dir/src/main.ts"
+
+              if [ -f "$MAIN_TS" ]; then
+                  TYPE="puppeteer" # Default type
+                  if grep -q "prepareCheerioScraper" "$MAIN_TS"; then
+                      TYPE="cheerio"
+                  fi
+                  echo "Deploying $actor_name with $TYPE"
+                  ./scripts/deploy-apify.js "$actor_name" "$TYPE"
+              else
+                  echo "Actor $actor_name has no main.ts file" >&2
+                  exit 1
               fi
-              echo "Deploying $ACTOR_NAME with $TYPE"
-              ./scripts/deploy-apify.js "$ACTOR_NAME" "$TYPE"
-            fi
           done
         shell: bash
+
+
+#

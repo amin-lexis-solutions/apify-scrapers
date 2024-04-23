@@ -12,7 +12,7 @@ const FINISHED_STATUSES = new Set([
 ]);
 const APIFY_GET_ALL_RUNS_URL = `https://api.apify.com/v2/actor-runs?token=${process.env.API_KEY_APIFY}&desc=true`;
 
-const findActors = async () => {
+const runActors = async () => {
   const response = await fetch(APIFY_GET_ALL_RUNS_URL, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
@@ -32,10 +32,10 @@ const findActors = async () => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: process.env.API_SECRET as string,
+      Authorization: 'Bearer ' + (process.env.API_SECRET as string),
     },
     body: JSON.stringify({ maxConcurrency }),
   });
 };
 
-findActors();
+runActors();

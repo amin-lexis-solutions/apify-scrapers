@@ -50,13 +50,20 @@ model Coupon {
 // A source of coupons, handled by an Apify actor
 model Source {
   id           String         @id @default(uuid())
-  domain       String
+  apifyActorId String         @unique
   name         String
-  apifyActorId String
+  domains      SourceDomain[]
   isActive     Boolean        @default(true)
   lastRunAt    DateTime?
   coupons      Coupon[]
   runs         ProcessedRun[]
+}
+
+model SourceDomain {
+  id      String    @id @default(uuid())
+  domain  String
+  source  Source    @relation(fields: [sourceId], references: [id])
+  sourceId String
 }
 
 // Maps to a single Apify actor run
@@ -80,11 +87,12 @@ model ProcessedRun {
 // Maps to a locale we are targeting
 model TargetLocale {
   id             String       @id @default(uuid())
-  locale         String
+  locale         String       @unique
   countryCode    String
   languageCode   String
   searchTemplate String // e.g. "{{website}} coupon codes"
   isActive       Boolean      @default(true)
+  lastSerpRunAt  DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @default(now())
   pages          TargetPage[]
@@ -93,17 +101,18 @@ model TargetLocale {
 
 // Maps to a page we want to scrape using an Apify actor
 model TargetPage {
-  id             String   @id @default(uuid())
-  url            String
-  domain         String
-  title          String
-  searchTerm     String
-  searchPosition Int
-  searchDomain   String // e.g. google.com.sg
-  apifyRunId     String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @default(now())
-  localeId       String
+  id                  String    @id @default(uuid())
+  url                 String
+  domain              String
+  title               String
+  searchTerm          String
+  searchPosition      Int
+  searchDomain        String // e.g. google.com.sg
+  apifyRunId          String?
+  apifyRunScheduledAt DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @default(now())
+  localeId            String
 
   locale TargetLocale @relation(fields: [localeId], references: [id])
 
