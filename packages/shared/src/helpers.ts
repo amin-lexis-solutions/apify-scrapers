@@ -145,3 +145,21 @@ export async function processAndStoreData(validator: DataValidator) {
     // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 }
+
+export function extractDomainFromUrl(url: string): string {
+  // Regular expression to extract the domain name
+  const regex = /https?:\/\/[^/]+\/[^/]+\/([^/]+)/;
+
+  // Find matches
+  const matches = url.match(regex);
+
+  if (matches && matches[1]) {
+    // Remove 'www.' if present
+    if (matches[1].startsWith('www.')) {
+      return matches[1].substring(4);
+    }
+    return matches[1];
+  }
+
+  return '';
+}
