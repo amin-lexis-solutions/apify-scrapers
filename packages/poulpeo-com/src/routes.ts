@@ -86,41 +86,43 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
 
       let couponUrl;
 
-      if (idInSite) {
-        idInSite = await extractIdInSite(element);
-        validator.addValue('idInSite', idInSite);
+      if (!idInSite) continue;
 
-        couponUrl = `https://www.poulpeo.com/o.htm?c=${idInSite}`;
+      idInSite = await extractIdInSite(element);
+      validator.addValue('idInSite', idInSite);
 
-        const generatedHash = generateCouponId(
-          merchantName,
-          idInSite,
-          request.url
-        );
-        const hasCode = codeElement ? true : false;
+      couponUrl = `https://www.poulpeo.com/o.htm?c=${idInSite}`;
 
-        result = { generatedHash, hasCode, couponUrl, validator };
+      const generatedHash = generateCouponId(
+        merchantName,
+        idInSite,
+        request.url
+      );
+      const hasCode = codeElement ? true : false;
 
-        if (!result.hasCode) {
-          await processAndStoreData(result.validator);
-        } else {
-          couponsWithCode[result.generatedHash] = result;
-          idsToCheck.push(result.generatedHash);
-        }
+      result = { generatedHash, hasCode, couponUrl, validator };
+
+      if (result.hasCode) {
+        couponsWithCode[result.generatedHash] = result;
+        idsToCheck.push(result.generatedHash);
+      } else {
+        await processAndStoreData(result.validator);
       }
+      
     }
     // Call the API to check if the coupon exists
     const nonExistingIds = await checkCouponIds(idsToCheck);
 
-    if (nonExistingIds.length > 0) {
-      let currentResult: CouponItemResult;
+    if (nonExistingIds?.length === 0) return;
 
-      for (const id of nonExistingIds) {
-        currentResult = couponsWithCode[id];
-        // Add the coupon URL to the request queue
-        await makeRequest(currentResult.couponUrl, currentResult.validator);
-      }
+    let currentResult: CouponItemResult;
+
+    for (const id of nonExistingIds) {
+      currentResult = couponsWithCode[id];
+      // Add the coupon URL to the request queue
+      await makeRequest(currentResult.couponUrl, currentResult.validator);
     }
+    
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.
