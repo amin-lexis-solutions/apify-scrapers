@@ -84,7 +84,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       validator.addValue('isShown', true);
       validator.addValue('isExpired', false);
 
-      let couponUrl;
+      let couponUrl = '';
 
       if (!idInSite) continue;
 
@@ -108,7 +108,6 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       } else {
         await processAndStoreData(result.validator);
       }
-      
     }
     // Call the API to check if the coupon exists
     const nonExistingIds = await checkCouponIds(idsToCheck);
@@ -122,7 +121,6 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       // Add the coupon URL to the request queue
       await makeRequest(currentResult.couponUrl, currentResult.validator);
     }
-    
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.
