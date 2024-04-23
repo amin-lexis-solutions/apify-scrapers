@@ -137,19 +137,19 @@ export class WebhooksController {
 
         const updatedFieldsCount = existingRecord
           ? Object.keys(updateData)
-              .filter((key) => key !== 'lastSeenAt' && key !== 'archivedAt')
-              .filter((key) => {
-                const existingValue = (existingRecord as any)[key];
-                const newValue = (updateData as any)[key];
+            .filter((key) => key !== 'lastSeenAt' && key !== 'archivedAt')
+            .filter((key) => {
+              const existingValue = (existingRecord as any)[key];
+              const newValue = (updateData as any)[key];
 
-                if (existingValue instanceof Date) {
-                  return (
-                    existingValue.getTime() !== new Date(newValue).getTime()
-                  );
-                }
+              if (existingValue instanceof Date) {
+                return (
+                  existingValue.getTime() !== new Date(newValue).getTime()
+                );
+              }
 
-                return existingValue !== newValue;
-              }).length
+              return existingValue !== newValue;
+            }).length
           : 0;
 
         try {
@@ -238,8 +238,19 @@ export class WebhooksController {
       `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&view=organic_results`
     ).then((res) => res.json());
 
+    // Filter out duplicate domains from the SERP results
+    const filteredData: ApifyGoogleSearchResult[] = [];
+    const domains: Set<string> = new Set();
+    for (const item of data) {
+      const domain = new URL(item.url).hostname.replace('www.', '');
+      if (!domains.has(domain)) {
+        filteredData.push(item);
+        domains.add(domain);
+      }
+    }
+
     await prisma.targetPage.createMany({
-      data: data
+      data: filteredData
         .filter((item) => !!item.url)
         .map((item) => {
           return {
