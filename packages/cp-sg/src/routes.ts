@@ -84,12 +84,12 @@ router.addHandler(Label.listing, async ({ request, $ }) => {
         element,
         request.url
       );
-      if (!result.hasCode) {
-        await processAndStoreData(result.validator);
-      } else {
+      if (result.hasCode) {
         // If coupon has a code, store it in a hashmap and add its ID for checking
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
+      } else {
+        await processAndStoreData(result.validator);
       }
     }
     // Call the API to check if the coupon exists
