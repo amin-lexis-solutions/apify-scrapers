@@ -84,14 +84,12 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       validator.addValue('isShown', true);
       validator.addValue('isExpired', false);
 
-      let couponUrl = '';
-
       if (!idInSite) continue;
 
       idInSite = await extractIdInSite(element);
       validator.addValue('idInSite', idInSite);
 
-      couponUrl = `https://www.poulpeo.com/o.htm?c=${idInSite}`;
+      const couponUrl = `https://www.poulpeo.com/o.htm?c=${idInSite}`;
 
       const generatedHash = generateCouponId(
         merchantName,
