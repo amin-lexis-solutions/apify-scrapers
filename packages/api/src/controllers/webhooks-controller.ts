@@ -243,10 +243,9 @@ export class WebhooksController {
     const domains: Set<string> = new Set();
     for (const item of data) {
       const domain = new URL(item.url).hostname.replace('www.', '');
-      if (!domains.has(domain)) {
-        filteredData.push(item);
-        domains.add(domain);
-      }
+      if (domains.has(domain)) continue;
+      filteredData.push(item);
+      domains.add(domain);
     }
 
     await prisma.targetPage.createMany({
