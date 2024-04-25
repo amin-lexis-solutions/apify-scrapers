@@ -238,8 +238,18 @@ export class WebhooksController {
       `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&view=organic_results`
     ).then((res) => res.json());
 
+    // Filter out duplicate domains from the SERP results
+    const filteredData: ApifyGoogleSearchResult[] = [];
+    const domains: Set<string> = new Set();
+    for (const item of data) {
+      const domain = new URL(item.url).hostname.replace('www.', '');
+      if (domains.has(domain)) continue;
+      filteredData.push(item);
+      domains.add(domain);
+    }
+
     await prisma.targetPage.createMany({
-      data: data
+      data: filteredData
         .filter((item) => !!item.url)
         .map((item) => {
           return {
