@@ -11,7 +11,6 @@ import {
   CouponItemResult,
 } from 'shared/helpers';
 
-
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
