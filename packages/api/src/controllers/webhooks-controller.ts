@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { Coupon, Prisma } from '@prisma/client';
 import { $Enums } from '@prisma/client';
 import fetch from 'node-fetch';
@@ -42,7 +43,7 @@ export class WebhooksController {
     const datasetId = webhookData.resource.defaultDatasetId;
     const actorRunId = webhookData.eventData.actorRunId;
     const status = webhookData.resource.status;
-    const { sourceId, localeId } = webhookData;
+    const { sourceId, localeId, targetIds } = webhookData;
 
     if (!sourceId) {
       return new StandardResponse('sourceId is a required field', true);
@@ -194,6 +195,15 @@ export class WebhooksController {
         }
       }
 
+      // update target pages apifyRunScheduledAt to current date for the targetIds
+      if (targetIds) {
+        const targetIdsArr = targetIds.split(',');
+        await prisma.targetPage.updateMany({
+          where: { id: { in: targetIdsArr } },
+          data: { lastApifyRunAt: new Date() },
+        });
+      }
+
       await prisma.processedRun.update({
         where: { id: run.id },
         data: {
@@ -207,6 +217,24 @@ export class WebhooksController {
           processedAt: new Date(),
         },
       });
+
+      // if resultCount is 0, the run is considered failed throw an warning to Sentry
+      if (scrapedData.length === 0) {
+        Sentry.captureMessage(
+          `No data was processed for run ${run.id} from source ${sourceId}`
+        );
+      }
+      if (errors.length > 0) {
+        Sentry.captureMessage(
+          `Errors occurred during processing run ${run.id} from source ${sourceId}`
+        );
+      }
+      // if resultCount not equal to createdCount + updatedCount, the run is considered failed throw an warning to Sentry
+      if (scrapedData.length !== createdCount + updatedCount) {
+        Sentry.captureMessage(
+          `Not all data was processed for run ${run.id} from source ${sourceId}`
+        );
+      }
     }, 0);
 
     return new StandardResponse('Data processed successfully', false);
@@ -225,7 +253,7 @@ export class WebhooksController {
     const datasetId = webhookData.resource.defaultDatasetId;
     const actorRunId = webhookData.eventData.actorRunId;
     const status = webhookData.resource.status;
-    const { localeId, scheduledAt } = webhookData;
+    const { localeId } = webhookData;
 
     if (status !== 'SUCCEEDED') {
       return new StandardResponse(
@@ -242,31 +270,57 @@ export class WebhooksController {
     const filteredData: ApifyGoogleSearchResult[] = [];
     const domains: Set<string> = new Set();
     for (const item of data) {
-      const domain = new URL(item.url).hostname.replace('www.', '');
-      if (domains.has(domain)) continue;
-      filteredData.push(item);
-      domains.add(domain);
+      try {
+        const url = new URL(item.url);
+        const domain = url.hostname.replace('www.', '');
+        if (domains.has(domain)) continue;
+        filteredData.push(item);
+        domains.add(domain);
+      } catch (e) {
+        Sentry.captureMessage(
+          ` ActorRun ID ${actorRunId} : Invalid URL format for SERP data: ${item.url} . Skipping.`
+        );
+        continue;
+      }
     }
 
-    await prisma.targetPage.createMany({
-      data: filteredData
-        .filter((item) => !!item.url)
-        .map((item) => {
-          return {
-            url: item.url,
-            title: item.title,
-            searchTerm: item.searchQuery.term,
-            searchPosition: item.position,
-            searchDomain: item.searchQuery.domain,
-            apifyRunId: actorRunId,
-            apifyRunScheduledAt: scheduledAt,
-            domain: new URL(item.url).hostname.replace('www.', ''),
-            localeId,
-          };
-        }),
-      skipDuplicates: true,
+    // Process the data and store it in the database
+    const validData: any = filteredData
+      .filter((item) => !!item.url)
+      .map((item) => {
+        return {
+          url: item.url,
+          title: item.title,
+          searchTerm: item.searchQuery.term,
+          searchPosition: item.position,
+          searchDomain: item.searchQuery.domain,
+          apifyRunId: actorRunId,
+          domain: new URL(item.url).hostname.replace('www.', ''),
+          localeId,
+        };
+      });
+
+    validData?.forEach(async (item: any) => {
+      try {
+        await prisma.targetPage.upsert({
+          where: { url: item.url },
+          create: {
+            ...item,
+            lastApifyRunAt: null,
+          },
+          update: {
+            ...item,
+            updatedAt: new Date(),
+          },
+        });
+      } catch (e) {
+        console.error(`Error processing SERP data: ${e}`);
+      }
     });
 
-    return new StandardResponse('Data processed successfully', false);
+    return new StandardResponse(
+      `Data processed successfully. Created ${validData.length} / ${filteredData.length}  new records.`,
+      false
+    );
   }
 }

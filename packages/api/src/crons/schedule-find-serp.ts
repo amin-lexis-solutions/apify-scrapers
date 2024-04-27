@@ -26,7 +26,10 @@ const findTargets = async () => {
 
   const maxConcurrency = MAX_CONCURRENT_RUNS - runningActorCount;
 
-  if (maxConcurrency < 1) return;
+  if (maxConcurrency < 1) {
+    console.log('Max concurrency reached, skipping actors run');
+    return;
+  }
 
   fetch(`${process.env.BASE_URL}targets/find-n-locales`, {
     method: 'POST',

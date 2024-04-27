@@ -16,4 +16,9 @@ export class SentryController {
     }
     return { url: sentryUrl };
   }
+
+  @Get('/error')
+  throwSentryError() {
+    throw new Error('This is a test error for Sentry.');
+  }
 }

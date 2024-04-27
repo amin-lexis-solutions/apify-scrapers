@@ -51,7 +51,7 @@ const localesToImport = [
   },
   {
     locale: 'en_AU',
-    countryCode: 'en',
+    countryCode: 'au',
     languageCode: 'en',
     searchTemplate: '{{website}} discount code',
   },
