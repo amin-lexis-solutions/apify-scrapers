@@ -8,3 +8,4 @@ sentry-dsn.ts
 **/null
 _NOTES
 test-volumes
+packages/api/src/crons/.env.cron
