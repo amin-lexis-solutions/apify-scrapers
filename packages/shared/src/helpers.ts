@@ -32,7 +32,7 @@ export async function fetchSentryUrl() {
   }
 }
 
-export async function checkCouponIds(ids) {
+export async function checkCouponIds(ids: any[]): Promise<any[]> {
   try {
     const response = await axios.post(
       'https://codes-api-d9jbl.ondigitalocean.app/coupons/match-ids',
@@ -43,13 +43,13 @@ export async function checkCouponIds(ids) {
     const existingIdsIndices = response.data;
 
     // Convert indices back to IDs
-    const existingIds = existingIdsIndices.map((index) => ids[index]);
+    const existingIds = existingIdsIndices.map((index: any) => ids[index]);
 
     // Filter the original IDs array to get only the non-existing IDs
-    const nonExistingIds = ids.filter((id) => !existingIds.includes(id));
+    const nonExistingIds = ids.filter((id: any) => !existingIds.includes(id));
     console.log('Non-existing IDs count:', nonExistingIds.length);
 
-    return nonExistingIds;
+    return nonExistingIds as any[];
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

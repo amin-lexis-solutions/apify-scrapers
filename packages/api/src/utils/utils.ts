@@ -1,21 +1,6 @@
 import crypto from 'crypto';
 
-export function getDomainName(url: string): string {
-  try {
-    const parsedUrl = new URL(url);
-    let hostname = parsedUrl.hostname;
-
-    // Remove 'www.' if present
-    if (hostname.startsWith('www.')) {
-      hostname = hostname.substring(4);
-    }
-
-    return hostname;
-  } catch (error) {
-    console.error('Invalid URL:', error);
-    return '';
-  }
-}
+import { getDomainName } from 'shared/helpers';
 
 export function normalizeString(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
