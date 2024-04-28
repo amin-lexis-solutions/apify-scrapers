@@ -1,13 +1,17 @@
-require('dotenv').config(); // This line should be at the very top of your main file
-
+import dotenv from 'dotenv';
+dotenv.config();
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import 'reflect-metadata'; // Required for routing-controllers
 
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
-import { Express } from 'express';
+
+import express, { Express } from 'express';
+
 import expressBasicAuth from 'express-basic-auth';
 import {
   RoutingControllersOptions,
-  createExpressServer,
+  useExpressServer,
 } from 'routing-controllers';
 import { getMetadataArgsStorage } from 'routing-controllers';
 import { routingControllersToSpec } from 'routing-controllers-openapi';
@@ -21,6 +25,30 @@ import { SentryController } from './controllers/sentry-controller';
 import { useNgrok } from './lib/ngrok';
 import { CustomErrorHandler } from './middlewares/custom-error-handler';
 import { authorizationChecker } from './utils/auth';
+
+// Create a single Express app instance
+const app: Express = express();
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  integrations: [
+    // enable HTTP calls tracing
+    new Sentry.Integrations.Http({ tracing: true }),
+    // enable Express.js middleware tracing
+    new Sentry.Integrations.Express({ app }),
+    nodeProfilingIntegration(),
+  ],
+  // Performance Monitoring
+  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  // Set sampling rate for profiling - this is relative to tracesSampleRate
+  profilesSampleRate: 1.0,
+});
+
+// The request handler must be the first middleware on the app
+app.use(Sentry.Handlers.requestHandler());
+
+// TracingHandler creates a trace for every incoming request
+app.use(Sentry.Handlers.tracingHandler());
 
 const routingControllersOptions: RoutingControllersOptions = {
   controllers: [
@@ -37,7 +65,8 @@ const routingControllersOptions: RoutingControllersOptions = {
   authorizationChecker,
 };
 
-const app: Express = createExpressServer(routingControllersOptions);
+// Apply the routing-controllers setup to the existing Express app
+useExpressServer(app, routingControllersOptions);
 
 // Generate OpenAPI spec
 const storage = getMetadataArgsStorage();
@@ -76,6 +105,9 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(spec)
 );
+
+// The error handler must be before any other error middleware and after all controllers
+app.use(Sentry.Handlers.errorHandler());
 
 const port = process.env.PORT || 3000;
 

@@ -112,6 +112,9 @@ export class WebhookRequestBody {
 
   @IsString()
   localeId: string;
+
+  @IsString()
+  targetIds?: string;
 }
 
 export class SerpWebhookRequestBody {
@@ -129,9 +132,6 @@ export class SerpWebhookRequestBody {
 
   @IsString()
   localeId: string;
-
-  @IsString()
-  scheduledAt: string;
 }
 
 export class FindTargetPagesBody {

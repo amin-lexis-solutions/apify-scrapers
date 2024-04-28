@@ -175,11 +175,11 @@ export class TargetsController {
     @Body() body: RunTargetPagesBody
   ): Promise<StandardResponse> {
     const { maxConcurrency } = body;
-
     console.log(
       `Will attempt to schedule ${maxConcurrency} sources (maps to actor) for scraping.`
     );
 
+    // Find sources that have not been scraped today or have never been scraped
     const sources = await prisma.source.findMany({
       where: {
         isActive: true,
@@ -191,7 +191,7 @@ export class TargetsController {
       include: {
         domains: true,
       },
-      take: maxConcurrency,
+      // take: maxConcurrency,
     });
 
     console.log(
@@ -200,88 +200,100 @@ export class TargetsController {
 
     let actorsStarted = 0;
 
-    const counts = await Promise.all(
-      sources.map(async (source) => {
-        if (maxConcurrency <= actorsStarted) {
-          console.log(
-            `Already scheduled the maximum number of actors. Skipping source ${source.id}.`
-          );
-          return 0;
-        }
+    const counts: any = [];
+    for (const source of sources) {
+      if (maxConcurrency <= actorsStarted) {
+        console.log(
+          `Already scheduled the maximum number of actors. Skipping source ${source.id}.`
+        );
+        break;
+      }
 
-        const sourceDomains = source.domains.map((domain) => domain.domain);
-        const twoWeeksAgo = moment().subtract(30, 'day').toDate();
+      const sourceDomains = source.domains.map((domain) => domain.domain);
+      const twoWeeksAgo = moment().subtract(30, 'day').toDate();
 
-        // Find the target pages for the source that have not been scraped in the last two weeks
-        const pages = await prisma.targetPage.findMany({
-          where: {
-            AND: [
-              { domain: { in: sourceDomains } },
-              {
-                OR: [
-                  { apifyRunScheduledAt: null },
-                  { apifyRunScheduledAt: { lt: twoWeeksAgo } },
-                ],
-              },
-            ],
-          },
-        });
+      // Find the target pages for the source that have not been scraped in the last two weeks
+      const pages = await prisma.targetPage.findMany({
+        where: {
+          AND: [
+            { domain: { in: sourceDomains } },
+            {
+              OR: [
+                { lastApifyRunAt: null },
+                { lastApifyRunAt: { lt: twoWeeksAgo } },
+              ],
+            },
+          ],
+        },
+      });
 
-        if (pages.length === 0) {
-          console.log(
-            `There are no fresh target pages for domain ${source.name}. Skipping coupon scraping for actor ${source.apifyActorId}`
-          );
-          return 0;
-        }
+      if (pages.length === 0) {
+        console.log(
+          `There are no fresh target pages for domain ${source.name}. Skipping coupon scraping for actor ${source.apifyActorId}`
+        );
+        continue;
+      }
+
+      console.log(
+        `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.name}. Will be chunking the start URLs in groups of 1000.`
+      );
+
+      const localeId = pages[0]?.localeId;
+
+      const chunkSize = 1_000;
+      for (let i = 0; i < pages.length; i += chunkSize) {
+        const pagesChunk = pages.slice(i, i + chunkSize);
+
+        // could potentually start more actors than maxConcurrency; should be fine since the maxConcurrency actually keep a buffer
+        actorsStarted++;
 
         console.log(
-          `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.name}. Will be chunking the start URLs in groups of 1000.`
+          `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.name}.`
         );
 
-        await prisma.source.update({
-          where: { id: source.id },
-          data: { lastRunAt: new Date() },
+        const startUrls = pagesChunk.map((page) => ({ url: page.url }));
+        const targetIds = pagesChunk.map((page) => page.id);
+
+        await apify.actor(source.apifyActorId).start(
+          { startUrls: startUrls },
+          {
+            webhooks: [
+              {
+                eventTypes: [
+                  'ACTOR.RUN.SUCCEEDED',
+                  'ACTOR.RUN.FAILED',
+                  'ACTOR.RUN.TIMED_OUT',
+                  'ACTOR.RUN.ABORTED',
+                ],
+                requestUrl: getWebhookUrl('/webhooks/coupons'),
+                payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}},"targetIds": "${targetIds}" }`,
+                headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
+              },
+            ],
+          }
+        );
+
+        await prisma.targetPage.updateMany({
+          where: {
+            id: { in: pagesChunk.map((page) => page.id) },
+          },
+          data: { lastApifyRunAt: new Date() },
         });
+      }
 
-        const localeId = pages[0]?.localeId;
+      await prisma.source.update({
+        where: { id: source.id },
+        data: { lastRunAt: new Date() },
+      });
 
-        const chunkSize = 1_000;
-        for (let i = 0; i < pages.length; i += chunkSize) {
-          const pagesChunk = pages.slice(i, i + chunkSize);
+      counts.push(pages.length);
+    }
 
-          // could potentually start more actors than maxConcurrency; should be fine since the maxConcurrency actually keep a buffer
-          actorsStarted++;
-
-          console.log(
-            `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.name}.`
-          );
-
-          await apify.actor(source.apifyActorId).start(
-            { startUrls: pagesChunk.map((page) => ({ url: page.url })) },
-            {
-              webhooks: [
-                {
-                  eventTypes: [
-                    'ACTOR.RUN.SUCCEEDED',
-                    'ACTOR.RUN.FAILED',
-                    'ACTOR.RUN.TIMED_OUT',
-                    'ACTOR.RUN.ABORTED',
-                  ],
-                  requestUrl: getWebhookUrl('/webhooks/coupons'),
-                  payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}}}`,
-                  headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
-                },
-              ],
-            }
-          );
-        }
-
-        return pages.length;
-      })
-    );
-
-    const result = sources.reduce((acc, actor, index) => {
-      acc[actor.name] = counts[index];
+    // Return the number of pages started for each source (actor)
+    const result = sources.reduce((acc, source, index) => {
+      if (counts[index] > 0) {
+        acc[source.name] = counts[index];
+      }
       return acc;
     }, {} as Record<string, number>);
 
@@ -296,8 +308,6 @@ async function findSerpForLocaleAndDomains(
   console.log(
     `Locale ${locale.id} has ${domains.length} domains to search. Chunking into a few request with 1 000 domains each`
   );
-
-  const scheduleTime = moment().toISOString();
 
   const chunkSize = 1_000;
   for (let i = 0; i < domains.length; i += chunkSize) {
@@ -328,7 +338,7 @@ async function findSerpForLocaleAndDomains(
               'ACTOR.RUN.ABORTED',
             ],
             requestUrl: getWebhookUrl('/webhooks/serp'),
-            payloadTemplate: `{"localeId":"${locale.id}","resource":{{resource}},"eventData":{{eventData}},"scheduledAt":"${scheduleTime}"}`,
+            payloadTemplate: `{"localeId":"${locale.id}","resource":{{resource}},"eventData":{{eventData}}}`,
             headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
           },
         ],

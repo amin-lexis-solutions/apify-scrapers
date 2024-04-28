@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import {
   ExpressErrorMiddlewareInterface,
   HttpError,
@@ -9,6 +10,9 @@ import { StandardResponse } from '../utils/validators';
 @Middleware({ type: 'after' })
 export class CustomErrorHandler implements ExpressErrorMiddlewareInterface {
   error(error: any, request: any, response: any, next: (err?: any) => any) {
+    // Capture the error with Sentry
+    Sentry.captureException(error);
+
     // Log the error details, excluding sensitive information
     console.error('Error occurred:', {
       timestamp: new Date().toISOString(),
@@ -35,6 +39,6 @@ export class CustomErrorHandler implements ExpressErrorMiddlewareInterface {
     // Standardized error response with appropriate message
     response.status(httpCode).json(new StandardResponse(responseMessage, true));
 
-    next();
+    next(error);
   }
 }

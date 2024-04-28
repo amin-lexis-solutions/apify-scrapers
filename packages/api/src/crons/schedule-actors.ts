@@ -26,7 +26,10 @@ const runActors = async () => {
 
   const maxConcurrency = MAX_CONCURRENT_RUNS - runningActorCount;
 
-  if (maxConcurrency < 1) return;
+  if (maxConcurrency < 1) {
+    console.log('Max concurrency reached, skipping actors run');
+    return;
+  }
 
   fetch(`${process.env.BASE_URL}targets/run`, {
     method: 'POST',
@@ -35,7 +38,16 @@ const runActors = async () => {
       Authorization: 'Bearer ' + (process.env.API_SECRET as string),
     },
     body: JSON.stringify({ maxConcurrency }),
-  });
+  })
+    .then((data) => {
+      if (data.status != 200) {
+        throw new Error('Failed to run actors');
+      }
+      console.log(
+        `🚀  Actors run successfully with concurrency ${maxConcurrency} `
+      );
+    })
+    .catch((e) => console.error(e));
 };
 
 runActors();
