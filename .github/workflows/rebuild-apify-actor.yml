@@ -1,52 +1,33 @@
-name: Conditional Apify Actor Deployment
+name: Rebuild Apify Actor
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'packages/**'
+      - 'package/**'
+      - '!package/api/**'
+      - '!package/shared/**'
 
 jobs:
-  deploy-actors:
+  deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '18'
-      - name: Install dependencies
-        run: yarn install
+
       - name: Install Apify CLI
         run: npm install -g apify-cli
+
       - name: Authenticate with Apify using API token
         env:
           APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
         run: apify login --token $APIFY_TOKEN
-      - name: Deploy actors based on changes
-        env:
-          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
-        run: |
-          changed_dirs=$(git diff --name-only HEAD~1 HEAD | grep -v "packages/api" | grep -v "packages/shared" | cut -d'/' -f2 | sort -u)
-          echo "Changed directories: $changed_dirs\n\n"
 
-          for actor_name in $changed_dirs; do
-              MAIN_TS="$dir/src/main.ts"
-
-              if [ -f "$MAIN_TS" ]; then
-                  TYPE="puppeteer" # Default type
-                  if grep -q "prepareCheerioScraper" "$MAIN_TS"; then
-                      TYPE="cheerio"
-                  fi
-                  echo "Deploying $actor_name with $TYPE"
-                  ./scripts/deploy-apify.js "$actor_name" "$TYPE"
-              else
-                  echo "Actor $actor_name has no main.ts file" >&2
-                  exit 1
-              fi
-          done
-        shell: bash
-
-
-#
+      - name: Deploy Apify Actor
+        run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
