@@ -112,22 +112,19 @@ export function formatDateTime(text: string): string {
   return parsedDate.toISOString().split('Z')[0];
 }
 
-// Extracts the domain name from a URL, removing 'www.' if present
+// Extracts the domain name from a URL and removes 'www.' if present
 export function getDomainName(url: string): string {
-  try {
-    const parsedUrl = new URL(url);
-    let hostname = parsedUrl.hostname;
+  const parsedUrl = new URL(url);
 
-    // Remove 'www.' if present
-    if (hostname.startsWith('www.')) {
-      hostname = hostname.substring(4);
-    }
+  // Extract hostname from URL or an empty string if the URL is invalid
+  let hostname = parsedUrl?.hostname || '';
 
-    return hostname;
-  } finally {
-    // We don't catch so that the error is logged in Sentry, but use finally
-    // since we want the Apify actor to end successfully and not waste resources by retrying.
+  // Remove 'www.' if present
+  if (hostname.startsWith('www.')) {
+    hostname = hostname.substring(4);
   }
+
+  return hostname;
 }
 
 // Sleeps for the specified number of milliseconds
