@@ -1,0 +1,45 @@
+name: Deploy Updated Apify Actors
+
+on:
+  push:
+    branches:
+      - ci-deploy-actor
+    paths:
+      - 'package/**'
+      - '!package/api/**'
+      - '!package/shared/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install Apify CLI
+        run: npm install -g apify-cli
+
+      - name: Authenticate with Apify using API token
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: apify login --token $APIFY_TOKEN
+
+      - name: Detect Changes and Deploy
+        run: |
+          FOLDERS=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '^package/' | grep -v '^package/api/' | grep -v '^package/shared/' | awk -F'/' '{print $2}' | uniq)
+          for FOLDER in $FOLDERS
+          do
+            if [ -d "package/$FOLDER" ]; then
+              echo "Deploying $FOLDER..."
+              cd package/$FOLDER
+              apify push --token ${{ secrets.APIFY_TOKEN }}
+              cd ../..
+            fi
+          done
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
