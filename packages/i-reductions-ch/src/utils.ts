@@ -49,24 +49,6 @@ export function formatDateTime(text: string): string {
   return parsedDate.toISOString().split('Z')[0];
 }
 
-// Extracts the domain name from a URL, removing 'www.' if present
-export function getDomainName(url: string): string {
-  try {
-    const parsedUrl = new URL(url);
-    let hostname = parsedUrl.hostname;
-
-    // Remove 'www.' if present
-    if (hostname.startsWith('www.')) {
-      hostname = hostname.substring(4);
-    }
-
-    return hostname;
-  } catch (error) {
-    console.error('Invalid URL:', error);
-    return '';
-  }
-}
-
 // Sleeps for the specified number of milliseconds
 export function sleep(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));

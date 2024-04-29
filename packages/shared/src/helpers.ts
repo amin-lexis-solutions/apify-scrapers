@@ -32,7 +32,7 @@ export async function fetchSentryUrl() {
   }
 }
 
-export async function checkCouponIds(ids) {
+export async function checkCouponIds(ids: any[]): Promise<any[]> {
   try {
     const response = await axios.post(
       'https://codes-api-d9jbl.ondigitalocean.app/coupons/match-ids',
@@ -43,13 +43,13 @@ export async function checkCouponIds(ids) {
     const existingIdsIndices = response.data;
 
     // Convert indices back to IDs
-    const existingIds = existingIdsIndices.map((index) => ids[index]);
+    const existingIds = existingIdsIndices.map((index: any) => ids[index]);
 
     // Filter the original IDs array to get only the non-existing IDs
-    const nonExistingIds = ids.filter((id) => !existingIds.includes(id));
+    const nonExistingIds = ids.filter((id: any) => !existingIds.includes(id));
     console.log('Non-existing IDs count:', nonExistingIds.length);
 
-    return nonExistingIds;
+    return nonExistingIds as any[];
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.
@@ -112,22 +112,19 @@ export function formatDateTime(text: string): string {
   return parsedDate.toISOString().split('Z')[0];
 }
 
-// Extracts the domain name from a URL, removing 'www.' if present
+// Extracts the domain name from a URL and removes 'www.' if present
 export function getDomainName(url: string): string {
-  try {
-    const parsedUrl = new URL(url);
-    let hostname = parsedUrl.hostname;
+  const parsedUrl = new URL(url);
 
-    // Remove 'www.' if present
-    if (hostname.startsWith('www.')) {
-      hostname = hostname.substring(4);
-    }
+  // Extract hostname from URL or an empty string if the URL is invalid
+  let hostname = parsedUrl?.hostname || '';
 
-    return hostname;
-  } finally {
-    // We don't catch so that the error is logged in Sentry, but use finally
-    // since we want the Apify actor to end successfully and not waste resources by retrying.
+  // Remove 'www.' if present
+  if (hostname.startsWith('www.')) {
+    hostname = hostname.substring(4);
   }
+
+  return hostname;
 }
 
 // Sleeps for the specified number of milliseconds

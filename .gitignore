@@ -9,3 +9,5 @@ sentry-dsn.ts
 _NOTES
 test-volumes
 packages/api/src/crons/.env.cron
+package-lock.json
+yarn.lock
