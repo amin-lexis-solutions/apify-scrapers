@@ -8,7 +8,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
-  extractDomainFromUrl,
+  getDomainName,
 } from 'shared/helpers';
 
 export const router = createCheerioRouter();
@@ -91,7 +91,7 @@ router.addHandler(Label.listing, async ({ request, $ }) => {
       throw new Error('merchantName not found');
     }
     // Extract coupon list elements from the webpage
-    const domain = extractDomainFromUrl(request.url);
+    const domain = getDomainName(request.url);
 
     const couponList = $('.promo-container.code');
 

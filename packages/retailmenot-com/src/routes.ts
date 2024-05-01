@@ -6,7 +6,7 @@ import {
   CouponHashMap,
   checkCouponIds,
   CouponItemResult,
-  extractDomainFromUrl,
+  getDomainName,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
@@ -29,7 +29,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       throw new Error('merchan name not found');
     }
     // Extract domain from the request URL
-    const domain = extractDomainFromUrl(request.url);
+    const domain = getDomainName(request.url);
 
     // Find all valid coupons on the page
     const validCoupons = await page.$$(
