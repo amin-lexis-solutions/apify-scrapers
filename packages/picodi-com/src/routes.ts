@@ -1,5 +1,5 @@
 import cheerio from 'cheerio';
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, KeyValueStore } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
 import {
@@ -8,7 +8,6 @@ import {
   generateCouponId,
   checkCouponIds,
   CouponItemResult,
-  CouponHashMap,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -16,6 +15,17 @@ const CUSTOM_HEADERS_LOCAL = {
   ...CUSTOM_HEADERS,
   Origin: 'https://www.picodi.com',
 };
+
+function requestForCouponWithCode(item: CouponItemResult) {
+  return {
+    url: item.couponUrl,
+    userData: {
+      label: Label.getCode,
+      validatorData: item.validator.getData(),
+    },
+    headers: CUSTOM_HEADERS_LOCAL,
+  };
+}
 
 function extractCountryCode(url: string): string {
   // Use the URL constructor to parse the given URL
@@ -151,16 +161,18 @@ router.addHandler(Label.listing, async (context) => {
       const validCoupons = $(
         'section.card-offers > ul > li.type-promo, section.card-offers > ul > li.type-code'
       );
-      const couponsWithCode: CouponHashMap = {};
+      const couponsWithCode: any = {};
       const idsToCheck: string[] = [];
-      let result: CouponItemResult;
+      let result: CouponItemResult = {} as any;
       for (let i = 0; i < validCoupons.length; i++) {
         const element = validCoupons[i];
         result = processCouponItem(merchantName, false, element, request.url);
         if (!result.hasCode) {
           await processAndStoreData(result.validator);
         } else {
-          couponsWithCode[result.generatedHash] = result;
+          couponsWithCode[result.generatedHash] = requestForCouponWithCode(
+            result
+          );
           idsToCheck.push(result.generatedHash);
         }
       }
@@ -177,24 +189,50 @@ router.addHandler(Label.listing, async (context) => {
       //   );
       // }
       // Call the API to check if the coupon exists
-      const nonExistingIds = await checkCouponIds(idsToCheck);
+      // const nonExistingIds = await checkCouponIds(idsToCheck);
 
-      if (nonExistingIds.length > 0) {
-        let currentResult: CouponItemResult;
-        for (const id of nonExistingIds) {
-          currentResult = couponsWithCode[id];
-          // Add the coupon URL to the request queue
-          await crawler.requestQueue.addRequest(
-            {
-              url: currentResult.couponUrl,
-              userData: {
-                label: Label.getCode,
-                validatorData: currentResult.validator.getData(),
-              },
-              headers: CUSTOM_HEADERS_LOCAL,
-            },
-            { forefront: true }
-          );
+      // Open a named key-value store
+      const store = await KeyValueStore.open('coupons');
+
+      const couponsWithCodes = await store.getValue('coupons');
+
+      // convert unknown type to object
+      const existingRequests = couponsWithCodes || {};
+
+      // merge the new requests with the existing ones
+      const mergedRequests = {
+        ...existingRequests,
+        ...couponsWithCode,
+      };
+
+      await store.setValue('coupons', mergedRequests);
+
+      const queue = crawler.requestQueue;
+
+      console.log(`Handled requests count: ${queue.handledCount()}`);
+
+      // Queue the requests for the coupons with codes
+      console.log(`Queuing ${Object.keys(mergedRequests).length} requests`);
+
+      // Check if the queue is finished
+      const isQueueFinished = await queue.fetchNextRequest();
+      if (isQueueFinished === null) {
+        console.log('Queue is finished');
+        // mergedRequests keys as an array of strings
+        const keys = Object.keys(mergedRequests);
+        const nonExistingIds = await checkCouponIds(keys);
+        console.log('Non-existing IDs count:', nonExistingIds.length);
+
+        // Filter out the non-existing IDs from the merged requests
+        if (nonExistingIds.length > 0) {
+          let currentResult: any;
+          for (const id of nonExistingIds) {
+            currentResult = mergedRequests[id];
+            // Add the coupon URL to the request queue
+            await crawler.requestQueue.addRequest(currentResult, {
+              forefront: true,
+            });
+          }
         }
       }
     }
