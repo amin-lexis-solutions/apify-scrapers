@@ -209,7 +209,6 @@ router.addHandler(Label.listing, async (context) => {
 
       const queue = crawler.requestQueue;
 
-
       console.log(`Handled requests count: ${queue.handledCount()}`);
 
       // Queue the requests for the coupons with codes
