@@ -2,26 +2,8 @@ import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData } from 'shared/helpers';
+import { processAndStoreData, getDomainName } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
-
-function extractDomainFromUrl(url: string): string {
-  // Regular expression to extract the domain name
-  const regex = /https?:\/\/[^/]+\/[^/]+\/([^/]+)/;
-
-  // Find matches
-  const matches = url.match(regex);
-
-  if (matches && matches[1]) {
-    // Remove 'www.' if present
-    if (matches[1].startsWith('www.')) {
-      return matches[1].substring(4);
-    }
-    return matches[1];
-  }
-
-  return '';
-}
 
 async function processCouponItem(
   merchantName: string,
@@ -129,7 +111,7 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Merchant name is missing');
     }
 
-    const domain = extractDomainFromUrl(request.url);
+    const domain = getDomainName(request.url);
     if (!domain) {
       throw new Error('Domain is missing');
     }

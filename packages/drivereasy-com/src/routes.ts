@@ -6,6 +6,7 @@ import {
   CouponHashMap,
   checkCouponIds,
   CouponItemResult,
+  getDomainName,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
@@ -64,16 +65,11 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
   async function getCouponUrl(domain, id) {
     return `https://www.drivereasy.com/coupons/${domain}?promoid=${id}`;
   }
-  async function extractDomainFromUrl(url: string) {
-    const u = new URL(url);
-    const lastPathname = u?.pathname?.split('/').pop();
-    return lastPathname;
-  }
 
   try {
     await page.waitForSelector('.list_coupons li');
 
-    const domain = await extractDomainFromUrl(request.url);
+    const domain = getDomainName(request.url);
 
     const merchantName = await page.$eval('.m_logo img', (node) =>
       node.getAttribute('alt')

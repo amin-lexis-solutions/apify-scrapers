@@ -6,7 +6,7 @@ import {
   CouponHashMap,
   checkCouponIds,
   CouponItemResult,
-  extractDomainFromUrl,
+  getDomainName,
 } from 'shared/helpers';
 import { createPuppeteerRouter } from 'crawlee';
 
@@ -73,7 +73,7 @@ router.addHandler(Label.listing, async ({ request, page, enqueueLinks }) => {
       throw new Error('merchantName not found');
     }
     // Extract coupon list elements from the webpage
-    const domain = extractDomainFromUrl(request.url);
+    const domain = getDomainName(request.url);
 
     const couponList = await page.$$('#active-coupons li.obox.code');
 

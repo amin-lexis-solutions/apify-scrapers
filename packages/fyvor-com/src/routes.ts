@@ -10,26 +10,9 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  getDomainName,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
-
-function extractDomainFromUrl(url: string): string {
-  // Regular expression to extract the domain name
-  const regex = /https?:\/\/[^/]+\/[^/]+\/([^/]+)\/?$/;
-
-  // Find matches
-  const matches = url.match(regex);
-
-  if (matches && matches[1]) {
-    // Remove 'www.' if present
-    if (matches[1].startsWith('www.')) {
-      return matches[1].substring(4);
-    }
-    return matches[1];
-  }
-
-  return '';
-}
 
 function processCouponItem(
   merchantName: string,
@@ -125,7 +108,7 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Merchant name is missing');
     }
 
-    const domain = extractDomainFromUrl(request.url);
+    const domain = getDomainName(request.url);
     if (!domain) {
       throw new Error('Domain is missing');
     }

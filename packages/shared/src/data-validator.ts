@@ -5,7 +5,7 @@ enum ValidationResultCode {
   MISSING_REQUIRED_FIELD,
 }
 
-type SchemaType = 'string' | 'number' | 'boolean' | 'date';
+type SchemaType = 'string' | 'number' | 'boolean' | 'date' | 'domain' | 'url';
 
 interface FieldSchema {
   type: SchemaType;
@@ -16,7 +16,7 @@ class DataValidator {
   private data: Record<string, any> = {};
   private schema: Record<string, FieldSchema> = {
     idInSite: { type: 'string', required: true },
-    domain: { type: 'string', required: false },
+    domain: { type: 'domain', required: false },
     merchantName: { type: 'string', required: true },
     title: { type: 'string', required: true },
     description: { type: 'string', required: false },
@@ -24,7 +24,7 @@ class DataValidator {
     expiryDateAt: { type: 'string', required: false },
     code: { type: 'string', required: false },
     startDateAt: { type: 'string', required: false },
-    sourceUrl: { type: 'string', required: true },
+    sourceUrl: { type: 'url', required: true },
     isShown: { type: 'boolean', required: false },
     isExpired: { type: 'boolean', required: false },
     isExclusive: { type: 'boolean', required: false },
@@ -71,6 +71,10 @@ class DataValidator {
           typeof value === 'number' ||
           value instanceof Date
         );
+      case 'domain':
+        return typeof value === 'string' && value.includes('.'); // very simple domain validation (contains a dot)
+      case 'url':
+        return typeof value === 'string' && value.includes('://'); // very simple URL validation (http:// or https://)
       case 'number':
         return (
           typeof value === 'number' ||
