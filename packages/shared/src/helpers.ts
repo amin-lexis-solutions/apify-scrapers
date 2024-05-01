@@ -50,9 +50,9 @@ export async function checkCouponIds(ids: any[]): Promise<any[]> {
     console.log('Non-existing IDs count:', nonExistingIds.length);
 
     return nonExistingIds as any[];
-  } finally {
-    // We don't catch so that the error is logged in Sentry, but use finally
-    // since we want the Apify actor to end successfully and not waste resources by retrying.
+  } catch (error) {
+    // console.log('Failed to check coupon IDs:', error);
+    return [] as any[];
   }
 }
 
