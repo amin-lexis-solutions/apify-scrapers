@@ -17,42 +17,39 @@
     it('should call actor with ID', async () => {
       await expectAsync(runResult).toHaveStatus('SUCCEEDED');
     });
+
     it('should not contain ReferenceError', async () => {
       await expectAsync(runResult).withLog((log) => {
         expect(log)
           .withContext(runResult.format('ReferenceError'))
-
           .not.toContain('ReferenceError');
 
         expect(log)
           .withContext(runResult.format('TypeError'))
-
           .not.toContain('TypeError');
       });
     });
+
     it('should not contain empty dataset', async () => {
       await expectAsync(runResult).withDataset(({ dataset, info }) => {
         expect(info.cleanItemCount)
           .withContext(runResult.format('Dataset cleanItemCount'))
-
           .toBeGreaterThan(0);
 
         expect(dataset.items)
           .withContext(runResult.format('Dataset items array'))
-
           .toBeNonEmptyArray();
       });
     });
+
     it('should not contain empty dataset', async () => {
       await expectAsync(runResult).withDataset(({ dataset, info }) => {
         expect(info.cleanItemCount)
           .withContext(runResult.format('Dataset cleanItemCount'))
-
           .toBeGreaterThan(0);
 
         expect(dataset.items)
           .withContext(runResult.format('Dataset items array'))
-
           .toBeNonEmptyArray();
       });
     });
