@@ -34,7 +34,6 @@ export async function fetchSentryUrl() {
 
 export async function checkCouponIds(ids: any[]): Promise<any[]> {
   try {
-    // Send a POST request to the API to check if the coupon IDs exist
     const response = await axios.post(
       'https://codes-api-d9jbl.ondigitalocean.app/items/match-ids',
       { ids: ids }
