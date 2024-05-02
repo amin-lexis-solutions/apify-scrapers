@@ -1,11 +1,15 @@
 #!/bin/bash
 
+# Setup Git to fetch all history for all tags and branches
+git fetch --prune --unshallow
+
+if [ $(git rev-list --count HEAD) -ge 2 ]; then
 
 # Get the list of folders that have been modified in the packages/ directory since the last commit (excluding packages/api and packages/shared)
-packages=$(git diff --name-only HEAD~1 packages/ | grep -v 'packages/api\|packages/shared' | cut -d/ -f2 | cut -d/ -f1 | uniq)
+packages=$(git diff --name-only HEAD^ packages/ | grep -v 'packages/api\|packages/shared' | cut -d/ -f2 | cut -d/ -f1 | uniq)
 
 # Check if the packages/shared/ folder has been modified since the last commit
-if git diff --name-only HEAD~1 packages/shared/ | grep -q 'packages/shared'; then
+if git diff --name-only HEAD^ packages/shared/ | grep -q 'packages/shared'; then
     # Get the list of all packages except packages/shared and packages/api
     packages=$(ls packages | grep -v 'shared\|api')
 fi 
@@ -31,3 +35,6 @@ do
     fi
 done
 
+else
+    echo "Not enough commits to perform the operation."
+fi
