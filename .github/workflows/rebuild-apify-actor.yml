@@ -6,15 +6,15 @@ on:
     branches:
       - main
     paths:
-      - 'package/**'
-      - '!package/api/**'
+      - 'packages/**'
+      - '!packages/api/**'
 
   push:
     branches:
       - main
     paths:
-      - 'package/**'
-      - '!package/api/**'
+      - 'packages/**'
+      - '!packages/api/**'
 
   workflow_dispatch:
 

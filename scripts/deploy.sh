@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Setup Git to fetch all history for all tags and branches
-git fetch --prune --unshallow
+# fetch history of the main branch
+git fetch --depth=1 origin +refs/heads/main:refs/remotes/origin/main --prune --unshallow
 
 if [ $(git rev-list --count HEAD) -ge 2 ]; then
 
