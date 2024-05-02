@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # fetch history of the main branch
-git fetch --depth=1 origin +refs/heads/main:refs/remotes/origin/main --prune --unshallow
+git fetch --prune origin +refs/heads/main:refs/remotes/origin/main
 
 if [ $(git rev-list --count HEAD) -ge 2 ]; then
 
