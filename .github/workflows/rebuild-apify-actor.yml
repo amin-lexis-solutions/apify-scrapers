@@ -25,6 +25,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2 # Fetches the last two commits for comparison
 
       - name: Set up Node.js
         uses: actions/setup-node@v2
