@@ -4,13 +4,25 @@
   "type": "commonjs",
   "description": "This is an example of a Crawlee project.",
   "dependencies": {
-    "crawlee": "^3.0.0"
+    "@types/cheerio": "^0.22.34",
+    "axios": "^1.6.2",
+    "cheerio": "^1.0.0-rc.12",
+    "node-html-parser": "^6.1.11",
+    "html-entities": "^2.4.0",
+    "chrono-node": "^2.7.3",
+    "apify": "3.1.14",
+    "crawlee": "3.7.2",
+    "moment": "^2.29.4",
+    "@sentry/node": "^6.13.3"
   },
   "devDependencies": {
     "@apify/tsconfig": "^0.1.0",
     "tsx": "^4.4.0",
     "typescript": "~5.4.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "ts-node": "10.9.2",
+    "tsc-alias": "1.8.8",
+    "tsconfig-paths": "4.2.0"
   },
   "scripts": {
     "start": "yarn start:dev",
