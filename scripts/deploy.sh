@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# fetch history of the main branch
-git fetch --prune origin +refs/heads/main:refs/remotes/origin/main
-
-if [ $(git rev-list --count HEAD) -ge 2 ]; then
-
 # Get the list of folders that have been modified in the packages/ directory since the last commit (excluding packages/api and packages/shared)
 packages=$(git diff --name-only HEAD^ packages/ | grep -v 'packages/api\|packages/shared' | cut -d/ -f2 | cut -d/ -f1 | uniq)
 
@@ -34,7 +29,3 @@ do
         echo "Skipping deployment of $package"
     fi
 done
-
-else
-    echo "Not enough commits to perform the operation."
-fi
