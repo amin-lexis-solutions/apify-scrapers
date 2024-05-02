@@ -1,10 +1,11 @@
 #!/bin/bash
 
-# Get the list of packages that have been modified in the current branch
-packages=$(git diff --name-only origin/main packages/ | grep -v 'packages/api\|packages/shared' | cut -d/ -f2 | cut -d/ -f1 | uniq)
 
-# check if packages/shared has been modified then get all packages even if they are not modified except packages/shared and packages/api 
-if git diff --name-only origin/main packages/shared/ | grep -q 'packages/shared'; then
+# Get the list of folders that have been modified in the packages/ directory since the last commit (excluding packages/api and packages/shared)
+packages=$(git diff --name-only HEAD~1 packages/ | grep -v 'packages/api\|packages/shared' | cut -d/ -f2 | cut -d/ -f1 | uniq)
+
+# Check if the packages/shared/ folder has been modified since the last commit
+if git diff --name-only HEAD~1 packages/shared/ | grep -q 'packages/shared'; then
     # Get the list of all packages except packages/shared and packages/api
     packages=$(ls packages | grep -v 'shared\|api')
 fi 
