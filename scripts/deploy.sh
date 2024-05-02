@@ -4,10 +4,10 @@
 packages=$(git diff --name-only origin/main packages/ | grep -v 'packages/api\|packages/shared' | cut -d/ -f2 | cut -d/ -f1 | uniq)
 
 # check if packages/shared has been modified then get all packages even if they are not modified except packages/shared and packages/api 
-# if git diff --name-only origin/main packages/shared/ | grep -q 'packages/shared'; then
-#     # Get the list of all packages except packages/shared and packages/api
-#     packages=$(ls packages | grep -v 'shared\|api')
-# fi 
+if git diff --name-only origin/main packages/shared/ | grep -q 'packages/shared'; then
+    # Get the list of all packages except packages/shared and packages/api
+    packages=$(ls packages | grep -v 'shared\|api')
+fi 
 
 
 # Loop through the list of folders and deploy each package

@@ -58,9 +58,16 @@ export class WebhooksController {
     });
 
     setTimeout(async () => {
-      const scrapedData = await fetch(
-        `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json`
-      ).then((res) => res.json());
+      const scrapedData = (await fetch(
+        `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&token=${process.env.APIFY_TOKEN}`
+      )
+        .then((res) => res.json())
+        .catch((e) => {
+          Sentry.captureMessage(
+            `Error fetching data from Apify for run ${run.id} from source ${sourceId}: ${e}`
+          );
+          return {};
+        })) as any;
 
       const now = new Date();
 
