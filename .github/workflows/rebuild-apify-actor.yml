@@ -10,10 +10,18 @@ on:
       - '!package/api/**'
       - '!package/shared/**'
 
+  push:
+    branches:
+      - main
+    paths:
+      - 'package/**'
+      - '!package/api/**'
+      - '!package/shared/**'
+
 jobs:
   rebuild:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.merged == true
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true || github.event_name == 'push'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
