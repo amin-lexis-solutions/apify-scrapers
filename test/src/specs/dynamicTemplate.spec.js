@@ -14,7 +14,7 @@
     }
   });
   describe('', () => {
-    it('should call actor with ID', async () => {
+    it('should be called with ID', async () => {
       await expectAsync(runResult).toHaveStatus('SUCCEEDED');
     });
 
@@ -30,27 +30,73 @@
       });
     });
 
-    it('should not contain empty dataset', async () => {
+    it('should contain clean items', async () => {
       await expectAsync(runResult).withDataset(({ dataset, info }) => {
         expect(info.cleanItemCount)
           .withContext(runResult.format('Dataset cleanItemCount'))
           .toBeGreaterThan(0);
-
-        expect(dataset.items)
-          .withContext(runResult.format('Dataset items array'))
-          .toBeNonEmptyArray();
       });
     });
 
     it('should not contain empty dataset', async () => {
       await expectAsync(runResult).withDataset(({ dataset, info }) => {
-        expect(info.cleanItemCount)
-          .withContext(runResult.format('Dataset cleanItemCount'))
-          .toBeGreaterThan(0);
-
         expect(dataset.items)
           .withContext(runResult.format('Dataset items array'))
           .toBeNonEmptyArray();
+      });
+    });
+  });
+  describe('Dataset', () => {
+    const couponFields = [
+      'idInSite',
+      'domain',
+      'merchantName',
+      'title',
+      'description',
+      'termsAndConditions',
+      'expiryDateAt',
+      'code',
+      'startDateAt',
+      'sourceUrl',
+      'isShown',
+      'isExpired',
+      'isExclusive',
+    ];
+    const undefinedFields = [];
+    it('should contain required fields', async () => {
+      await expectAsync(runResult).withDataset(({ dataset, info }) => {
+        for (const coupon of dataset.items) {
+          for (const field of couponFields) {
+            expect(coupon[field]).toBeDefined();
+
+            if (coupon[field] === undefined || coupon[field] === null) {
+              undefinedFields.push({
+                coupon,
+                requiredField: field,
+              });
+            }
+          }
+        }
+      });
+    });
+    // Print undefined fields
+    if (undefinedFields.length > 0) {
+      console.log('Undefined fields found:', undefinedFields);
+    }
+  });
+  describe('Stats', () => {
+    it('should have less than 5 request retries', async () => {
+      await expectAsync(runResult).withStatistics((stats) => {
+        expect(stats.requestsRetries)
+          .withContext(runResult.format('Request retries'))
+          .toBeLessThan(5);
+      });
+    });
+    it('should have runtime less than 10 min', async () => {
+      await expectAsync(runResult).withStatistics((stats) => {
+        expect(stats.crawlerRuntimeMillis)
+          .withContext(runResult.format('Run time'))
+          .toBeLessThan(10 * 60000);
       });
     });
   });
