@@ -13,7 +13,21 @@ interface FieldSchema {
 }
 
 class DataValidator {
-  private data: Record<string, any> = {};
+  private data: Record<string, any> = {
+    idInSite: null,
+    domain: null,
+    merchantName: null,
+    title: null,
+    description: null,
+    termsAndConditions: null,
+    expiryDateAt: null,
+    code: null,
+    startDateAt: null,
+    sourceUrl: null,
+    isShown: null,
+    isExpired: null,
+    isExclusive: null,
+  };
   private schema: Record<string, FieldSchema> = {
     idInSite: { type: 'string', required: true },
     domain: { type: 'domain', required: false },
