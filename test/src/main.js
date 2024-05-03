@@ -24,9 +24,8 @@ if (testConfig.length == 0) {
         slackPrefix: '@lead-dev @actor-owner',
       };
       const run = await client.actor('pocesar/actor-testing').call(input);
-      console.info(`${run.status} - ${config.testName}`);
       console.info(
-        `Check details https://console.apify.com/organization/${run.userId}/actors/${config.actorId}/runs/${run.id}#log`
+        `Check test details https://console.apify.com/organization/${run.userId}/actors/${config.actorId}/runs/${run.id}#log`
       );
     }
   } catch (e) {
