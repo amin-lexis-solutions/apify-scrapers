@@ -14,7 +14,7 @@
     }
   });
   describe('', () => {
-    it('should be called with ID', async () => {
+    it('should run successfully', async () => {
       await expectAsync(runResult).toHaveStatus('SUCCEEDED');
     });
 
@@ -30,7 +30,7 @@
       });
     });
 
-    it('should contain clean items', async () => {
+    it('should contain coupons', async () => {
       await expectAsync(runResult).withDataset(({ dataset, info }) => {
         expect(info.cleanItemCount)
           .withContext(runResult.format('Dataset cleanItemCount'))
@@ -46,6 +46,7 @@
       });
     });
   });
+
   describe('Dataset', () => {
     const couponFields = [
       'idInSite',
@@ -63,6 +64,7 @@
       'isExclusive',
     ];
     const undefinedFields = [];
+
     it('should contain required fields', async () => {
       await expectAsync(runResult).withDataset(({ dataset, info }) => {
         for (const coupon of dataset.items) {
@@ -79,19 +81,22 @@
         }
       });
     });
+
     // Print undefined fields
     if (undefinedFields.length > 0) {
       console.log('Undefined fields found:', undefinedFields);
     }
   });
+
   describe('Stats', () => {
-    it('should have less than 5 request retries', async () => {
+    it('should have less than 3 request retries', async () => {
       await expectAsync(runResult).withStatistics((stats) => {
         expect(stats.requestsRetries)
           .withContext(runResult.format('Request retries'))
-          .toBeLessThan(5);
+          .toBeLessThan(3);
       });
     });
+
     it('should have runtime less than 10 min', async () => {
       await expectAsync(runResult).withStatistics((stats) => {
         expect(stats.crawlerRuntimeMillis)
