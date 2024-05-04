@@ -7,7 +7,11 @@ import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
 import { ApifyGoogleSearchResult } from '../lib/apify';
 import { prisma } from '../lib/prisma';
-import { generateHash, validDateOrNull } from '../utils/utils';
+import {
+  generateHash,
+  validDateOrNull,
+  calculateStandardDeviation,
+} from '../utils/utils';
 import {
   SerpWebhookRequestBody,
   StandardResponse,
@@ -59,7 +63,7 @@ export class WebhooksController {
 
     setTimeout(async () => {
       const scrapedData = (await fetch(
-        `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&token=${process.env.APIFY_TOKEN}`
+        `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&token=${process.env.API_KEY_APIFY}`
       )
         .then((res) => res.json())
         .catch((e) => {
@@ -75,6 +79,7 @@ export class WebhooksController {
         updatedCount = 0,
         unarchivedCount = 0,
         archivedCount = 0;
+      const couponStats = {} as any;
       const errors: Record<string, any>[] = [];
 
       for (let i = 0; i < scrapedData.length; i++) {
@@ -84,6 +89,12 @@ export class WebhooksController {
           item.idInSite,
           item.sourceUrl
         );
+
+        // increment the count of the coupon in the stats
+        couponStats[item.sourceUrl] = couponStats[item.sourceUrl] || {
+          count: 0,
+        };
+        couponStats[item.sourceUrl].count++;
 
         const existingRecord: Coupon | null = await prisma.coupon.findUnique({
           where: { id },
@@ -200,6 +211,69 @@ export class WebhooksController {
         } catch (e: any) {
           errors.push({ index: i, error: e.toString() });
         }
+      }
+
+      // Calculate stats for each source
+      const updatePromises = Object.keys(couponStats).map(async (sourceUrl) => {
+        const couponCount = couponStats[sourceUrl].count;
+
+        // Fetch historical data for the source URL
+        const historicalData = await prisma.couponStats.findMany({
+          where: { sourceUrl },
+          select: { averageCouponCount: true },
+        });
+
+        const counts = historicalData.map(
+          (data) => data.averageCouponCount
+        ) as number[];
+
+        // Calculate the standard deviation, surge threshold, and plunge threshold
+        const standardDeviation = calculateStandardDeviation(counts);
+        const surgeThreshold = couponCount + 2 * standardDeviation;
+        const plungeThreshold = couponCount - standardDeviation;
+
+        let anomalyType: 'Surge' | 'Plunge' | null = null;
+        if (couponCount > surgeThreshold) {
+          anomalyType = 'Surge';
+        } else if (couponCount < plungeThreshold) {
+          anomalyType = 'Plunge';
+        }
+
+        // Update the couponStats object with the new calculated values
+        couponStats[sourceUrl] = {
+          ...couponStats[sourceUrl],
+          historical: counts,
+          standardDeviation,
+          surgeThreshold,
+          plungeThreshold,
+          anomalyType,
+        };
+      });
+
+      // Wait for all updates to complete
+      await Promise.all(updatePromises);
+
+      // Now that all updates are complete, proceed with database operations
+      const statsData = Object.keys(couponStats).map((sourceUrl) => ({
+        sourceUrl,
+        averageCouponCount: couponStats[sourceUrl].count,
+        standardDeviation: couponStats[sourceUrl].standardDeviation,
+        surgeThreshold: couponStats[sourceUrl].surgeThreshold,
+        plungeThreshold: couponStats[sourceUrl].plungeThreshold,
+      }));
+
+      await prisma.couponStats.createMany({ data: statsData });
+
+      const anomaliesData = Object.keys(couponStats)
+        .filter((sourceUrl) => couponStats[sourceUrl].anomalyType)
+        .map((sourceUrl) => ({
+          sourceUrl,
+          anomalyType: couponStats[sourceUrl].anomalyType,
+          couponCount: couponStats[sourceUrl].count,
+        }));
+
+      if (anomaliesData.length > 0) {
+        await prisma.couponAnomalyLog.createMany({ data: anomaliesData });
       }
 
       // update target pages apifyRunScheduledAt to current date for the targetIds
