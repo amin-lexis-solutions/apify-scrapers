@@ -17,6 +17,7 @@ import {
   CouponMatchRequestBody,
   ListRequestBody,
   StandardResponse,
+  AnomalyRequestBody,
 } from '../utils/validators';
 
 @JsonController('/items')
@@ -179,5 +180,53 @@ export class CouponsController {
     return new StandardResponse('Record archived successfully', false, {
       updatedRecord: updatedRecord,
     });
+  }
+
+  @Post('/anomaly-detector')
+  @OpenAPI({
+    summary: 'Detect anomalies in coupon data',
+    description: 'Detect anomalies in coupon data and log them',
+  })
+  // @ResponseSchema(StandardResponse)
+  async detectAnomalies(@Body() body: AnomalyRequestBody) {
+    const { sourceUrl, couponsCount } = body;
+
+    // Validate input
+    if (!sourceUrl || couponsCount === undefined) {
+      throw new BadRequestError('sourceUrl and couponCount must be provided');
+    }
+
+    try {
+      // Retrieve the latest stats for the source
+      const stats = await prisma.couponStats.findFirst({
+        where: { sourceUrl },
+        orderBy: { timestamp: 'desc' },
+      });
+
+      if (!stats) {
+        return new StandardResponse(
+          'No history found for the provided source URL. Cannot detect anomalies.',
+          true
+        );
+      }
+
+      let anomalyType = null;
+      if (couponsCount > stats.surgeThreshold) {
+        anomalyType = 'Surge';
+      } else if (couponsCount < stats.plungeThreshold) {
+        anomalyType = 'Plunge';
+      }
+
+      if (anomalyType) {
+        return {
+          message: `Anomaly detected: ${anomalyType} in coupon count for ${sourceUrl}`,
+        };
+      }
+
+      return { message: 'No anomaly detected, data within normal ranges.' };
+    } catch (error: any) {
+      console.error('An error occurred in anomaly detection', error);
+      return new StandardResponse('An error occurred ', true);
+    }
   }
 }
