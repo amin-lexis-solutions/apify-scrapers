@@ -6,7 +6,7 @@ CREATE TABLE "CouponStats" (
     "standardDeviation" DOUBLE PRECISION NOT NULL,
     "surgeThreshold" INTEGER NOT NULL,
     "plungeThreshold" INTEGER NOT NULL,
-    "timestamp" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "CouponStats_pkey" PRIMARY KEY ("id")
 );
@@ -15,10 +15,10 @@ CREATE TABLE "CouponStats" (
 CREATE TABLE "CouponAnomalyLog" (
     "id" TEXT NOT NULL,
     "sourceUrl" TEXT NOT NULL,
-    "timestamp" TIMESTAMP(3) NOT NULL,
     "couponCount" INTEGER NOT NULL,
     "anomalyType" TEXT NOT NULL,
-
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
     CONSTRAINT "CouponAnomalyLog_pkey" PRIMARY KEY ("id")
 );
 

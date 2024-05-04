@@ -123,6 +123,7 @@ model TargetPage {
   @@index([url])
 }
 
+// Tracking for coupon counts over time to detect anomalies in target pages
 model CouponStats {
   id                 String     @id @default(uuid())
   targetPage         TargetPage @relation(fields: [sourceUrl], references: [url])
@@ -131,14 +132,15 @@ model CouponStats {
   standardDeviation  Float // Population standard deviation
   surgeThreshold     Int // Number of standard deviations above the mean
   plungeThreshold    Int // Number of standard deviations below the mean
-  timestamp          DateTime
+  createdAt          DateTime   @default(now())
 }
 
+// Logs for detected anomalies in coupon counts for a page over time
 model CouponAnomalyLog {
   id          String     @id @default(uuid())
   targetPage  TargetPage @relation(fields: [sourceUrl], references: [url])
   sourceUrl   String
-  timestamp   DateTime
   couponCount Int
   anomalyType String // Surge or Plunge
+  createdAt   DateTime   @default(now())
 }

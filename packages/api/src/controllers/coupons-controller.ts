@@ -185,13 +185,13 @@ export class CouponsController {
   @Post('/anomaly-detector')
   @OpenAPI({
     summary: 'Detect anomalies in coupon data',
-    description: 'Detect anomalies in coupon data and log them',
+    description: 'Detect anomalies in coupon data based on historical data.',
   })
   // @ResponseSchema(StandardResponse)
   async detectAnomalies(@Body() body: AnomalyRequestBody) {
     const { sourceUrl, couponsCount } = body;
 
-    // Validate input
+    // Validate the input
     if (!sourceUrl || couponsCount === undefined) {
       throw new BadRequestError('sourceUrl and couponCount must be provided');
     }
@@ -200,7 +200,7 @@ export class CouponsController {
       // Retrieve the latest stats for the source
       const stats = await prisma.couponStats.findFirst({
         where: { sourceUrl },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { createdAt: 'desc' },
       });
 
       if (!stats) {
