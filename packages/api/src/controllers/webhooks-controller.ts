@@ -156,19 +156,19 @@ export class WebhooksController {
 
         const updatedFieldsCount = existingRecord
           ? Object.keys(updateData)
-              .filter((key) => key !== 'lastSeenAt' && key !== 'archivedAt')
-              .filter((key) => {
-                const existingValue = (existingRecord as any)[key];
-                const newValue = (updateData as any)[key];
+            .filter((key) => key !== 'lastSeenAt' && key !== 'archivedAt')
+            .filter((key) => {
+              const existingValue = (existingRecord as any)[key];
+              const newValue = (updateData as any)[key];
 
-                if (existingValue instanceof Date) {
-                  return (
-                    existingValue.getTime() !== new Date(newValue).getTime()
-                  );
-                }
+              if (existingValue instanceof Date) {
+                return (
+                  existingValue.getTime() !== new Date(newValue).getTime()
+                );
+              }
 
-                return existingValue !== newValue;
-              }).length
+              return existingValue !== newValue;
+            }).length
           : 0;
 
         try {
@@ -227,7 +227,7 @@ export class WebhooksController {
             createdAt: {
               gte: new Date(
                 new Date().getTime() -
-                  ANOMALY_DETECTION_DAYS * 24 * 60 * 60 * 1000
+                ANOMALY_DETECTION_DAYS * 24 * 60 * 60 * 1000
               ),
             },
           },
@@ -279,7 +279,15 @@ export class WebhooksController {
         plungeThreshold: couponStats[sourceUrl].plungeThreshold,
       }));
 
-      await prisma.couponStats.createMany({ data: statsData });
+      try {
+        await prisma.couponStats.createMany({ data: statsData });
+      } catch (e) {
+        // If the stats creation fails, log the error and statsData and continue
+        Sentry.captureMessage(
+          `Error creating coupon stats for source ${sourceId} :
+           ${JSON.stringify(statsData)}  : ${e} `
+        );
+      }
 
       const anomaliesData = Object.keys(couponStats)
         .filter((sourceUrl) => couponStats[sourceUrl].anomalyType)
