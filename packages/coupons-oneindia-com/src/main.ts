@@ -1,12 +1,12 @@
 import 'shared/sentry-init';
 import { Actor } from 'apify';
-import { prepareCheerioScraper } from 'shared/actor-utils';
-import { router } from 'shared/next-routes';
+import { preparePuppeteerScraper } from 'shared/actor-utils';
+import { router } from './routes';
 
 async function main() {
   await Actor.init();
 
-  const crawler = await prepareCheerioScraper(router, {
+  const crawler = await preparePuppeteerScraper(router as any, {
     domain: 'coupons.oneindia.com',
     countryCode: 'in',
   });
