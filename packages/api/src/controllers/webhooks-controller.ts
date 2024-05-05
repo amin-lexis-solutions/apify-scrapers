@@ -84,9 +84,15 @@ export class WebhooksController {
 
       for (let i = 0; i < scrapedData.length; i++) {
         const item = scrapedData[i];
+        // generate idInSite if it is not provided temporarily until fixed by the source
+        if (!item.idInSite) {
+          item.idInSite = `${item.merchantName} ${item.title} ${item.domain}` // combine merchantName, title and domain
+            .replace(/[^a-zA-Z0-9]/g, '') // remove special characters
+            .replace(/\s+/g, ''); // remove spaces
+        }
         const id = generateHash(
           item.merchantName,
-          item.idInSite,
+          item?.idInSite,
           item.sourceUrl
         );
 

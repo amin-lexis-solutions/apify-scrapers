@@ -40,8 +40,10 @@ export function getWebhookUrl(path: string): string {
 
 // Function to determine tolerance multiplier based on couponCount
 export function getToleranceMultiplier(couponCount: number): number {
-  if (couponCount < 20) {
-    return 0.85; // 85% tolerance
+  if (couponCount < 10) {
+    return 3; // 300% tolerance
+  } else if (couponCount < 20) {
+    return 1; // 100% tolerance
   } else if (couponCount < 50) {
     return 0.5; // 50% tolerance
   } else if (couponCount < 100) {
