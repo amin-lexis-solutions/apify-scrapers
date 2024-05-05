@@ -13,7 +13,7 @@ declare global {
       MAX_CONCURRENT_RUNS?: string;
       SENTRY_DSN?: string;
       SENTRY_DSN_ACTORS?: string;
-      STANDARD_DEVIATION?: number;
+      ANOMALY_DETECTION_DAYS?: number;
     }
   }
 }

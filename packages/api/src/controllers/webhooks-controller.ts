@@ -10,7 +10,7 @@ import { prisma } from '../lib/prisma';
 import {
   generateHash,
   validDateOrNull,
-  calculateStandardDeviation,
+  getToleranceMultiplier,
 } from '../utils/utils';
 import {
   SerpWebhookRequestBody,
@@ -217,20 +217,39 @@ export class WebhooksController {
       const updatePromises = Object.keys(couponStats).map(async (sourceUrl) => {
         const couponCount = couponStats[sourceUrl].count;
 
-        // Fetch historical data for the source URL
+        // Fetch historical data for the source from the last 14 days
+        const ANOMALY_DETECTION_DAYS =
+          Number(process.env.ANOMALY_DETECTION_DAYS) || 14;
+
         const historicalData = await prisma.couponStats.findMany({
-          where: { sourceUrl },
-          select: { averageCouponCount: true },
+          where: {
+            sourceUrl,
+            createdAt: {
+              gte: new Date(
+                new Date().getTime() -
+                  ANOMALY_DETECTION_DAYS * 24 * 60 * 60 * 1000
+              ),
+            },
+          },
         });
 
         const counts = historicalData.map(
-          (data) => data.averageCouponCount
+          (data) => data.couponsCount
         ) as number[];
 
-        // Calculate the standard deviation, surge threshold, and plunge threshold
-        const standardDeviation = calculateStandardDeviation(counts);
-        const surgeThreshold = couponCount + 2 * standardDeviation;
-        const plungeThreshold = couponCount - standardDeviation;
+        // Calculate the average and handel the case where all counts are the same or no counts are provided
+        const averageCount =
+          counts.length > 0
+            ? counts.reduce((a, b) => a + b) / counts.length
+            : couponCount;
+
+        // Calculate the tolerance multiplier based on the average count
+        const toleranceMultiplier = getToleranceMultiplier(averageCount);
+        const surgeThreshold = averageCount * (1 + toleranceMultiplier);
+        const plungeThreshold = Math.max(
+          1,
+          averageCount * (1 - toleranceMultiplier)
+        );
 
         let anomalyType: 'Surge' | 'Plunge' | null = null;
         if (couponCount > surgeThreshold) {
@@ -243,7 +262,6 @@ export class WebhooksController {
         couponStats[sourceUrl] = {
           ...couponStats[sourceUrl],
           historical: counts,
-          standardDeviation,
           surgeThreshold,
           plungeThreshold,
           anomalyType,
@@ -256,8 +274,7 @@ export class WebhooksController {
       // Now that all updates are complete, proceed with database operations
       const statsData = Object.keys(couponStats).map((sourceUrl) => ({
         sourceUrl,
-        averageCouponCount: couponStats[sourceUrl].count,
-        standardDeviation: couponStats[sourceUrl].standardDeviation,
+        couponsCount: couponStats[sourceUrl].count,
         surgeThreshold: couponStats[sourceUrl].surgeThreshold,
         plungeThreshold: couponStats[sourceUrl].plungeThreshold,
       }));
@@ -273,7 +290,11 @@ export class WebhooksController {
         }));
 
       if (anomaliesData.length > 0) {
-        await prisma.couponAnomalyLog.createMany({ data: anomaliesData });
+        Sentry.captureMessage(
+          `Anomalies detected for source ${sourceId}: ${JSON.stringify(
+            anomaliesData
+          )}`
+        );
       }
 
       // update target pages apifyRunScheduledAt to current date for the targetIds

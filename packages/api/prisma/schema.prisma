@@ -116,8 +116,7 @@ model TargetPage {
 
   locale TargetLocale @relation(fields: [localeId], references: [id])
 
-  stats     CouponStats[]
-  anomalies CouponAnomalyLog[]
+  stats CouponStats[]
 
   @@index([localeId])
   @@index([url])
@@ -125,22 +124,11 @@ model TargetPage {
 
 // Tracking for coupon counts over time to detect anomalies in target pages
 model CouponStats {
-  id                 String     @id @default(uuid())
-  targetPage         TargetPage @relation(fields: [sourceUrl], references: [url])
-  sourceUrl          String
-  averageCouponCount Int
-  standardDeviation  Float // Population standard deviation
-  surgeThreshold     Int // Number of standard deviations above the mean
-  plungeThreshold    Int // Number of standard deviations below the mean
-  createdAt          DateTime   @default(now())
-}
-
-// Logs for detected anomalies in coupon counts for a page over time
-model CouponAnomalyLog {
-  id          String     @id @default(uuid())
-  targetPage  TargetPage @relation(fields: [sourceUrl], references: [url])
-  sourceUrl   String
-  couponCount Int
-  anomalyType String // Surge or Plunge
-  createdAt   DateTime   @default(now())
+  id              String     @id @default(uuid())
+  targetPage      TargetPage @relation(fields: [sourceUrl], references: [url])
+  sourceUrl       String
+  couponsCount    Int // Number of coupons on the page     
+  surgeThreshold  Int // Number of standard deviations above the mean
+  plungeThreshold Int // Number of standard deviations below the mean
+  createdAt       DateTime   @default(now())
 }
