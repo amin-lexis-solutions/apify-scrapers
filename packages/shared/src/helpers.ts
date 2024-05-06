@@ -157,7 +157,7 @@ export async function processAndStoreData(validator: DataValidator) {
     // Log processed data
     console.log(processedData);
     // Push processed data to dataset
-    await Dataset.pushData(validator.getData());
+    await Dataset.pushData(processedData);
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.
