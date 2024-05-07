@@ -187,7 +187,7 @@ export class CouponsController {
     summary: 'Detect anomalies in coupon data',
     description: 'Detect anomalies in coupon data based on historical data.',
   })
-  // @ResponseSchema(StandardResponse)
+  @ResponseSchema(StandardResponse)
   async detectAnomalies(@Body() body: AnomalyRequestBody) {
     const { sourceUrl, couponsCount } = body;
 
@@ -205,8 +205,13 @@ export class CouponsController {
 
       if (!stats) {
         return new StandardResponse(
-          'No history found for the provided source URL. Cannot detect anomalies.',
-          true
+          'No historical data found for the source',
+          false,
+          {
+            anomalyType: null,
+            plungeThreshold: null,
+            surgeThreshold: null,
+          }
         );
       }
 
@@ -218,12 +223,26 @@ export class CouponsController {
       }
 
       if (anomalyType) {
-        return {
-          message: `Anomaly detected: ${anomalyType} in coupon count for ${sourceUrl}`,
-        };
+        return new StandardResponse(
+          `Anomaly detected: ${anomalyType} in coupon data`,
+          true,
+          {
+            anomalyType,
+            plungeThreshold: stats.plungeThreshold,
+            surgeThreshold: stats.surgeThreshold,
+          }
+        );
       }
 
-      return { message: 'No anomaly detected, data within normal ranges.' };
+      return new StandardResponse(
+        'No anomalies detected in coupon data',
+        false,
+        {
+          anomalyType: null,
+          plungeThreshold: stats.plungeThreshold,
+          surgeThreshold: stats.surgeThreshold,
+        }
+      );
     } catch (error: any) {
       console.error('An error occurred in anomaly detection', error);
       return new StandardResponse('An error occurred ', true);
