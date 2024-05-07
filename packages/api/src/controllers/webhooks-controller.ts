@@ -4,7 +4,7 @@ import { $Enums } from '@prisma/client';
 import fetch from 'node-fetch';
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
-
+import dayjs from 'dayjs';
 import { ApifyGoogleSearchResult } from '../lib/apify';
 import { prisma } from '../lib/prisma';
 import {
@@ -92,7 +92,7 @@ export class WebhooksController {
         }
         const id = generateHash(
           item.merchantName,
-          item?.idInSite,
+          item.idInSite,
           item.sourceUrl
         );
 
@@ -231,10 +231,7 @@ export class WebhooksController {
           where: {
             sourceUrl,
             createdAt: {
-              gte: new Date(
-                new Date().getTime() -
-                  ANOMALY_DETECTION_DAYS * 24 * 60 * 60 * 1000
-              ),
+              gte: dayjs().subtract(ANOMALY_DETECTION_DAYS, 'day').toDate(),
             },
           },
         });

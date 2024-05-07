@@ -10,7 +10,7 @@ import {
   RunTargetPagesBody,
   StandardResponse,
 } from '../utils/validators';
-import moment from 'moment';
+import dayjs from 'dayjs';
 import { TargetLocale } from '@prisma/client';
 
 const RESULTS_NEEDED_PER_LOCALE = 25;
@@ -103,7 +103,7 @@ export class TargetsController {
           isActive: true,
           lastSerpRunAt: {
             not: null,
-            lt: moment().subtract(2, 'weeks').toDate(),
+            lt: dayjs().subtract(2, 'weeks').toDate(),
           },
         },
         orderBy: { lastSerpRunAt: 'asc' },
@@ -185,7 +185,7 @@ export class TargetsController {
         isActive: true,
         OR: [
           { lastRunAt: null },
-          { lastRunAt: { lt: moment().startOf('day').toDate() } },
+          { lastRunAt: { lt: dayjs().startOf('day').toDate() } },
         ],
       },
       include: {
@@ -210,9 +210,8 @@ export class TargetsController {
       }
 
       const sourceDomains = source.domains.map((domain) => domain.domain);
-      const twoWeeksAgo = moment().subtract(30, 'day').toDate();
 
-      // Find the target pages for the source that have not been scraped in the last two weeks
+      // Find the target pages for the source that have not been scraped in the  last 30 days
       const pages = await prisma.targetPage.findMany({
         where: {
           AND: [
@@ -220,7 +219,9 @@ export class TargetsController {
             {
               OR: [
                 { lastApifyRunAt: null },
-                { lastApifyRunAt: { lt: twoWeeksAgo } },
+                {
+                  lastApifyRunAt: { lt: dayjs().subtract(30, 'days').toDate() },
+                },
               ],
             },
           ],
