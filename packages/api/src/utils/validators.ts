@@ -12,6 +12,7 @@ import {
   MinLength,
   Length,
   ValidateNested,
+  IsUrl,
 } from 'class-validator';
 
 export class StandardResponse {
@@ -156,4 +157,12 @@ export class RunNLocalesBody {
 export class RunTargetPagesBody {
   @IsNumber()
   maxConcurrency: number;
+}
+
+export class AnomalyRequestBody {
+  @IsUrl()
+  sourceUrl: string;
+
+  @IsNumber()
+  couponsCount: number;
 }

@@ -17,6 +17,7 @@ import {
   CouponMatchRequestBody,
   ListRequestBody,
   StandardResponse,
+  AnomalyRequestBody,
 } from '../utils/validators';
 
 @JsonController('/items')
@@ -179,5 +180,72 @@ export class CouponsController {
     return new StandardResponse('Record archived successfully', false, {
       updatedRecord: updatedRecord,
     });
+  }
+
+  @Post('/anomaly-detector')
+  @OpenAPI({
+    summary: 'Detect anomalies in coupon data',
+    description: 'Detect anomalies in coupon data based on historical data.',
+  })
+  @ResponseSchema(StandardResponse)
+  async detectAnomalies(@Body() body: AnomalyRequestBody) {
+    const { sourceUrl, couponsCount } = body;
+
+    // Validate the input
+    if (!sourceUrl || couponsCount === undefined) {
+      throw new BadRequestError('sourceUrl and couponCount must be provided');
+    }
+
+    try {
+      // Retrieve the latest stats for the source
+      const stats = await prisma.couponStats.findFirst({
+        where: { sourceUrl },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (!stats) {
+        return new StandardResponse(
+          'No historical data found for the source',
+          false,
+          {
+            anomalyType: null,
+            plungeThreshold: null,
+            surgeThreshold: null,
+          }
+        );
+      }
+
+      let anomalyType = null;
+      if (couponsCount > stats.surgeThreshold) {
+        anomalyType = 'Surge';
+      } else if (couponsCount < stats.plungeThreshold) {
+        anomalyType = 'Plunge';
+      }
+
+      if (anomalyType) {
+        return new StandardResponse(
+          `Anomaly detected: ${anomalyType} in coupon data`,
+          true,
+          {
+            anomalyType,
+            plungeThreshold: stats.plungeThreshold,
+            surgeThreshold: stats.surgeThreshold,
+          }
+        );
+      }
+
+      return new StandardResponse(
+        'No anomalies detected in coupon data',
+        false,
+        {
+          anomalyType: null,
+          plungeThreshold: stats.plungeThreshold,
+          surgeThreshold: stats.surgeThreshold,
+        }
+      );
+    } catch (error: any) {
+      console.error('An error occurred in anomaly detection', error);
+      return new StandardResponse('An error occurred ', true);
+    }
   }
 }
