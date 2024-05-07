@@ -5,7 +5,8 @@
   "description": "This project runs dynamic testing",
   "main": "main.js",
   "scripts": {
-    "start": "node src/main.js"
+    "start": "node src/main.js",
+    "schedule:test": "node src/cron/schedule-test.js"
   },
   "repository": {
     "type": "git",
