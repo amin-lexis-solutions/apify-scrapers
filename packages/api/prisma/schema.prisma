@@ -60,9 +60,9 @@ model Source {
 }
 
 model SourceDomain {
-  id      String    @id @default(uuid())
-  domain  String
-  source  Source    @relation(fields: [sourceId], references: [id])
+  id       String @id @default(uuid())
+  domain   String
+  source   Source @relation(fields: [sourceId], references: [id])
   sourceId String
 }
 
@@ -101,22 +101,36 @@ model TargetLocale {
 
 // Maps to a page we want to scrape using an Apify actor
 model TargetPage {
-  id                  String    @id @default(uuid())
-  url                 String    @unique
-  domain              String
-  title               String
-  searchTerm          String
-  searchPosition      Int
-  searchDomain        String // e.g. google.com.sg
-  apifyRunId          String?
-  lastApifyRunAt      DateTime?
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @default(now())
-  localeId            String
+  id             String    @id @default(uuid())
+  url            String    @unique
+  domain         String
+  title          String
+  searchTerm     String
+  searchPosition Int
+  searchDomain   String // e.g. google.com.sg
+  apifyRunId     String?
+  lastApifyRunAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @default(now())
+  localeId       String
 
   locale TargetLocale @relation(fields: [localeId], references: [id])
 
+  stats CouponStats[]
+
   @@index([localeId])
+  @@index([url])
+}
+
+// Tracking for coupon counts over time to detect anomalies in target pages
+model CouponStats {
+  id              String     @id @default(uuid())
+  targetPage      TargetPage @relation(fields: [sourceUrl], references: [url])
+  sourceUrl       String
+  couponsCount    Int // Number of coupons on the page     
+  surgeThreshold  Int // Number of standard deviations above the mean
+  plungeThreshold Int // Number of standard deviations below the mean
+  createdAt       DateTime   @default(now())
 }
 model Test {
   id                  String @id @default(uuid())

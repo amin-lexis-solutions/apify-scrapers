@@ -11,6 +11,7 @@ COPY packages/api/package.json ./packages/api/
 RUN yarn --silent
 
 COPY packages/api ./packages/api/
+COPY packages/shared ./packages/shared/
 
 WORKDIR /app/packages/api
 

@@ -12,6 +12,7 @@ import {
   MinLength,
   Length,
   ValidateNested,
+  IsUrl,
 } from 'class-validator';
 
 export class StandardResponse {
@@ -157,6 +158,15 @@ export class RunTargetPagesBody {
   @IsNumber()
   maxConcurrency: number;
 }
+
+export class AnomalyRequestBody {
+  @IsUrl()
+  sourceUrl: string;
+
+  @IsNumber()
+  couponsCount: number;
+}
+
 export class ListTestRequestBody {
   @IsPositive()
   @IsOptional()
@@ -176,6 +186,7 @@ export class ListTestRequestBody {
   actorId?: string;
 
 }
+
 export class TestActor {
   @IsString()
   actorId: string;
@@ -190,6 +201,7 @@ export class RunTestBody {
   actors: TestActor[]
   maxConcurrency: number
 }
+
 export class TestRequestBody {
   status: string
   apifyRunId: string

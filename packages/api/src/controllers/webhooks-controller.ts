@@ -4,10 +4,14 @@ import { $Enums } from '@prisma/client';
 import fetch from 'node-fetch';
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
-
+import dayjs from 'dayjs';
 import { ApifyGoogleSearchResult } from '../lib/apify';
 import { prisma } from '../lib/prisma';
-import { generateHash, validDateOrNull } from '../utils/utils';
+import {
+  generateHash,
+  validDateOrNull,
+  getToleranceMultiplier,
+} from '../utils/utils';
 import {
   SerpWebhookRequestBody,
   StandardResponse,
@@ -59,7 +63,7 @@ export class WebhooksController {
 
     setTimeout(async () => {
       const scrapedData = (await fetch(
-        `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&token=${process.env.APIFY_TOKEN}`
+        `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&token=${process.env.API_KEY_APIFY}`
       )
         .then((res) => res.json())
         .catch((e) => {
@@ -75,15 +79,28 @@ export class WebhooksController {
         updatedCount = 0,
         unarchivedCount = 0,
         archivedCount = 0;
+      const couponStats = {} as any;
       const errors: Record<string, any>[] = [];
 
       for (let i = 0; i < scrapedData.length; i++) {
         const item = scrapedData[i];
+        // generate idInSite if it is not provided temporarily until fixed by the source
+        if (!item.idInSite) {
+          item.idInSite = `${item.merchantName} ${item.title} ${item.domain}` // combine merchantName, title and domain
+            .replace(/[^a-zA-Z0-9]/g, '') // remove special characters
+            .replace(/\s+/g, ''); // remove spaces
+        }
         const id = generateHash(
           item.merchantName,
           item.idInSite,
           item.sourceUrl
         );
+
+        // increment the count of the coupon in the stats
+        couponStats[item.sourceUrl] = couponStats[item.sourceUrl] || {
+          count: 0,
+        };
+        couponStats[item.sourceUrl].count++;
 
         const existingRecord: Coupon | null = await prisma.coupon.findUnique({
           where: { id },
@@ -200,6 +217,95 @@ export class WebhooksController {
         } catch (e: any) {
           errors.push({ index: i, error: e.toString() });
         }
+      }
+
+      // Calculate stats for each source
+      const updatePromises = Object.keys(couponStats).map(async (sourceUrl) => {
+        const couponCount = couponStats[sourceUrl].count;
+
+        // Fetch historical data for the source from the last 14 days
+        const ANOMALY_DETECTION_DAYS =
+          Number(process.env.ANOMALY_DETECTION_DAYS) || 14;
+
+        const historicalData = await prisma.couponStats.findMany({
+          where: {
+            sourceUrl,
+            createdAt: {
+              gte: dayjs().subtract(ANOMALY_DETECTION_DAYS, 'day').toDate(),
+            },
+          },
+        });
+
+        const counts = historicalData.map(
+          (data) => data.couponsCount
+        ) as number[];
+
+        // Calculate the average and handel the case where all counts are the same or no counts are provided
+        const averageCount =
+          counts.length > 0
+            ? counts.reduce((a, b) => a + b) / counts.length
+            : couponCount;
+
+        // Calculate the tolerance multiplier based on the average count
+        const toleranceMultiplier = getToleranceMultiplier(averageCount);
+        const surgeThreshold = averageCount * (1 + toleranceMultiplier);
+        const plungeThreshold = Math.max(
+          1,
+          averageCount * (1 - toleranceMultiplier)
+        );
+
+        let anomalyType: 'Surge' | 'Plunge' | null = null;
+        if (couponCount > surgeThreshold) {
+          anomalyType = 'Surge';
+        } else if (couponCount < plungeThreshold) {
+          anomalyType = 'Plunge';
+        }
+
+        // Update the couponStats object with the new calculated values
+        couponStats[sourceUrl] = {
+          ...couponStats[sourceUrl],
+          historical: counts,
+          surgeThreshold,
+          plungeThreshold,
+          anomalyType,
+        };
+      });
+
+      // Wait for all updates to complete
+      await Promise.all(updatePromises);
+
+      // Now that all updates are complete, proceed with database operations
+      const statsData = Object.keys(couponStats).map((sourceUrl) => ({
+        sourceUrl,
+        couponsCount: couponStats[sourceUrl].count,
+        surgeThreshold: couponStats[sourceUrl].surgeThreshold,
+        plungeThreshold: couponStats[sourceUrl].plungeThreshold,
+      }));
+
+      try {
+        await prisma.couponStats.createMany({ data: statsData });
+      } catch (e) {
+        // If the stats creation fails, log the error and statsData and continue
+        Sentry.captureMessage(
+          `Error creating coupon stats for source ${sourceId} :
+           ${JSON.stringify(statsData)}  : ${e} `
+        );
+      }
+
+      const anomaliesData = Object.keys(couponStats)
+        .filter((sourceUrl) => couponStats[sourceUrl].anomalyType)
+        .map((sourceUrl) => ({
+          sourceUrl,
+          anomalyType: couponStats[sourceUrl].anomalyType,
+          couponCount: couponStats[sourceUrl].count,
+        }));
+
+      if (anomaliesData.length > 0) {
+        Sentry.captureMessage(
+          `Anomalies detected for source ${sourceId}: ${JSON.stringify(
+            anomaliesData
+          )}`
+        );
       }
 
       // update target pages apifyRunScheduledAt to current date for the targetIds
