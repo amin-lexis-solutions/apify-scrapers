@@ -25,6 +25,7 @@ import { SentryController } from './controllers/sentry-controller';
 import { useNgrok } from './lib/ngrok';
 import { CustomErrorHandler } from './middlewares/custom-error-handler';
 import { authorizationChecker } from './utils/auth';
+import { TestController } from './controllers/test-controller';
 
 // Create a single Express app instance
 const app: Express = express();
@@ -57,6 +58,7 @@ const routingControllersOptions: RoutingControllersOptions = {
     TargetsController,
     SentryController,
     ExportController,
+    TestController
   ],
   middlewares: [
     CustomErrorHandler, // Registering your custom error handler

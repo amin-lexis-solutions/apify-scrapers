@@ -118,3 +118,11 @@ model TargetPage {
 
   @@index([localeId])
 }
+model Test {
+  id                  String @id @default(uuid())
+  apifyRunId          String?
+  apifyActorId        String
+  lastApifyRunAt      DateTime?
+  startUrls           String[]
+  status              String?
+}
