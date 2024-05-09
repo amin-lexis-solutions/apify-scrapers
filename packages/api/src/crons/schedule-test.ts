@@ -1,32 +1,31 @@
-import { Template } from "../test/actors/fileReader";
+import { Template } from '../test/actors/fileReader';
 
 const maxConcurrentTests = Number(process.env.MAX_CONCURRENT_TESTS) || 5;
 
 const APIFY_RUN_TEST = `https://api.apify.com/v2/acts/pocesar~actor-testing/runs?token=${process.env.APIFY_TOKEN}`;
 
 async function findTest() {
-    try {
+  try {
+    const response = await fetch(`${process.env.BASE_URL}test/`, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + (process.env.API_SECRET as string),
+      },
+    });
+    const testList = await response?.json();
 
-        const response = await fetch(`${process.env.BASE_URL}test/`,
-        {
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: 'Bearer ' + (process.env.API_SECRET as string),
-              },
-        }
-    )
-    const testList = await response?.json()
+    const testRun =
+      testList?.data?.results?.filter(
+        (item: any) => !item.status.includes('READY')
+      ) || [];
 
-    const testRun = testList?.data?.results?.filter((item:any) => !item.status.includes("READY")) || []
-    
-    return testRun
-
-    } catch (e) {
-        console.log(e)
-    }
+    return testRun;
+  } catch (e) {
+    console.log(e);
+  }
 }
 
-async function runTest (actorId:string, startUrls: string[]) {
+async function runTest(actorId: string, startUrls: string[]) {
   try {
     const response = await fetch(APIFY_RUN_TEST, {
       method: 'POST',
@@ -51,22 +50,22 @@ async function runTest (actorId:string, startUrls: string[]) {
       },
     });
 
-    const result = await response.json()
+    const result = await response.json();
 
-    return result
+    return result;
   } catch (e) {
     console.log(e);
   }
-};
+}
 
 (async () => {
   try {
-    const scheduledTest = await findTest()
+    const scheduledTest = await findTest();
 
     let runningTests = 0;
 
     if (scheduledTest.length == 0) {
-        throw new Error('Test no found')
+      throw new Error('Test no found');
     }
 
     for (const obj of scheduledTest['data']['results']) {
@@ -76,11 +75,11 @@ async function runTest (actorId:string, startUrls: string[]) {
         );
       }
 
-      runningTests++
+      runningTests++;
 
       const startUrls = obj.startUrls.map((item: string) => {
-        return { "url": item }
-      })
+        return { url: item };
+      });
 
       const result = await runTest(obj.apifyActorId, startUrls);
 
@@ -89,13 +88,13 @@ async function runTest (actorId:string, startUrls: string[]) {
         body: JSON.stringify({
           status: result['data']['status'],
           apifyRunId: result['data']['id'],
-          lastApifyRunAt: result['data']['startedAt']
+          lastApifyRunAt: result['data']['startedAt'],
         }),
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Bearer ' + (process.env.API_SECRET as string),
         },
-      })
+      });
     }
   } catch (e) {
     console.log(e);

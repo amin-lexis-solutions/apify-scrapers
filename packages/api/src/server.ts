@@ -58,7 +58,7 @@ const routingControllersOptions: RoutingControllersOptions = {
     TargetsController,
     SentryController,
     ExportController,
-    TestController
+    TestController,
   ],
   middlewares: [
     CustomErrorHandler, // Registering your custom error handler

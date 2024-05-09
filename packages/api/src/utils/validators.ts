@@ -184,7 +184,6 @@ export class ListTestRequestBody {
   @IsString()
   @IsOptional()
   actorId?: string;
-
 }
 
 export class TestActor {
@@ -198,12 +197,12 @@ export class TestActor {
 
 export class RunTestBody {
   @IsArray()
-  actors: TestActor[]
-  maxConcurrency: number
+  actors: TestActor[];
+  maxConcurrency: number;
 }
 
 export class TestRequestBody {
-  status: string
-  apifyRunId: string
-  lastApifyRunAt: Date
+  status: string;
+  apifyRunId: string;
+  lastApifyRunAt: Date;
 }
