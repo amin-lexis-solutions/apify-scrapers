@@ -69,8 +69,11 @@ function processCouponItem(
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
-  const idInSite =
-    voucher?.idVoucher?.toString() || voucher?.idInSite?.toString() || '';
+  let idInSite = (
+    voucher?.idPool?.split('_')?.[1] ||
+    voucher?.idVoucher ||
+    voucher?.idInSite
+  )?.toString();
 
   // Add required values to the validator
   validator.addValue('sourceUrl', sourceUrl);
