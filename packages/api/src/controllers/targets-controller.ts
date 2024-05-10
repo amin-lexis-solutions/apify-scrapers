@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { apify } from '../lib/apify';
@@ -255,25 +256,31 @@ export class TargetsController {
         const startUrls = pagesChunk.map((page) => ({ url: page.url }));
         const targetIds = pagesChunk.map((page) => page.id);
 
-        await apify.actor(source.apifyActorId).start(
-          { startUrls: startUrls },
-          {
-            webhooks: [
-              {
-                eventTypes: [
-                  'ACTOR.RUN.SUCCEEDED',
-                  'ACTOR.RUN.FAILED',
-                  'ACTOR.RUN.TIMED_OUT',
-                  'ACTOR.RUN.ABORTED',
-                ],
-                requestUrl: getWebhookUrl('/webhooks/coupons'),
-                payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}},"targetIds": "${targetIds}" }`,
-                headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
-              },
-            ],
-          }
-        );
-
+        try {
+          await apify.actor(source.apifyActorId).start(
+            { startUrls: startUrls },
+            {
+              webhooks: [
+                {
+                  eventTypes: [
+                    'ACTOR.RUN.SUCCEEDED',
+                    'ACTOR.RUN.FAILED',
+                    'ACTOR.RUN.TIMED_OUT',
+                    'ACTOR.RUN.ABORTED',
+                  ],
+                  requestUrl: getWebhookUrl('/webhooks/coupons'),
+                  payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}},"targetIds": "${targetIds}" }`,
+                  headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
+                },
+              ],
+            }
+          );
+        } catch (e) {
+          Sentry.captureException(
+            `Failed to start actor ${source.apifyActorId} , ${e} , ${startUrls}`
+          );
+          continue;
+        }
         await prisma.targetPage.updateMany({
           where: {
             id: { in: pagesChunk.map((page) => page.id) },
