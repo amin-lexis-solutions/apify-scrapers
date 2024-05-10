@@ -276,8 +276,11 @@ export class TargetsController {
             }
           );
         } catch (e) {
+          console.warn(
+            `Failed to start actor ${source.apifyActorId} , ${startUrls}`
+          );
           Sentry.captureException(
-            `Failed to start actor ${source.apifyActorId} , ${e} , ${startUrls}`
+            `Failed to start actor ${source.apifyActorId} , ${startUrls}`
           );
           continue;
         }
