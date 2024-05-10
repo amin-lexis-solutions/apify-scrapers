@@ -276,11 +276,17 @@ export class TargetsController {
             }
           );
         } catch (e) {
-          console.warn(
-            `Failed to start actor ${source.apifyActorId} , ${startUrls}`
-          );
-          Sentry.captureException(
-            `Failed to start actor ${source.apifyActorId} , ${startUrls}`
+          // add data to Sentry capture exception and message
+          Sentry.captureException(e, {
+            extra: {
+              sourceId: source.id,
+              localeId: localeId,
+              targetIds: targetIds,
+              startUrls: startUrls,
+            },
+          });
+          Sentry.captureMessage(
+            `Failed to start actor ${source.apifyActorId} with ${startUrls.length} start URLs for source ${source.name} and locale ${localeId}`
           );
           continue;
         }
