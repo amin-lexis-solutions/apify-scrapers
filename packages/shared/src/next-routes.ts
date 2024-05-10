@@ -69,7 +69,7 @@ function processCouponItem(
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
-  let idInSite = (
+  const idInSite = (
     voucher?.idPool?.split('_')?.[1] ||
     voucher?.idVoucher ||
     voucher?.idInSite
