@@ -17,7 +17,7 @@ import {
 } from '../utils/validators';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 
-@JsonController('/test')
+@JsonController('/tests')
 @Authorized()
 @OpenAPI({ security: [{ bearerAuth: [] }] })
 export class TestController {
