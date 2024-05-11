@@ -173,6 +173,8 @@ router.addHandler(Label.listing, async (context) => {
           couponsWithCode[result.generatedHash] = requestForCouponWithCode(
             result
           );
+          couponsWithCode[result.generatedHash].userData.sourceUrl =
+            request.url;
           idsToCheck.push(result.generatedHash);
         }
       }
