@@ -46,7 +46,10 @@ async function processCouponItem(
     throw new Error('Button element is missing');
   }
 
-  const idInSite = buttonElement.attr('data-v_id')?.trim();
+  const idInSite =
+    buttonElement.attr('data-v_id')?.trim() ||
+    $coupon('i.icon_thumbdown').attr('data-vid')?.trim() ||
+    '';
 
   if (!idInSite || idInSite.trim() === '') {
     console.log('Coupon HTML:', $coupon.html());
