@@ -70,7 +70,7 @@ function processCouponItem(
   }
 
   // Extract the voucher title
-  const titleElement = $coupon('article header > h2').first();
+  const titleElement = $coupon('.Offer h3.Outlink').first();
   if (titleElement.length === 0) {
     console.log('Coupon HTML:', $coupon.html());
     throw new Error('Voucher title is missing');
