@@ -205,7 +205,7 @@ export class TargetsController {
     for (const source of sources) {
       if (maxConcurrency <= actorsStarted) {
         console.log(
-          `Already scheduled the maximum number of actors. Skipping source ${source.id}.`
+          `Already scheduled the maximum ${maxConcurrency} number of actors. Skipping source ${source.id}.`
         );
         break;
       }
@@ -246,9 +246,6 @@ export class TargetsController {
       for (let i = 0; i < pages.length; i += chunkSize) {
         const pagesChunk = pages.slice(i, i + chunkSize);
 
-        // could potentually start more actors than maxConcurrency; should be fine since the maxConcurrency actually keep a buffer
-        actorsStarted++;
-
         console.log(
           `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.name}.`
         );
@@ -269,13 +266,25 @@ export class TargetsController {
                     'ACTOR.RUN.ABORTED',
                   ],
                   requestUrl: getWebhookUrl('/webhooks/coupons'),
-                  payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}},"targetIds": "${targetIds}" }`,
+                  payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}} }`,
                   headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
                 },
               ],
             }
           );
+
+          actorsStarted++;
+
+          await prisma.targetPage.updateMany({
+            where: {
+              id: { in: pagesChunk.map((page) => page.id) },
+            },
+            data: { lastApifyRunAt: new Date() },
+          });
         } catch (e) {
+          console.error(
+            `Failed to start actor ${source.apifyActorId} with ${startUrls.length} start URLs for source ${source.name} and locale ${localeId}`
+          );
           // add data to Sentry capture exception and message
           Sentry.captureException(e, {
             extra: {
@@ -290,12 +299,6 @@ export class TargetsController {
           );
           continue;
         }
-        await prisma.targetPage.updateMany({
-          where: {
-            id: { in: pagesChunk.map((page) => page.id) },
-          },
-          data: { lastApifyRunAt: new Date() },
-        });
       }
 
       await prisma.source.update({
@@ -334,32 +337,39 @@ async function findSerpForLocaleAndDomains(
       return locale.searchTemplate.replace('{{website}}', domain);
     });
 
-    await apify.actor('apify/google-search-scraper').start(
-      {
-        queries: queries.join('\n'),
-        countryCode: locale.countryCode.toLowerCase(),
-        languageCode: locale.languageCode,
-        maxPagesPerQuery: 1,
-        resultsPerPage: RESULTS_NEEDED_PER_LOCALE,
-        saveHtml: false,
-        saveHtmlToKeyValueStore: false,
-        mobileResults: false,
-      },
-      {
-        webhooks: [
-          {
-            eventTypes: [
-              'ACTOR.RUN.SUCCEEDED',
-              'ACTOR.RUN.FAILED',
-              'ACTOR.RUN.TIMED_OUT',
-              'ACTOR.RUN.ABORTED',
-            ],
-            requestUrl: getWebhookUrl('/webhooks/serp'),
-            payloadTemplate: `{"localeId":"${locale.id}","resource":{{resource}},"eventData":{{eventData}}}`,
-            headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
-          },
-        ],
-      }
-    );
+    await apify
+      .actor('apify/google-search-scraper')
+      .start(
+        {
+          queries: queries.join('\n'),
+          countryCode: locale.countryCode.toLowerCase(),
+          languageCode: locale.languageCode,
+          maxPagesPerQuery: 1,
+          resultsPerPage: RESULTS_NEEDED_PER_LOCALE,
+          saveHtml: false,
+          saveHtmlToKeyValueStore: false,
+          mobileResults: false,
+        },
+        {
+          webhooks: [
+            {
+              eventTypes: [
+                'ACTOR.RUN.SUCCEEDED',
+                'ACTOR.RUN.FAILED',
+                'ACTOR.RUN.TIMED_OUT',
+                'ACTOR.RUN.ABORTED',
+              ],
+              requestUrl: getWebhookUrl('/webhooks/serp'),
+              payloadTemplate: `{"localeId":"${locale.id}","resource":{{resource}},"eventData":{{eventData}}}`,
+              headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
+            },
+          ],
+        }
+      )
+      .then(() => {
+        console.log(
+          `Started search for ${locale.locale} with ${domainsChunk.length} domains`
+        );
+      });
   }
 }

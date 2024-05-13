@@ -113,9 +113,6 @@ export class WebhookRequestBody {
 
   @IsString()
   localeId: string;
-
-  @IsString()
-  targetIds?: string;
 }
 
 export class SerpWebhookRequestBody {

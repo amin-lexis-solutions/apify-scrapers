@@ -47,7 +47,9 @@ export class WebhooksController {
     const datasetId = webhookData.resource.defaultDatasetId;
     const actorRunId = webhookData.eventData.actorRunId;
     const status = webhookData.resource.status;
-    const { sourceId, localeId, targetIds } = webhookData;
+    const { sourceId, localeId } = webhookData;
+
+    const targetPages = new Set<string>();
 
     if (!sourceId) {
       return new StandardResponse('sourceId is a required field', true);
@@ -95,6 +97,8 @@ export class WebhooksController {
           item.idInSite,
           item.sourceUrl
         );
+
+        targetPages.add(item.sourceUrl);
 
         // increment the count of the coupon in the stats
         couponStats[item.sourceUrl] = couponStats[item.sourceUrl] || {
@@ -308,11 +312,11 @@ export class WebhooksController {
         );
       }
 
-      // update target pages apifyRunScheduledAt to current date for the targetIds
-      if (targetIds) {
-        const targetIdsArr = targetIds.split(',');
+      // update lastApifyRunAt for the targetPages
+      if (targetPages.size > 0) {
+        const targetPagesArray = Array.from(targetPages);
         await prisma.targetPage.updateMany({
-          where: { id: { in: targetIdsArr } },
+          where: { url: { in: targetPagesArray } },
           data: { lastApifyRunAt: new Date() },
         });
       }
