@@ -54,3 +54,10 @@ export function getToleranceMultiplier(couponCount: number): number {
     return 0.1; // 10% tolerance
   }
 }
+
+// Function to extract merchant name from domain name
+export function getMerchantName(domain: string): string {
+  const domainName = domain.replace('www.', '');
+  const name = domainName.split('.')[0] || domainName;
+  return name;
+}

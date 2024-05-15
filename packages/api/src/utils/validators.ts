@@ -130,6 +130,10 @@ export class SerpWebhookRequestBody {
 
   @IsString()
   localeId: string;
+
+  @IsBoolean()
+  @IsOptional()
+  targetedLocales: boolean;
 }
 
 export class FindTargetPagesBody {
@@ -154,6 +158,18 @@ export class RunNLocalesBody {
 export class RunTargetPagesBody {
   @IsNumber()
   maxConcurrency: number;
+}
+
+export class TargetLocaleBody {
+  @IsString()
+  locale: string;
+
+  @IsArray()
+  urls: string[];
+
+  @IsNumber()
+  @IsOptional()
+  limit?: number;
 }
 
 export class AnomalyRequestBody {
