@@ -54,3 +54,24 @@ export function getToleranceMultiplier(couponCount: number): number {
     return 0.1; // 10% tolerance
   }
 }
+
+export function removeDuplicates(data: any) {
+  const seen = new Set();
+  const dataArray = Object.values(data);
+  return dataArray.reduce((acc: any[], item: any) => {
+    const keyString =
+      item?.title +
+      item?.idInSite +
+      item?.sourceUrl +
+      item?.merchantName +
+      item?.domain;
+    // Create a unique key for each item
+    const key = crypto.createHash('sha256').update(keyString).digest('hex');
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      acc.push(item);
+    }
+    return acc;
+  }, []);
+}

@@ -11,6 +11,7 @@ import {
   generateHash,
   validDateOrNull,
   getToleranceMultiplier,
+  removeDuplicates,
 } from '../utils/utils';
 import {
   SerpWebhookRequestBody,
@@ -67,7 +68,10 @@ export class WebhooksController {
       const scrapedData = (await fetch(
         `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&token=${process.env.API_KEY_APIFY}`
       )
-        .then((res) => res.json())
+        .then(async (res) => {
+          const data = await res.json();
+          return removeDuplicates(data);
+        })
         .catch((e) => {
           Sentry.captureMessage(
             `Error fetching data from Apify for run ${run.id} from source ${sourceId}: ${e}`
