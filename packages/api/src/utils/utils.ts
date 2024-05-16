@@ -55,7 +55,7 @@ export function getToleranceMultiplier(couponCount: number): number {
   }
 }
 
-export function removeDuplicates(data: any) {
+export function removeDuplicateCoupons(data: any) {
   const seen = new Set();
   const dataArray = Object.values(data);
   return dataArray.reduce((acc: any[], item: any) => {

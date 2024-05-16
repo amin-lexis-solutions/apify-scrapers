@@ -11,7 +11,7 @@ import {
   generateHash,
   validDateOrNull,
   getToleranceMultiplier,
-  removeDuplicates,
+  removeDuplicateCoupons,
 } from '../utils/utils';
 import {
   SerpWebhookRequestBody,
@@ -70,7 +70,7 @@ export class WebhooksController {
       )
         .then(async (res) => {
           const data = await res.json();
-          return removeDuplicates(data);
+          return removeDuplicateCoupons(data);
         })
         .catch((e) => {
           Sentry.captureMessage(
