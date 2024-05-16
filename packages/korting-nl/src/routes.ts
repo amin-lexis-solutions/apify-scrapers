@@ -96,33 +96,34 @@ const processCoupon = async (context) => {
 
       processAndStoreData(validator);
     });
-  } else {
-    const elem = $('.single_compare_right');
-    const { hasCode, elemCode } = getCouponCode(elem);
-    const voucherTitle = getVoucherTitle(elem, pageType);
-    const idInSite = generateHash(merchantName, voucherTitle, request.url);
-    const description =
-      decodeHtml($('article.post-inner p').text().trim()) || null; // Extracting description
-
-    const validator = new DataValidator();
-    validator.addValue('sourceUrl', request.url);
-    validator.addValue('merchantName', merchantName);
-    validator.addValue('title', voucherTitle);
-    validator.addValue('description', description);
-    validator.addValue('idInSite', idInSite);
-    validator.addValue(
-      'isExpired',
-      elemCode?.hasClass('expired_coupon') || false
-    );
-    validator.addValue('isShown', true);
-
-    if (hasCode) {
-      const coupon = getCoupon(elemCode);
-      validator.addValue('code', coupon);
-    }
-
-    processAndStoreData(validator);
+    return;
   }
+
+  const elem = $('.single_compare_right');
+  const { hasCode, elemCode } = getCouponCode(elem);
+  const voucherTitle = getVoucherTitle(elem, pageType);
+  const idInSite = generateHash(merchantName, voucherTitle, request.url);
+  const description =
+    decodeHtml($('article.post-inner p').text().trim()) || null; // Extracting description
+
+  const validator = new DataValidator();
+  validator.addValue('sourceUrl', request.url);
+  validator.addValue('merchantName', merchantName);
+  validator.addValue('title', voucherTitle);
+  validator.addValue('description', description);
+  validator.addValue('idInSite', idInSite);
+  validator.addValue(
+    'isExpired',
+    elemCode?.hasClass('expired_coupon') || false
+  );
+  validator.addValue('isShown', true);
+
+  if (hasCode) {
+    const coupon = getCoupon(elemCode);
+    validator.addValue('code', coupon);
+  }
+
+  processAndStoreData(validator);
 };
 
 router.addHandler(Label.listing, processCoupon);
