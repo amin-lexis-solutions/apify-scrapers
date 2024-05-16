@@ -321,7 +321,7 @@ export class TargetsController {
     return new StandardResponse('Scraping job enqueued', false, result);
   }
 
-  @Post('/locale-targets')
+  @Post('/find-for-urls-and-locale')
   @OpenAPI({
     summary: 'Retrieving Locale-Specific Target Pages from URLs',
     description:
@@ -388,7 +388,7 @@ export class TargetsController {
                   'ACTOR.RUN.ABORTED',
                 ],
                 requestUrl: getWebhookUrl('/webhooks/serp'),
-                payloadTemplate: `{"localeId":"${targetLocale.id}","resource":{{resource}},"eventData":{{eventData}},"targetedLocales":true}`,
+                payloadTemplate: `{"localeId":"${targetLocale.id}","resource":{{resource}},"eventData":{{eventData}},"removeDuplicates":false}`,
                 headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
               },
             ],

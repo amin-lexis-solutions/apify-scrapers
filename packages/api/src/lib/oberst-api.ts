@@ -15,7 +15,7 @@ if (!process.env.OBERST_API_KEY) {
 
 export async function getMerchantsForLocale(
   locale: string,
-  empty_Name = false
+  ensureNameIsPresent = true
 ): Promise<Merchant[]> {
   const merchantMyResponse = await fetch(API_URL, {
     method: 'POST',
@@ -33,7 +33,7 @@ export async function getMerchantsForLocale(
       return [];
     });
 
-  if (!empty_Name) {
+  if (ensureNameIsPresent) {
     return merchantMyResponse.map((merchant: any) => {
       if (merchant.name === '') {
         return {

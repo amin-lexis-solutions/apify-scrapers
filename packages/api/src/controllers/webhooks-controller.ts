@@ -370,7 +370,7 @@ export class WebhooksController {
     const datasetId = webhookData.resource.defaultDatasetId;
     const actorRunId = webhookData.eventData.actorRunId;
     const status = webhookData.resource.status;
-    const { localeId, targetedLocales = false } = webhookData;
+    const { localeId, removeDuplicates = true } = webhookData;
 
     if (status !== 'SUCCEEDED') {
       return new StandardResponse(
@@ -384,8 +384,10 @@ export class WebhooksController {
     ).then((res) => res.json());
 
     // Filter out duplicate domains from the SERP results
-    const filteredData: ApifyGoogleSearchResult[] = targetedLocales ? data : [];
-    if (!targetedLocales) {
+    const filteredData: ApifyGoogleSearchResult[] = removeDuplicates
+      ? []
+      : data;
+    if (removeDuplicates) {
       const domains: Set<string> = new Set();
       for (const item of data) {
         try {

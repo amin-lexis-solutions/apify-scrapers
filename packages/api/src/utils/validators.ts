@@ -133,7 +133,7 @@ export class SerpWebhookRequestBody {
 
   @IsBoolean()
   @IsOptional()
-  targetedLocales: boolean;
+  removeDuplicates: boolean;
 }
 
 export class FindTargetPagesBody {
