@@ -24,7 +24,7 @@ const SOURCES_DATA = [
   },
   {
     apifyActorId: 'bjlyD8L6xZSQnE8Ni',
-    domains: ['iprice.sg'],
+    domains: ['iprice.sg', 'iprice.my'],
     name: 'iprice-sg',
   },
   {
@@ -192,6 +192,7 @@ const SOURCES_DATA = [
     domains: [
       'cuponation.ch',
       'cuponation.com.au',
+      'cuponation.com.my',
       'cuponation.com.br',
       'cuponation.com.sg',
     ],

@@ -55,6 +55,7 @@ export function getToleranceMultiplier(couponCount: number): number {
   }
 }
 
+// Function to remove duplicate coupons
 export function removeDuplicateCoupons(data: any) {
   const seen = new Set();
   const dataArray = Object.values(data);
@@ -74,4 +75,12 @@ export function removeDuplicateCoupons(data: any) {
     }
     return acc;
   }, []);
+}
+
+// Function to extract merchant name from domain name
+export function getMerchantName(url: string): string {
+  const regex = /^(?<start>([^/]+\/\/)?(www\.)?)(?<domain>.+?)(?<end>(\.[^.]{1,3})+)$/gm;
+  const match = regex.exec(url);
+  const name = match?.groups?.domain || '';
+  return name;
 }

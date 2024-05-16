@@ -9,6 +9,7 @@ import {
   RunNLocalesBody,
   FindTargetPagesBody,
   RunTargetPagesBody,
+  TargetLocaleBody,
   StandardResponse,
 } from '../utils/validators';
 import dayjs from 'dayjs';
@@ -318,6 +319,97 @@ export class TargetsController {
     }, {} as Record<string, number>);
 
     return new StandardResponse('Scraping job enqueued', false, result);
+  }
+
+  @Post('/find-for-urls-and-locale')
+  @OpenAPI({
+    summary: 'Retrieving Locale-Specific Target Pages from URLs',
+    description:
+      'Find target pages associated with specific URLs for a given locale',
+  })
+  @ResponseSchema(StandardResponse)
+  async findTargetLocales(
+    @Body() body: TargetLocaleBody
+  ): Promise<StandardResponse> {
+    const { urls, locale, limit = 5 } = body;
+
+    const targetLocale = await prisma.targetLocale.findFirst({
+      where: {
+        locale: locale,
+      },
+    });
+
+    if (!targetLocale) {
+      return new StandardResponse(`Locale ${locale} not found`, true);
+    }
+
+    // Get all brands for the locale
+    const brands = await getMerchantsForLocale(targetLocale.locale);
+
+    // Generate queries for each brand and URL
+    const queries = brands.flatMap((brand) => {
+      return urls.map((url) => {
+        return `site:${url} ${brand.name}`;
+      });
+    });
+
+    if (queries.length === 0) {
+      return new StandardResponse(
+        `No queries generated for locale ${locale} and ${urls.length} URLs / ${brands.length} brands. Aborting.`,
+        true
+      );
+    }
+
+    const chunkSize = 1_000;
+    for (let i = 0; i < queries.length; i += chunkSize) {
+      const queriesChunk = queries.slice(i, i + chunkSize);
+
+      await apify
+        .actor('apify/google-search-scraper')
+        .start(
+          {
+            queries: queriesChunk.join('\n'),
+            countryCode: targetLocale.countryCode.toLowerCase(),
+            languageCode: targetLocale.languageCode,
+            maxPagesPerQuery: 1,
+            resultsPerPage: limit,
+            saveHtml: false,
+            saveHtmlToKeyValueStore: false,
+            includeUnfilteredResults: false,
+            mobileResults: false,
+          },
+          {
+            webhooks: [
+              {
+                eventTypes: [
+                  'ACTOR.RUN.SUCCEEDED',
+                  'ACTOR.RUN.FAILED',
+                  'ACTOR.RUN.TIMED_OUT',
+                  'ACTOR.RUN.ABORTED',
+                ],
+                requestUrl: getWebhookUrl('/webhooks/serp'),
+                payloadTemplate: `{"localeId":"${targetLocale.id}","resource":{{resource}},"eventData":{{eventData}},"removeDuplicates":false}`,
+                headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
+              },
+            ],
+          }
+        )
+        .then(() => {
+          console.log(
+            `Started search for ${targetLocale.locale} with ${queriesChunk.length} queries`
+          );
+        })
+        .catch((e) => {
+          console.error(e);
+          return new StandardResponse('Error starting search', true, {
+            error: e,
+          });
+        });
+    }
+    return new StandardResponse(
+      `Target pages search started for ${locale} : ${brands.length} brands`,
+      false
+    );
   }
 }
 
