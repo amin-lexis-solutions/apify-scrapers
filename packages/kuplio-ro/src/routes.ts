@@ -2,7 +2,7 @@ import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData } from 'shared/helpers';
+import { processAndStoreData, getDomainName } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 function extractAndFormatDate(input: string | null): string | null {
@@ -25,7 +25,8 @@ function extractAndFormatDate(input: string | null): string | null {
 
 async function processCouponItem(
   couponElement: cheerio.Element,
-  sourceUrl: string
+  sourceUrl: string,
+  sourceDomain: string
 ) {
   const $coupon = cheerio.load(couponElement);
 
@@ -83,6 +84,7 @@ async function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
+  validator.addValue('domain', sourceDomain);
   validator.addValue('title', voucherTitle);
   validator.addValue('idInSite', idInSite);
   validator.addValue('description', description);
@@ -114,10 +116,11 @@ router.addHandler(Label.listing, async (context) => {
 
     console.log(`\nProcessing URL: ${request.url}`);
 
+    const domain = getDomainName(request.url);
     // Extract valid coupons
     const validCoupons = $('div#couponContainer > div.coupon');
     for (const validCoupon of validCoupons) {
-      await processCouponItem(validCoupon, request.url);
+      await processCouponItem(validCoupon, request.url, domain);
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

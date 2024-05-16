@@ -55,11 +55,32 @@ export function getToleranceMultiplier(couponCount: number): number {
   }
 }
 
+// Function to remove duplicate coupons
+export function removeDuplicateCoupons(data: any) {
+  const seen = new Set();
+  const dataArray = Object.values(data);
+  return dataArray.reduce((acc: any[], item: any) => {
+    const keyString =
+      item?.title +
+      item?.idInSite +
+      item?.sourceUrl +
+      item?.merchantName +
+      item?.domain;
+    // Create a unique key for each item
+    const key = crypto.createHash('sha256').update(keyString).digest('hex');
+
+    if (!seen.has(key)) {
+      seen.add(key);
+      acc.push(item);
+    }
+    return acc;
+  }, []);
+}
+
 // Function to extract merchant name from domain name
 export function getMerchantName(url: string): string {
   const regex = /^(?<start>([^/]+\/\/)?(www\.)?)(?<domain>.+?)(?<end>(\.[^.]{1,3})+)$/gm;
   const match = regex.exec(url);
   const name = match?.groups?.domain || '';
-  console.log('Merchant name:', name);
   return name;
 }
