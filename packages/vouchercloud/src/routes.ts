@@ -7,12 +7,14 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  getDomainName,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
 function processCouponItem(
   merchantName: string,
   voucher: any,
+  domain: string,
   sourceUrl: string
 ): CouponItemResult {
   // Create a new DataValidator instance
@@ -23,10 +25,9 @@ function processCouponItem(
   // Add required values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
+  validator.addValue('domain', domain);
   validator.addValue('title', voucher.OfferTitle);
   validator.addValue('idInSite', idInSite);
-
-  // Add optional values to the validator
   validator.addValue('isExclusive', voucher.IsExclusive);
   validator.addValue('isExpired', voucher.Available);
   validator.addValue('isShown', true);
@@ -74,14 +75,17 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Unable to find merchant name');
     }
 
+    const domain = getDomainName(request.url);
+
     const vouchers = props.Offers;
 
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
+
     for (const voucher of vouchers) {
       await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings
-      result = processCouponItem(merchantName, voucher, request.url);
+      result = processCouponItem(merchantName, voucher, domain, request.url);
       if (!result.hasCode) {
         await processAndStoreData(result.validator);
       } else {

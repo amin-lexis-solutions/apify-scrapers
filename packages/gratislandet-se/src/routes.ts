@@ -2,12 +2,13 @@ import { createCheerioRouter } from 'crawlee';
 import cheerio from 'cheerio';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData } from 'shared/helpers';
+import { getDomainName, processAndStoreData } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
   merchantName: string,
   couponElement: cheerio.Element,
+  domain: string,
   sourceUrl: string
 ) {
   const $coupon = cheerio.load(couponElement);
@@ -49,6 +50,7 @@ async function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
+  validator.addValue('domain', domain);
   validator.addValue('title', voucherTitle);
   validator.addValue('idInSite', idInSite);
   validator.addValue('description', description);
@@ -91,10 +93,15 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Merchant name is missing');
     }
 
+    const domain = getDomainName(request.url);
+
+    if (!domain) {
+      throw new Error('Domain name is missing');
+    }
     // Extract valid coupons
     const validCoupons = $('div.active-offers-container div.offerbox-store');
     for (const element of validCoupons) {
-      await processCouponItem(merchantName, element, request.url);
+      await processCouponItem(merchantName, element, domain, request.url);
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

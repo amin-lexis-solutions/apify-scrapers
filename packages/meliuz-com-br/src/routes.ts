@@ -16,10 +16,10 @@ async function processCouponItem(
   let titleCss = '';
   let codeCss = '';
   if (!isExpired) {
-    titleCss = 'p.offer-cpn__title';
+    titleCss = 'h3.offer-cpn__title';
     codeCss = 'span.code-btn__value';
   } else {
-    titleCss = 'h3';
+    titleCss = 'p';
     codeCss = 'span.expired-cpn-sec__code';
   }
 
@@ -63,6 +63,9 @@ async function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
+  // Domain saved as brandname
+  validator.addValue('domain', merchantName);
+
   validator.addValue('title', voucherTitle);
   validator.addValue('idInSite', idInSite);
   validator.addValue('isExpired', isExpired);

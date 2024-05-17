@@ -1,12 +1,13 @@
 import * as cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData } from 'shared/helpers';
+import { getDomainName, processAndStoreData } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
   merchantName: string,
   couponElement: cheerio.Element,
+  domain: string,
   sourceUrl: string
 ) {
   const $coupon = cheerio.load(couponElement);
@@ -45,6 +46,7 @@ async function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
+  validator.addValue('domain', domain);
   validator.addValue('title', voucherTitle);
   validator.addValue('idInSite', idInSite);
   validator.addValue('description', description);
@@ -69,15 +71,22 @@ router.addHandler(Label.listing, async ({ request, body }) => {
     const $ = cheerio.load(htmlContent);
 
     const merchantNameElem = $('div.breadcrumbs span.breadcrumb_last');
+
     if (!merchantNameElem) {
       throw new Error('Unable to find merchant name element');
+    }
+
+    const domain = getDomainName(request.url);
+
+    if (!domain) {
+      throw new Error('Unable to find domain name');
     }
 
     const merchantName = merchantNameElem.text().trim();
 
     const validCoupons = $('ul#vouchers > li > div');
     for (const element of validCoupons) {
-      await processCouponItem(merchantName, element, request.url);
+      await processCouponItem(merchantName, element, domain, request.url);
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

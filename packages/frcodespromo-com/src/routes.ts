@@ -50,6 +50,8 @@ async function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
+  // brand name as domain
+  validator.addValue('domain', merchantName);
   validator.addValue('title', voucherTitle);
   validator.addValue('idInSite', idInSite);
   validator.addValue('isExpired', false);
@@ -83,7 +85,7 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Unable to find merchant name');
     }
 
-    merchantName = merchantName.trim();
+    merchantName = merchantName.trim()?.toLowerCase();
 
     // Extract valid coupons
     const validCoupons = $('div#coupon_list div.c_list > div[data-type]');

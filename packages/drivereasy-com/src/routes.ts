@@ -69,7 +69,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
   try {
     await page.waitForSelector('.list_coupons li');
 
-    const domain = getDomainName(request.url);
+    const domain = request.url?.split('/')?.pop();
 
     const merchantName = await page.$eval('.m_logo img', (node) =>
       node.getAttribute('alt')

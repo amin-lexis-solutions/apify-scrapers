@@ -115,7 +115,8 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Merchant name is missing');
     }
 
-    const domain = getDomainName(request.url);
+    const domain = request.url?.split('/').pop();
+
     if (!domain) {
       throw new Error('Domain is missing');
     }

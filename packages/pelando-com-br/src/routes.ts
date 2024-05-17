@@ -78,7 +78,7 @@ async function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -98,8 +98,7 @@ router.addHandler(Label.listing, async (context) => {
       // Parse the JSON data
       const jsonData = JSON.parse(scriptContent);
       const merchantName = jsonData.name;
-      const domain = getDomainName(jsonData.url);
-
+      const domain = getDomainName(request.url);
       // Check if valid page
       if (!merchantName) {
         console.log(`Not Merchant URL: ${request.url}`);

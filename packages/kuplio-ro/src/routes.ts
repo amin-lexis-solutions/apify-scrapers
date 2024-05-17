@@ -103,7 +103,7 @@ async function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -116,7 +116,23 @@ router.addHandler(Label.listing, async (context) => {
 
     console.log(`\nProcessing URL: ${request.url}`);
 
-    const domain = getDomainName(request.url);
+    // Parsing merchant Url from tag element
+    function getMerchantUrl() {
+      let urlSerch = new URL($('.row.coupon').attr('data-eshop-url') || '');
+      return (
+        urlSerch?.searchParams?.get('url') ||
+        urlSerch?.searchParams?.get('redirect_to')
+      );
+    }
+
+    const merchantUrl = getMerchantUrl();
+
+    if (!merchantUrl) {
+      throw new Error('Domain is missing');
+    }
+
+    const domain = getDomainName(merchantUrl);
+
     // Extract valid coupons
     const validCoupons = $('div#couponContainer > div.coupon');
     for (const validCoupon of validCoupons) {

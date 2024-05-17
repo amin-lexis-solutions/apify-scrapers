@@ -101,6 +101,7 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     const domain = getDomainName(request.url);
+
     if (!domain) {
       throw new Error('Domain is missing');
     }
