@@ -337,7 +337,7 @@ export class WebhooksController {
           errorCount: errors.length,
           processingErrors: errors,
           processedAt: new Date(),
-          costInUsdCents: Number(usageTotalUsd * 100),
+          costInUsdCents: Number(usageTotalUsd) * 1000,
         },
       });
 
@@ -454,7 +454,7 @@ export class WebhooksController {
         resultCount: filteredData.length,
         createdCount: validData.length,
         processedAt: new Date(),
-        costInUsdCents: Number(usageTotalUsd * 100),
+        costInUsdCents: Number(usageTotalUsd) * 1000,
       },
     });
 

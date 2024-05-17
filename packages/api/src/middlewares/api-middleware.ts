@@ -31,22 +31,17 @@ export function CostLimit() {
         },
       });
 
-      const totalCostInUsd = Number(totalCost._sum.costInUsdCents) / 100;
-      const costLimitInUsd = Number(costLimit);
+      const totalCostInUsdCents = Number(totalCost._sum.costInUsdCents);
+      const costLimitInUsdCents = Number(costLimit) * 1000;
 
-      if (totalCostInUsd > costLimitInUsd) {
-        Sentry.captureMessage(
-          `Cost limit reached for today. Total cost: ${totalCostInUsd.toFixed(
-            4
-          )} USD`
-        );
+      if (totalCostInUsdCents >= costLimitInUsdCents) {
+        const totalCostInUsd = (totalCostInUsdCents / 1000).toFixed(2);
 
-        return new StandardResponse(
-          `Cost limit reached for today. Total cost: ${totalCostInUsd.toFixed(
-            4
-          )} USD`,
-          true
-        );
+        const message = `Cost limit reached for today. Total cost: ${totalCostInUsd} USD . Please try again tomorrow.`;
+
+        Sentry.captureMessage(message);
+
+        return new StandardResponse(message, true);
       }
 
       return originalMethod.apply(this, args);

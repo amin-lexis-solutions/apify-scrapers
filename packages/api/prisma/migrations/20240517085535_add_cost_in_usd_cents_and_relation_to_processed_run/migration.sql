@@ -2,8 +2,9 @@
 ALTER TABLE "ProcessedRun" DROP CONSTRAINT "ProcessedRun_actorId_fkey";
 
 -- AlterTable
-ALTER TABLE "ProcessedRun" ADD COLUMN     "costInUsdCents" DOUBLE PRECISION NOT NULL DEFAULT 0,
-ADD COLUMN     "localeId" TEXT,
+ALTER TABLE "ProcessedRun"
+ADD COLUMN "costInUsdCents" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN "localeId" TEXT,
 ALTER COLUMN "actorId" DROP NOT NULL;
 
 -- AddForeignKey

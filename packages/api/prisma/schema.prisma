@@ -82,7 +82,7 @@ model ProcessedRun {
   unarchivedCount  Int       @default(0)
   errorCount       Int       @default(0)
   processingErrors Json?
-  costInUsdCents   Float     @default(0)
+  costInUsdCents   Int       @default(0)
 
   source           Source?   @relation(fields: [actorId], references: [id])
   targetLocale     TargetLocale? @relation(fields: [localeId], references: [id]) 
