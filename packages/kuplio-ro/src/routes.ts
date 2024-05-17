@@ -103,7 +103,7 @@ async function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler, log } = context;
+  const { request, $, crawler } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -118,7 +118,7 @@ router.addHandler(Label.listing, async (context) => {
 
     // Parsing merchant Url from tag element
     function getMerchantUrl() {
-      let urlSerch = new URL($('.row.coupon').attr('data-eshop-url') || '');
+      const urlSerch = new URL($('.row.coupon').attr('data-eshop-url') || '');
       return (
         urlSerch?.searchParams?.get('url') ||
         urlSerch?.searchParams?.get('redirect_to')
