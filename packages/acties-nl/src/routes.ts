@@ -9,6 +9,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  getDomainName,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -129,15 +130,10 @@ router.addHandler(Label.listing, async (context) => {
       const storeLogoElement = $('#store-logo');
       const merchantNameAttr = storeLogoElement.attr('title');
       const merchantName = merchantNameAttr ? merchantNameAttr.trim() : null;
-      // Extract domain from the text of the li element with the 'data-jump-store' attribute
-      const domainRaw = $('div#store-topbar > div.right > ul > li > span')
-        .text()
-        .trim();
 
       // Check if the domain starts with 'www.' and remove it if present
-      const domain = domainRaw.startsWith('www.')
-        ? domainRaw.substring(4)
-        : domainRaw;
+      const domain = getDomainName(request.url);
+
       if (!merchantName) {
         throw new Error('Merchant name not found');
       }

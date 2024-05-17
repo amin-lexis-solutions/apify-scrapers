@@ -117,7 +117,7 @@ export function formatDateTime(text: string): string {
 // In this context domain refers to where coupons is applied.
 export function getDomainName(url: string): string {
   const parsedUrl = new URL(url);
-  let domain = parsedUrl.hostname;
+  let domain = parsedUrl.pathname;
 
   // Remove www subdomain if present
   if (domain.startsWith('www.')) {
@@ -137,6 +137,11 @@ export function getDomainName(url: string): string {
   // Remove hyphens if present
   if (domain.includes('-')) {
     domain = domain.split('-')[0];
+  }
+  // Remove hyphens split brandname
+  if (domain.includes('/')) {
+    const trimmedPath = domain.split('/');
+    domain = trimmedPath[trimmedPath.length - 1];
   }
   return domain;
 }
