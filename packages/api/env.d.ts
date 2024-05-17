@@ -14,6 +14,7 @@ declare global {
       SENTRY_DSN?: string;
       SENTRY_DSN_ACTORS?: string;
       ANOMALY_DETECTION_DAYS?: number;
+      COST_LIMIT_USD: string;
     }
   }
 }

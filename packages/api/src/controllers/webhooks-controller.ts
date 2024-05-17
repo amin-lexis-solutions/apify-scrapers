@@ -48,6 +48,7 @@ export class WebhooksController {
     const datasetId = webhookData.resource.defaultDatasetId;
     const actorRunId = webhookData.eventData.actorRunId;
     const status = webhookData.resource.status;
+    const usageTotalUsd = webhookData.resource.usageTotalUsd;
     const { sourceId, localeId } = webhookData;
 
     const targetPages = new Set<string>();
@@ -336,6 +337,7 @@ export class WebhooksController {
           errorCount: errors.length,
           processingErrors: errors,
           processedAt: new Date(),
+          costInUsdCents: Number(usageTotalUsd * 100),
         },
       });
 
@@ -374,6 +376,7 @@ export class WebhooksController {
     const datasetId = webhookData.resource.defaultDatasetId;
     const actorRunId = webhookData.eventData.actorRunId;
     const status = webhookData.resource.status;
+    const usageTotalUsd = webhookData.resource.usageTotalUsd;
     const { localeId, removeDuplicates = true } = webhookData;
 
     if (status !== 'SUCCEEDED') {
@@ -440,6 +443,19 @@ export class WebhooksController {
       } catch (e) {
         console.error(`Error processing SERP data: ${e}`);
       }
+    });
+
+    // Update the processedRun record
+    await prisma.processedRun.create({
+      data: {
+        localeId: localeId,
+        actorRunId,
+        status,
+        resultCount: filteredData.length,
+        createdCount: validData.length,
+        processedAt: new Date(),
+        costInUsdCents: Number(usageTotalUsd * 100),
+      },
     });
 
     return new StandardResponse(

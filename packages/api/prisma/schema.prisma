@@ -69,7 +69,8 @@ model SourceDomain {
 // Maps to a single Apify actor run
 model ProcessedRun {
   id               String    @id @default(uuid())
-  actorId          String
+  actorId          String?
+  localeId         String?    
   actorRunId       String    @unique
   finishedAt       DateTime  @default(now())
   processedAt      DateTime?
@@ -81,7 +82,11 @@ model ProcessedRun {
   unarchivedCount  Int       @default(0)
   errorCount       Int       @default(0)
   processingErrors Json?
+  costInUsdCents   Float     @default(0)
+
   source           Source?   @relation(fields: [actorId], references: [id])
+  targetLocale     TargetLocale? @relation(fields: [localeId], references: [id]) 
+
 }
 
 // Maps to a locale we are targeting
@@ -97,6 +102,7 @@ model TargetLocale {
   updatedAt      DateTime     @default(now())
   pages          TargetPage[]
   coupons        Coupon[]
+  runs           ProcessedRun[]
 }
 
 // Maps to a page we want to scrape using an Apify actor
