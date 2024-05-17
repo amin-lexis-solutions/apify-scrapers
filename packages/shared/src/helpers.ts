@@ -157,25 +157,8 @@ export async function processAndStoreData(validator: DataValidator) {
 
     // Get processed data from validator
     const processedData = validator.getData();
-
-    const dataset = await Dataset.open();
-
-    // Flag to check if data is already present
-    let isDataPresent = false;
-
-    // Loop through dataset to check for duplicate items
-    await dataset.forEach((item) => {
-      // Check if either idInSite or title of item matches processedData
-      isDataPresent =
-        item?.idInSite?.includes(processedData?.idInSite) ||
-        item?.title?.includes(processedData?.title);
-    });
-    // If data is already present, exit function
-    if (isDataPresent) return;
-    // Log processed data
-    console.log(processedData);
-    // Push processed data to dataset
-    await Dataset.pushData(processedData);
+    // save the data to the dataset
+    Dataset.pushData(processedData);
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

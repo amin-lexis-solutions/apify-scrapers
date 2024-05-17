@@ -11,6 +11,7 @@ import {
   generateHash,
   validDateOrNull,
   getToleranceMultiplier,
+  removeDuplicateCoupons,
 } from '../utils/utils';
 import {
   SerpWebhookRequestBody,
@@ -67,7 +68,10 @@ export class WebhooksController {
       const scrapedData = (await fetch(
         `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&token=${process.env.API_KEY_APIFY}`
       )
-        .then((res) => res.json())
+        .then(async (res) => {
+          const data = await res.json();
+          return removeDuplicateCoupons(data);
+        })
         .catch((e) => {
           Sentry.captureMessage(
             `Error fetching data from Apify for run ${run.id} from source ${sourceId}: ${e}`
@@ -370,7 +374,7 @@ export class WebhooksController {
     const datasetId = webhookData.resource.defaultDatasetId;
     const actorRunId = webhookData.eventData.actorRunId;
     const status = webhookData.resource.status;
-    const { localeId } = webhookData;
+    const { localeId, removeDuplicates = true } = webhookData;
 
     if (status !== 'SUCCEEDED') {
       return new StandardResponse(
@@ -384,23 +388,26 @@ export class WebhooksController {
     ).then((res) => res.json());
 
     // Filter out duplicate domains from the SERP results
-    const filteredData: ApifyGoogleSearchResult[] = [];
-    const domains: Set<string> = new Set();
-    for (const item of data) {
-      try {
-        const url = new URL(item.url);
-        const domain = url.hostname.replace('www.', '');
-        if (domains.has(domain)) continue;
-        filteredData.push(item);
-        domains.add(domain);
-      } catch (e) {
-        Sentry.captureMessage(
-          ` ActorRun ID ${actorRunId} : Invalid URL format for SERP data: ${item.url} . Skipping.`
-        );
-        continue;
+    const filteredData: ApifyGoogleSearchResult[] = removeDuplicates
+      ? []
+      : data;
+    if (removeDuplicates) {
+      const domains: Set<string> = new Set();
+      for (const item of data) {
+        try {
+          const url = new URL(item.url);
+          const domain = url.hostname.replace('www.', '');
+          if (domains.has(domain)) continue;
+          filteredData.push(item);
+          domains.add(domain);
+        } catch (e) {
+          Sentry.captureMessage(
+            ` ActorRun ID ${actorRunId} : Invalid URL format for SERP data: ${item.url} . Skipping.`
+          );
+          continue;
+        }
       }
     }
-
     // Process the data and store it in the database
     const validData: any = filteredData
       .filter((item) => !!item.url)

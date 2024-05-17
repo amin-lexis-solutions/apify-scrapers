@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { getMerchantName } from '@api/utils/utils';
 
 type Merchant = {
   domain: string;
@@ -13,9 +14,10 @@ if (!process.env.OBERST_API_KEY) {
 }
 
 export async function getMerchantsForLocale(
-  locale: string
+  locale: string,
+  ensureNameIsPresent = true
 ): Promise<Merchant[]> {
-  return fetch(API_URL, {
+  const merchantMyResponse = await fetch(API_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -24,5 +26,27 @@ export async function getMerchantsForLocale(
       locale,
       api_key: process.env.OBERST_API_KEY,
     }),
-  }).then((res) => res.json());
+  })
+    .then((res) => res.json())
+    .catch((err) => {
+      console.error('Error fetching merchants from Oberst API', err);
+      return [];
+    });
+
+  if (ensureNameIsPresent) {
+    return merchantMyResponse.map((merchant: any) => {
+      if (merchant.name === '') {
+        return {
+          domain: merchant.domain,
+          name: getMerchantName(merchant.domain),
+        };
+      }
+      return {
+        domain: merchant.domain,
+        name: merchant.name,
+      };
+    });
+  }
+
+  return merchantMyResponse;
 }
