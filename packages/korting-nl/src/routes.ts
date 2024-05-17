@@ -1,4 +1,3 @@
-import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
@@ -9,102 +8,135 @@ import {
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
-function extractMerchantName(rawName: string): string {
-  // Regular expression to find the first occurrence of
-  // a word starting with "korting"
-  const regex = /\bkorting.*?\b/i; // 'i' == case-insensitive
-
-  // Split the string using the regex and take the first part
-  const [merchantName] = rawName.split(regex);
-
-  return merchantName.trim();
-}
-
-async function processCouponItem(
-  merchantName: string,
-  couponElement: cheerio.Element,
-  domain: string,
-  sourceUrl: string
-) {
-  const $coupon = cheerio.load(couponElement);
-
-  let hasCode = false;
-
-  const elemCode = $coupon('span.coupon_text').first();
-
-  if (elemCode.length > 0) {
-    hasCode = true;
-  }
-
-  // Extract the voucher title
-  const titleElement = $coupon('h3').first();
-  if (titleElement.length === 0) {
-    console.log('Coupon HTML:', $coupon.html());
-    throw new Error('Voucher title is missing');
-  }
-  const voucherTitle = he.decode(titleElement.text().trim());
-
-  const idInSite = generateHash(merchantName, voucherTitle, sourceUrl);
-
-  const validator = new DataValidator();
-
-  // Add required and optional values to the validator
-  validator.addValue('sourceUrl', sourceUrl);
-  validator.addValue('merchantName', merchantName);
-  validator.addValue('domain', domain);
-  validator.addValue('title', voucherTitle);
-  validator.addValue('idInSite', idInSite);
-  validator.addValue('isExpired', false);
-  validator.addValue('isShown', true);
-
-  if (hasCode) {
-    const coupon = elemCode.text().trim();
-    validator.addValue('code', coupon);
-  }
-  await processAndStoreData(validator);
-  return true;
-}
-
 export const router = createCheerioRouter();
 
-router.addHandler(Label.listing, async (context) => {
+// Function to decode HTML entities
+const decodeHtml = (html) => he.decode(html);
+
+// Function to get merchant name based on page type
+const getMerchantName = ($, pageType) => {
+  const selector =
+    pageType === 'listing'
+      ? '.woo-tax-logo img'
+      : '.rh-cat-list-title a:last-child';
+  const merchantNameElement = $(selector);
+
+  if (merchantNameElement.length === 0)
+    throw new Error('Merchant name is missing');
+
+  return decodeHtml(
+    (pageType === 'listing'
+      ? merchantNameElement.attr('alt')
+      : merchantNameElement.text()
+    ).trim()
+  );
+};
+
+// Function to get coupon code
+const getCouponCode = (elem) => {
+  const couponElement = elem.find('.rehub_offer_coupon');
+  return {
+    hasCode: couponElement.length > 0,
+    elemCode: couponElement,
+  };
+};
+
+// Function to get voucher title
+const getVoucherTitle = (elem, pageType) => {
+  const titleElement =
+    pageType === 'listing' ? elem.find('h3') : elem.find('h1');
+  if (titleElement.length === 0) {
+    throw new Error('Voucher title is missing');
+  }
+  return decodeHtml(titleElement.text().trim());
+};
+
+// Function to extract coupon details
+const getCoupon = (elemCode) => {
+  return (
+    elemCode?.attr('data-clipboard-text')?.trim() ||
+    elemCode?.find('.coupon_text')?.text().trim() ||
+    null
+  );
+};
+
+// Main processing function
+const processCoupon = async (context) => {
   const { request, $, crawler } = context;
-
-  if (request.userData.label !== Label.listing) return;
-
   if (!crawler.requestQueue) {
     throw new Error('Request queue is missing');
   }
 
-  try {
-    // Extracting request and body from context
+  const domain = getDomainName(request.url);
 
-    console.log(`\nProcessing URL: ${request.url}`);
-
-    const h1Element = $('div.woo-tax-name > h1');
-    let merchantName = '';
-    if (h1Element.length > 0) {
-      merchantName = extractMerchantName(h1Element.text());
-    }
-
-    if (!merchantName) {
-      throw new Error('Merchant name is missing');
-    }
-
-    const domain = getDomainName(
-      $('.store_post_meta_item a').attr('href') || ''
-    );
-
-    if (!domain) {
-      throw new Error('Domain name is missing');
-    }
-    // Extract valid coupons
-    const validCoupons = $('article.offer_grid');
-    for (const element of validCoupons) {
-      await processCouponItem(merchantName, element, domain, request.url);
-    }
-  } finally {
-    // We don't catch so that the error is logged in Sentry, but use finally
-    // since we want the Apify actor to end successfully and not waste resources by retrying.
+  if (!domain) {
+    throw new Error('Domain name is missing');
   }
-});
+
+  const label = request.userData.label;
+  if (!label) return;
+
+  const pageType = $('.rh-mini-sidebar').length ? 'listing' : 'detail';
+  console.log(`\nProcessing URL: ${request.url}`);
+
+  const merchantName = getMerchantName($, pageType);
+
+  if (pageType === 'listing') {
+    $('article.offer_grid').each((_, elem) => {
+      const element = $(elem);
+      const { hasCode, elemCode } = getCouponCode(element);
+      const voucherTitle = getVoucherTitle(element, pageType);
+      const idInSite = generateHash(merchantName, voucherTitle, request.url);
+
+      const validator = new DataValidator();
+      validator.addValue('sourceUrl', request.url);
+      validator.addValue('merchantName', merchantName);
+      validator.addValue('domain', domain);
+      validator.addValue('title', voucherTitle);
+      validator.addValue('idInSite', idInSite);
+      validator.addValue(
+        'isExpired',
+        elemCode?.hasClass('expired_coupon') || false
+      );
+      validator.addValue('isShown', true);
+
+      if (hasCode) {
+        const coupon = getCoupon(elemCode);
+        validator.addValue('code', coupon);
+      }
+
+      processAndStoreData(validator);
+    });
+    return;
+  }
+
+  const elem = $('.single_compare_right');
+  const { hasCode, elemCode } = getCouponCode(elem);
+  const voucherTitle = getVoucherTitle(elem, pageType);
+  const idInSite = generateHash(merchantName, voucherTitle, request.url);
+  const description =
+    decodeHtml($('article.post-inner p').text().trim()) || null; // Extracting description
+
+  const validator = new DataValidator();
+  validator.addValue('sourceUrl', request.url);
+  validator.addValue('merchantName', merchantName);
+  validator.addValue('domain', domain);
+
+  validator.addValue('title', voucherTitle);
+  validator.addValue('description', description);
+  validator.addValue('idInSite', idInSite);
+  validator.addValue(
+    'isExpired',
+    elemCode?.hasClass('expired_coupon') || false
+  );
+  validator.addValue('isShown', true);
+
+  if (hasCode) {
+    const coupon = getCoupon(elemCode);
+    validator.addValue('code', coupon);
+  }
+
+  processAndStoreData(validator);
+};
+
+router.addHandler(Label.listing, processCoupon);
