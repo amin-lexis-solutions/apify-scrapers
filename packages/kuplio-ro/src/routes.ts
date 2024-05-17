@@ -110,20 +110,19 @@ router.addHandler(Label.listing, async (context) => {
   if (!crawler.requestQueue) {
     throw new Error('Request queue is missing');
   }
+  // Parsing merchant Url from tag element
+  function getMerchantUrl() {
+    const urlSerch = new URL($('.row.coupon').attr('data-eshop-url') || '');
+    return (
+      urlSerch?.searchParams?.get('url') ||
+      urlSerch?.searchParams?.get('redirect_to')
+    );
+  }
 
   try {
     // Extracting request and body from context
 
     console.log(`\nProcessing URL: ${request.url}`);
-
-    // Parsing merchant Url from tag element
-    function getMerchantUrl() {
-      const urlSerch = new URL($('.row.coupon').attr('data-eshop-url') || '');
-      return (
-        urlSerch?.searchParams?.get('url') ||
-        urlSerch?.searchParams?.get('redirect_to')
-      );
-    }
 
     const merchantUrl = getMerchantUrl();
 
