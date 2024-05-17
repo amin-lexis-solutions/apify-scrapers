@@ -10,7 +10,6 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
-  getDomainName,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -109,6 +108,7 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     const domain = new URL(request.url).pathname?.split('/')?.[2];
+
     if (!domain) {
       throw new Error('Domain is missing');
     }
