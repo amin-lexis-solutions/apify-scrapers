@@ -18,7 +18,8 @@
     "prisma:seed:target-locales": "ts-node prisma/seeds/populate_all_target_locales.ts",
     "prisma:studio": "./node_modules/.bin/prisma studio --schema prisma/schema.prisma",
     "schedule:actors": "./node_modules/.bin/ts-node ./src/crons/schedule-actors.ts",
-    "schedule:find-serp": "./node_modules/.bin/ts-node ./src/crons/schedule-find-serp.ts"
+    "schedule:find-serp": "./node_modules/.bin/ts-node ./src/crons/schedule-find-serp.ts",
+    "schedule:periodically-cleanup": "./node_modules/.bin/ts-node ./src/crons/schedule-cleanup.ts"
   },
   "repository": {
     "type": "git",

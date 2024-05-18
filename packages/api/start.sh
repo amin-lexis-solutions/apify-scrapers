@@ -4,6 +4,11 @@
 # echo "*/5 * * * * root cd /app/packages/api && yarn schedule:actors" >> /etc/crontab
 echo "*/10 0-8 * * 1,4 root cd /app/packages/api && yarn schedule:find-serp" >> /etc/crontab
 
+# Cron job to cleanup old data every day at 4:30 AM
+echo "30 4 * * * root cd /app/packages/api && yarn schedule:periodically-cleanup" >> /etc/crontab
+
+
+
 # Export environment variables to ensure availability for cron jobs
 printenv >> /app/packages/api/src/.env.cron
 
