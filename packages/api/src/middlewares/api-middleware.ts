@@ -13,7 +13,7 @@ export function CostLimit() {
     const originalMethod = descriptor.value;
 
     descriptor.value = async function (...args: any[]) {
-      const COST_LIMIT_USD = process.env.COST_LIMIT_USD;
+      const COST_LIMIT_USD = process.env.APIFY_DAILY_COST_LIMIT_USD;
       if (!COST_LIMIT_USD) {
         return new StandardResponse(`Cost limit is not set`, true);
       }
