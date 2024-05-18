@@ -5,7 +5,7 @@
 echo "*/10 0-8 * * 1,4 root cd /app/packages/api && yarn schedule:find-serp" >> /etc/crontab
 
 # Cron job to cleanup old data every day at 4:30 AM
-echo "30 4 * * * root cd /app/packages/api && yarn schedule:periodically-cleanup" >> /etc/crontab
+echo "30 4 * * * root cd /app/packages/api && yarn schedule:schedule:periodic-coupons-cleanup" >> /etc/crontab
 
 
 
