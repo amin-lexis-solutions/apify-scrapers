@@ -2,12 +2,13 @@ import { prisma } from '../lib/prisma';
 import dayjs from 'dayjs';
 
 export async function main() {
-  const thirtyDaysAgo = dayjs().subtract(30, 'days').toDate();
+  // Delete coupons older than 6 weeks
+  const olderThan = dayjs().subtract(6, 'weeks').toDate();
 
   const deleted = await prisma.couponStats.deleteMany({
     where: {
       createdAt: {
-        lt: thirtyDaysAgo,
+        lt: olderThan,
       },
     },
   });
