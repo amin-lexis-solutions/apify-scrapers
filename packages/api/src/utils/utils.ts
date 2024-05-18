@@ -86,7 +86,9 @@ export function getMerchantName(url: string): string {
 }
 
 export function getGoogleActorPriceInUsdMicroCents(
-  TotalResults: number
+  totalResults: number
 ): number {
-  return (3.5 / 1000) * TotalResults * 1000000;
+  const PRICE_PER_1000_RESULTS_IN_USD = 3.5;
+
+  return PRICE_PER_1000_RESULTS_IN_USD * (totalResults / 1000) * 1000000;
 }
