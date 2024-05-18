@@ -84,3 +84,7 @@ export function getMerchantName(url: string): string {
   const name = match?.groups?.domain || '';
   return name;
 }
+
+export function getGoogleActorPriceInUsdMicroCents(results: number): number {
+  return (3.5 / 1000) * results * 1000000;
+}

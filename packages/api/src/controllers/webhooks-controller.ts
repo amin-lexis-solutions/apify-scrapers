@@ -12,6 +12,7 @@ import {
   validDateOrNull,
   getToleranceMultiplier,
   removeDuplicateCoupons,
+  getGoogleActorPriceInUsdMicroCents,
 } from '../utils/utils';
 import {
   SerpWebhookRequestBody,
@@ -444,9 +445,6 @@ export class WebhooksController {
       }
     });
 
-    // Cost is calculated in Micro USD, we pay 3.5 USD per 1000 SERP results
-    const costInUsdMicroCents = (3.5 / 1000) * filteredData.length * 1000000;
-
     // Update the processedRun record
     await prisma.processedRun.create({
       data: {
@@ -456,7 +454,9 @@ export class WebhooksController {
         resultCount: filteredData.length,
         createdCount: validData.length,
         processedAt: new Date(),
-        costInUsdMicroCents,
+        costInUsdMicroCents: getGoogleActorPriceInUsdMicroCents(
+          filteredData.length
+        ),
       },
     });
 
