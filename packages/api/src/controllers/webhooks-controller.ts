@@ -59,7 +59,7 @@ export class WebhooksController {
 
     const run = await prisma.processedRun.create({
       data: {
-        actorId: sourceId,
+        sourceId,
         actorRunId,
         status,
       },
@@ -337,7 +337,7 @@ export class WebhooksController {
           errorCount: errors.length,
           processingErrors: errors,
           processedAt: new Date(),
-          costInUsdCents: Number(usageTotalUsd) * 1000,
+          costInUsdMicroCents: Number(usageTotalUsd) * 1000000,
         },
       });
 
@@ -376,7 +376,6 @@ export class WebhooksController {
     const datasetId = webhookData.resource.defaultDatasetId;
     const actorRunId = webhookData.eventData.actorRunId;
     const status = webhookData.resource.status;
-    const usageTotalUsd = webhookData.resource.usageTotalUsd;
     const { localeId, removeDuplicates = true } = webhookData;
 
     if (status !== 'SUCCEEDED') {
@@ -445,6 +444,9 @@ export class WebhooksController {
       }
     });
 
+    // Cost is calculated in Micro USD, we pay 3.5 USD per 1000 SERP results
+    const costInUsdMicroCents = (3.5 / 1000) * filteredData.length * 1000000;
+
     // Update the processedRun record
     await prisma.processedRun.create({
       data: {
@@ -454,7 +456,7 @@ export class WebhooksController {
         resultCount: filteredData.length,
         createdCount: validData.length,
         processedAt: new Date(),
-        costInUsdCents: Number(usageTotalUsd) * 1000,
+        costInUsdMicroCents,
       },
     });
 
