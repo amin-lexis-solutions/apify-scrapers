@@ -68,35 +68,40 @@ model SourceDomain {
 
 // Maps to a single Apify actor run
 model ProcessedRun {
-  id               String    @id @default(uuid())
-  actorId          String
-  actorRunId       String    @unique
-  finishedAt       DateTime  @default(now())
-  processedAt      DateTime?
-  status           String
-  resultCount      Int       @default(0)
-  createdCount     Int       @default(0)
-  updatedCount     Int       @default(0)
-  archivedCount    Int       @default(0)
-  unarchivedCount  Int       @default(0)
-  errorCount       Int       @default(0)
-  processingErrors Json?
-  source           Source?   @relation(fields: [actorId], references: [id])
+  id                  String    @id @default(uuid())
+  sourceId            String?
+  localeId            String?
+  actorRunId          String    @unique
+  finishedAt          DateTime  @default(now())
+  processedAt         DateTime?
+  status              String
+  resultCount         Int       @default(0)
+  createdCount        Int       @default(0)
+  updatedCount        Int       @default(0)
+  archivedCount       Int       @default(0)
+  unarchivedCount     Int       @default(0)
+  errorCount          Int       @default(0)
+  processingErrors    Json?
+  costInUsdMicroCents Int       @default(0)
+
+  source       Source?       @relation(fields: [sourceId], references: [id])
+  targetLocale TargetLocale? @relation(fields: [localeId], references: [id])
 }
 
 // Maps to a locale we are targeting
 model TargetLocale {
-  id             String       @id @default(uuid())
-  locale         String       @unique
+  id             String         @id @default(uuid())
+  locale         String         @unique
   countryCode    String
   languageCode   String
   searchTemplate String // e.g. "{{website}} coupon codes"
-  isActive       Boolean      @default(true)
+  isActive       Boolean        @default(true)
   lastSerpRunAt  DateTime?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @default(now())
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @default(now())
   pages          TargetPage[]
   coupons        Coupon[]
+  runs           ProcessedRun[]
 }
 
 // Maps to a page we want to scrape using an Apify actor
