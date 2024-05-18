@@ -32,10 +32,10 @@ export function CostLimit() {
       });
 
       const totalCostInUsdCents = Number(totalCost._sum.costInUsdMicroCents);
-      const costLimitInUsdMicroCents = Number(COST_LIMIT_USD) * 100000000;
+      const costLimitInUsdMicroCents = Number(COST_LIMIT_USD) * 1000000;
 
       if (totalCostInUsdCents >= costLimitInUsdMicroCents) {
-        const totalCostInUsd = (totalCostInUsdCents / 100000000).toFixed(5);
+        const totalCostInUsd = (totalCostInUsdCents / 1000000).toFixed(5);
 
         const message = `Cost limit reached for today. Total cost: ${totalCostInUsd} USD . Please try again tomorrow.`;
 
