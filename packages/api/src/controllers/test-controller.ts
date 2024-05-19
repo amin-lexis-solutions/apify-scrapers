@@ -28,17 +28,18 @@ export class TestController {
   })
   @ResponseSchema(StandardResponse)
   async getList(@QueryParams() params: ListTestRequestBody) {
-    const { page, pageSize, actorId } = params;
+    const { page, pageSize, actorId, status } = params;
 
     const offset = (page - 1) * pageSize;
 
     const [totalResults, data] = await Promise.all([
-      prisma.test.count({}),
+      prisma.test.count({ where: { apifyActorId: actorId, status } }),
       prisma.test.findMany({
         skip: offset,
         take: pageSize,
         where: {
-          OR: [{ apifyActorId: actorId }],
+          apifyActorId: actorId,
+          status,
         },
       }),
     ]);
@@ -104,8 +105,8 @@ export class TestController {
 
   @Post('/:id')
   @OpenAPI({
-    summary: 'Tested actor',
-    description: 'Actor testing',
+    summary: 'Testing actor',
+    description: 'Update actor testing data',
   })
   @ResponseSchema(StandardResponse)
   async test(

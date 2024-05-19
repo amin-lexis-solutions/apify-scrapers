@@ -1,36 +1,32 @@
-import { Template } from '../test/actors/fileReader';
+import { testSpec } from '../test/actors/specs/dynamicTemplate.spec';
 
 const maxConcurrentTests = Number(process.env.MAX_CONCURRENT_TESTS) || 5;
 
 const APIFY_RUN_TEST = `https://api.apify.com/v2/acts/pocesar~actor-testing/runs?token=${process.env.APIFY_TOKEN}`;
 
-async function findTest() {
+async function findTests() {
   try {
-    const response = await fetch(`${process.env.BASE_URL}test/`, {
+    const response = await fetch(`${process.env.BASE_URL}tests/`, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer ' + (process.env.API_SECRET as string),
       },
+      method: 'GET',
     });
     const testList = await response?.json();
 
-    const testRun =
-      testList?.data?.results?.filter(
-        (item: any) => !item.status.includes('READY')
-      ) || [];
-
-    return testRun;
+    return testList;
   } catch (e) {
     console.log(e);
   }
 }
 
-async function runTest(actorId: string, startUrls: string[]) {
+async function runTests(actorId: string, startUrls: string[]) {
   try {
     const response = await fetch(APIFY_RUN_TEST, {
       method: 'POST',
       body: JSON.stringify({
-        testSpec: Template,
+        testSpec: testSpec,
         customData: {
           actorId: actorId,
           startUrls: startUrls,
@@ -60,15 +56,15 @@ async function runTest(actorId: string, startUrls: string[]) {
 
 (async () => {
   try {
-    const scheduledTest = await findTest();
+    const scheduledTest = await findTests();
 
     let runningTests = 0;
 
-    if (scheduledTest.length == 0) {
+    if (scheduledTest?.data?.results?.length == 0) {
       throw new Error('Test no found');
     }
 
-    for (const obj of scheduledTest['data']['results']) {
+    for (const obj of scheduledTest?.['data']?.['results']) {
       if (runningTests >= maxConcurrentTests) {
         throw new Error(
           `Limit the number of concurrent tests ${maxConcurrentTests}`
@@ -81,9 +77,9 @@ async function runTest(actorId: string, startUrls: string[]) {
         return { url: item };
       });
 
-      const result = await runTest(obj.apifyActorId, startUrls);
+      const result = await runTests(obj.apifyActorId, startUrls);
 
-      await fetch(`${process.env.BASE_URL}test/${obj.id}`, {
+      await fetch(`${process.env.BASE_URL}tests/${obj.id}`, {
         method: 'POST',
         body: JSON.stringify({
           status: result['data']['status'],

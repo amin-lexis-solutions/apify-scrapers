@@ -1,4 +1,4 @@
-`({ it, xit, moment, _, run, expect, expectAsync, input, describe }) => {
+export const testSpec = `({ it, xit, moment, _, run, expect, expectAsync, input, describe }) => {
   let runResult;
   beforeAll(async () => {
     try {
