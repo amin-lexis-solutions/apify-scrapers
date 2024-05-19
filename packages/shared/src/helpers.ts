@@ -138,11 +138,7 @@ export function getDomainName(url: string): string | null {
     domain = domain.slice(4);
   }
   // Ensure domain contains a dot (.)
-  if (domain?.includes('.')) {
-    return domain;
-  } else {
-    return null;
-  }
+  return domain?.includes('.') ? domain : null;
 }
 
 // Sleeps for the specified number of milliseconds

@@ -1,6 +1,6 @@
 import cheerio from 'cheerio';
 import * as he from 'he';
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
   processAndStoreData,
@@ -22,7 +22,7 @@ function processCouponItem(
   merchantName: string,
   isExpired: boolean,
   couponElement: cheerio.Element,
-  domain: string,
+  domain: string | null,
   sourceUrl: string
 ): CouponItemResult {
   const $coupon = cheerio.load(couponElement);
@@ -126,7 +126,7 @@ router.addHandler(Label.listing, async (context) => {
     const domain = getDomainName(request.url);
 
     if (!domain) {
-      throw new Error('domain name is missing');
+      log.warning('domain name is missing');
     }
 
     const couponsWithCode: CouponHashMap = {};
@@ -158,7 +158,13 @@ router.addHandler(Label.listing, async (context) => {
       'div.voucherGroup div.voucherCard.voucherCard--expired'
     );
     for (const element of expiredCoupons) {
-      result = processCouponItem(merchantName, true, element, request.url);
+      result = processCouponItem(
+        merchantName,
+        true,
+        element,
+        null,
+        request.url
+      );
       if (!result.hasCode) {
         await processAndStoreData(result.validator);
       } else {

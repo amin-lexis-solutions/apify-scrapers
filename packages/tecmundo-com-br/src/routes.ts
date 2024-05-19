@@ -1,4 +1,4 @@
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import cheerio from 'cheerio';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
@@ -16,7 +16,7 @@ import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 function processCouponItem(
   merchantName: string,
   couponElement: cheerio.Element,
-  domain: string,
+  domain: string | null,
   sourceUrl: string
 ): CouponItemResult {
   const $coupon = cheerio.load(couponElement);
@@ -113,7 +113,7 @@ router.addHandler(Label.listing, async (context) => {
     const domain = getDomainName(request.url);
 
     if (!domain) {
-      throw new Error('domain name is missing');
+      log.warning('domain name is missing');
     }
     // Extract valid coupons
     const couponsWithCode: CouponHashMap = {};
