@@ -179,3 +179,43 @@ export class AnomalyRequestBody {
   @IsNumber()
   couponsCount: number;
 }
+
+export class ListTestRequestBody {
+  @IsPositive()
+  @IsOptional()
+  page = 1;
+
+  @Min(1)
+  @Max(MAX_PAGE_SIZE)
+  @IsOptional()
+  pageSize = 10;
+
+  @IsString()
+  @IsOptional()
+  status?: string;
+
+  @IsString()
+  @IsOptional()
+  actorId?: string;
+}
+
+export class TestActor {
+  @IsString()
+  actorId: string;
+  @IsString()
+  testName: string;
+  @IsString()
+  startUrls: string[];
+}
+
+export class RunTestBody {
+  @IsArray()
+  actors: TestActor[];
+  maxConcurrency: number;
+}
+
+export class TestRequestBody {
+  status: string;
+  apifyRunId: string;
+  lastApifyRunAt: Date;
+}
