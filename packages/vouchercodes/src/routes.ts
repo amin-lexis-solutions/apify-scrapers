@@ -1,5 +1,5 @@
 import cheerio from 'cheerio';
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
 import { getDomainName, processAndStoreData } from 'shared/helpers';
@@ -8,7 +8,7 @@ import { Label } from 'shared/actor-utils';
 async function processCouponItem(
   merchantName: string,
   couponElement: cheerio.Element,
-  domain: string,
+  domain: string | null,
   sourceUrl: string
 ) {
   const $coupon = cheerio.load(couponElement);
@@ -88,13 +88,17 @@ router.addHandler(Label.listing, async (context) => {
     );
 
     if (!merchantName) {
-      throw new Error('Merchant name is missing');
+      log.warning('Merchant name is missing');
     }
 
-    const domain = getDomainName(request.url);
+    const merchantUrl = $('.contact .mail a')
+      .attr('href')
+      ?.replace('mailto:', '');
+
+    const domain = merchantUrl ? getDomainName(merchantUrl) : null;
 
     if (!domain) {
-      throw new Error('Domain name is missing');
+      log.warning('Domain name is missing');
     }
     // Extract valid coupons
     const validCoupons = $('div#divMerchantOffers > div[data-id]');

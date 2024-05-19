@@ -1,4 +1,4 @@
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import cheerio from 'cheerio';
 import { DataValidator } from 'shared/data-validator';
 import {
@@ -57,7 +57,7 @@ router.addHandler(Label.listing, async ({ request, $ }) => {
     const domain = $('.stp_sub-header a._prevent_default').text()?.trim();
 
     if (!domain) {
-      throw new Error('Domain not found');
+      log.info('Domain not found');
     }
     // Extract the merchant name
     const merchantName = domain?.split('.com')?.[0];

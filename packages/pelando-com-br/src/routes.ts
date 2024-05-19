@@ -11,7 +11,7 @@ import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
   merchantName: string,
-  domain: string,
+  domain: string | null,
   isExpired: boolean,
   couponElement: cheerio.Element,
   sourceUrl: string

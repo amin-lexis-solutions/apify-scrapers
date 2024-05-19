@@ -59,7 +59,7 @@ function checkVoucherCode(code: string | null | undefined) {
 
 function processCouponItem(
   merchantName: string,
-  domain: string,
+  domain: string | null,
   retailerId: string,
   voucher: any,
   sourceUrl: string,
@@ -113,7 +113,7 @@ function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, body, crawler } = context;
+  const { request, body, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -161,6 +161,10 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = jsonData.retailer.name;
     const merchantUrl = jsonData.retailer.merchant_url;
     const domain = getDomainName(merchantUrl);
+
+    if (!domain) {
+      log.info('Domain is missing!');
+    }
 
     // Combine active and expired vouchers
     const activeVouchers = jsonData.vouchers.map((voucher) => ({

@@ -1,4 +1,4 @@
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
   processAndStoreData,
@@ -14,7 +14,7 @@ import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 function processCouponItem(
   merchantName: string,
   voucher: any,
-  domain: string,
+  domain: string | null,
   sourceUrl: string
 ): CouponItemResult {
   // Create a new DataValidator instance
@@ -72,10 +72,16 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = props.MerchantName;
 
     if (!merchantName) {
-      throw new Error('Unable to find merchant name');
+      log.warning('Unable to find merchant name');
     }
 
-    const domain = getDomainName(request.url);
+    const merchantUrl = $('p a')?.attr('href');
+
+    if (!merchantUrl) {
+      log.warning('Unable to find domain name');
+    }
+
+    const domain = merchantUrl ? getDomainName(merchantUrl) : null;
 
     const vouchers = props.Offers;
 

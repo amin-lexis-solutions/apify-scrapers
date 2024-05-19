@@ -79,7 +79,6 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       const validator = new DataValidator();
 
       validator.addValue('merchantName', merchantName);
-      validator.addValue('domain', merchantName);
       validator.addValue('title', couponTitle);
       validator.addValue('sourceUrl', request.url);
       validator.addValue('isShown', true);

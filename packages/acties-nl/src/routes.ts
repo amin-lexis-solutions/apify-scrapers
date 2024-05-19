@@ -28,7 +28,7 @@ type Voucher = {
 
 function processCouponItem(
   merchantName: string,
-  domain: string,
+  domain: string | null,
   pageId: string,
   voucher: Voucher,
   sourceUrl: string
@@ -72,7 +72,7 @@ export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
   // context includes request, body, etc.
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -131,14 +131,17 @@ router.addHandler(Label.listing, async (context) => {
       const merchantNameAttr = storeLogoElement.attr('title');
       const merchantName = merchantNameAttr ? merchantNameAttr.trim() : null;
 
+      // Parsing domain from Link tag
+      const domain = getDomainName(
+        `https://${$('.right ul .link span')?.text()}`
+      );
       // Check if the domain starts with 'www.' and remove it if present
-      const domain = getDomainName(request.url);
 
       if (!merchantName) {
         throw new Error('Merchant name not found');
       }
       if (!domain) {
-        throw new Error('Domain information not found');
+        log.warning('Domain is missing');
       }
 
       // Extract coupons and offers

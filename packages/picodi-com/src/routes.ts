@@ -49,7 +49,6 @@ function processCouponItem(
   merchantName: string,
   isExpired: boolean,
   couponElement: cheerio.Element,
-  domain: string,
   sourceUrl: string
 ): CouponItemResult {
   const $coupon = cheerio.load(couponElement);
@@ -110,7 +109,6 @@ function processCouponItem(
     // Add required and optional values to the validator
     validator.addValue('sourceUrl', sourceUrl);
     validator.addValue('merchantName', merchantName);
-    validator.addValue('domain', domain);
     validator.addValue('title', voucherTitle);
     validator.addValue('idInSite', idInSite);
     validator.addValue('description', description);
@@ -161,12 +159,6 @@ router.addHandler(Label.listing, async (context) => {
       console.log(`Not Merchant URL: ${request.url}`);
     }
 
-    const domain = getDomainName(request.url);
-
-    if (!domain) {
-      throw new Error('domain is missing!');
-    }
-
     // Extract valid coupons
     const validCoupons = $(
       'section.card-offers > ul > li.type-promo, section.card-offers > ul > li.type-code'
@@ -176,13 +168,7 @@ router.addHandler(Label.listing, async (context) => {
     let result: CouponItemResult = {} as any;
     for (let i = 0; i < validCoupons.length; i++) {
       const element = validCoupons[i];
-      result = processCouponItem(
-        merchantName,
-        false,
-        element,
-        domain,
-        request.url
-      );
+      result = processCouponItem(merchantName, false, element, request.url);
       if (!result.hasCode) {
         await processAndStoreData(result.validator);
       } else {

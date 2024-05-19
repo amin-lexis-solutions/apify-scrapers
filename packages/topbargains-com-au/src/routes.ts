@@ -1,5 +1,5 @@
 import cheerio from 'cheerio';
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
   processAndStoreData,
@@ -16,7 +16,7 @@ function processCouponItem(
   merchantName: string,
   isExpired: boolean,
   couponElement: cheerio.Element,
-  domain: string,
+  domain: string | null,
   sourceUrl: string
 ): CouponItemResult {
   const $coupon = cheerio.load(couponElement);
@@ -113,11 +113,13 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Unable to find merchant name');
     }
 
-    const domain = getDomainName(request.url);
+    const domainUrlLink = $('.field-content a')?.attr('href') || '';
 
-    if (!domain) {
-      throw new Error('Unable to find domain name');
+    if (!domainUrlLink) {
+      log.warning('Unable to find domain name');
     }
+
+    const domain = getDomainName(domainUrlLink);
 
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];

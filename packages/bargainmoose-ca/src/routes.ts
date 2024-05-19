@@ -15,7 +15,7 @@ import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
 function processCouponItem(
   merchantName: string,
-  domain: string,
+  domain: string | null,
   couponElement: cheerio.Element,
   sourceUrl: string
 ): CouponItemResult {
@@ -92,7 +92,7 @@ function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -118,7 +118,7 @@ router.addHandler(Label.listing, async (context) => {
     const domain = getDomainName(request.url);
 
     if (!domain) {
-      throw new Error('Domain is missing');
+      log.warning('Domain is missing');
     }
 
     // Extract valid coupons

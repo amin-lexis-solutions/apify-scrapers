@@ -1,11 +1,7 @@
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import {
-  processAndStoreData,
-  generateHash,
-  getDomainName,
-} from 'shared/helpers';
+import { processAndStoreData, generateHash } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 export const router = createCheerioRouter();
@@ -67,12 +63,6 @@ const processCoupon = async (context) => {
     throw new Error('Request queue is missing');
   }
 
-  const domain = getDomainName(request.url);
-
-  if (!domain) {
-    throw new Error('Domain name is missing');
-  }
-
   const label = request.userData.label;
   if (!label) return;
 
@@ -91,7 +81,6 @@ const processCoupon = async (context) => {
       const validator = new DataValidator();
       validator.addValue('sourceUrl', request.url);
       validator.addValue('merchantName', merchantName);
-      validator.addValue('domain', domain);
       validator.addValue('title', voucherTitle);
       validator.addValue('idInSite', idInSite);
       validator.addValue(
@@ -120,8 +109,6 @@ const processCoupon = async (context) => {
   const validator = new DataValidator();
   validator.addValue('sourceUrl', request.url);
   validator.addValue('merchantName', merchantName);
-  validator.addValue('domain', domain);
-
   validator.addValue('title', voucherTitle);
   validator.addValue('description', description);
   validator.addValue('idInSite', idInSite);

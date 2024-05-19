@@ -64,7 +64,9 @@ export function generateCouponId(
 ): string {
   const normalizedMerchant = normalizeString(merchantName);
   const normalizedVoucher = normalizeString(idInSite);
-  const normalizedUrl = normalizeString(getDomainName(sourceUrl));
+
+  const domain = getDomainName(sourceUrl);
+  const normalizedUrl = domain ? normalizeString(domain) : '';
 
   const combinedString = `${normalizedMerchant}|${normalizedVoucher}|${normalizedUrl}`;
 
@@ -115,35 +117,32 @@ export function formatDateTime(text: string): string {
 
 // Extracts the domain name from a URL and removes 'www.' if present
 // In this context domain refers to where coupons is applied.
-export function getDomainName(url: string): string {
+export function getDomainName(url: string): string | null {
   const parsedUrl = new URL(url);
-  let domain = parsedUrl.pathname;
+  let domain: string | undefined = parsedUrl.pathname;
 
-  // Remove www subdomain if present
-  if (domain.startsWith('www.')) {
+  // Remove 'http://' or 'https://' if present
+  domain = domain?.replace(/^(http:\/\/|https:\/\/)/, '');
+  // Removes the last character (/)
+  if (domain.endsWith('/')) {
+    domain = domain?.slice(0, -1);
+  }
+  // Extract domain from pathname if there's a dot (.)
+  if (!domain.includes('.') && parsedUrl.hostname.includes('.')) {
+    domain = parsedUrl?.hostname?.split('/')?.[0];
+  } else {
+    domain = domain.split('/')?.pop();
+  }
+  // Remove 'www' subdomain if present
+  if (domain?.startsWith('www.')) {
     domain = domain.slice(4);
   }
-  // Remove path and subdomains
-  const parts = domain.split('.');
-  if (parts.length > 2) {
-    domain = parts.slice(-2).join('.');
+  // Ensure domain contains a dot (.)
+  if (domain?.includes('.')) {
+    return domain;
+  } else {
+    return null;
   }
-  // Remove trailing slash if present
-  if (parsedUrl.pathname.endsWith('/')) {
-    const trimmedPath = parsedUrl.pathname.slice(0, -1);
-    const lastSlashIndex = trimmedPath.lastIndexOf('/');
-    domain = trimmedPath.slice(lastSlashIndex + 1);
-  }
-  // Remove hyphens if present
-  if (domain.includes('-')) {
-    domain = domain.split('-')[0];
-  }
-  // Remove hyphens split brandname
-  if (domain.includes('/')) {
-    const trimmedPath = domain.split('/');
-    domain = trimmedPath[trimmedPath.length - 1];
-  }
-  return domain;
 }
 
 // Sleeps for the specified number of milliseconds
@@ -166,6 +165,7 @@ export async function processAndStoreData(validator: DataValidator) {
 }
 
 // Just a wrapper around getDomainName in case already existing code needs to be reused
-export function extractDomainFromUrl(url: string): string {
+// Domain can be null if does not exist.
+export function extractDomainFromUrl(url: string): string | null {
   return getDomainName(url);
 }

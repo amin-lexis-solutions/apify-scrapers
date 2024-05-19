@@ -63,9 +63,6 @@ async function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
-  // Domain saved as brandname
-  validator.addValue('domain', merchantName);
-
   validator.addValue('title', voucherTitle);
   validator.addValue('idInSite', idInSite);
   validator.addValue('isExpired', isExpired);

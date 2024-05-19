@@ -50,8 +50,6 @@ async function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
-  // brand name as domain
-  validator.addValue('domain', merchantName);
   validator.addValue('title', voucherTitle);
   validator.addValue('idInSite', idInSite);
   validator.addValue('isExpired', false);
@@ -81,6 +79,7 @@ router.addHandler(Label.listing, async (context) => {
     console.log(`\nProcessing URL: ${request.url}`);
 
     let merchantName = $('a.golink').attr('title');
+
     if (!merchantName) {
       throw new Error('Unable to find merchant name');
     }

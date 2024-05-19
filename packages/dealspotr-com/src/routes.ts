@@ -9,6 +9,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  getDomainName,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -85,7 +86,7 @@ router.addHandler(Label.listing, async (context) => {
 
     // Initialize variables to hold the extracted information
     let merchantName = '';
-    let domain = '';
+    let domain;
 
     $('script[type="application/ld+json"]').each((_, element) => {
       // Attempt to parse the JSON-LD content of each script tag
@@ -96,8 +97,7 @@ router.addHandler(Label.listing, async (context) => {
           merchantName = jsonData.name; // Extract the merchant name
 
           // Extract the domain, removing 'www.' if present
-          const urlObj = new URL(jsonData.url);
-          domain = urlObj.hostname.replace(/^www\./, '');
+          domain = getDomainName(jsonData.url);
 
           // Since we found our target, we stop processing further
           return false; // Break out of the .each loop

@@ -21,7 +21,7 @@ const CUSTOM_HEADERS_LOCAL = {
 
 function processCouponItem(
   merchantName: string,
-  domain: string,
+  domain: string | null,
   couponElement: cheerio.Element,
   sourceUrl: string
 ): CouponItemResult {

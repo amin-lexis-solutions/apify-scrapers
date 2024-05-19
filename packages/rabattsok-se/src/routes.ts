@@ -1,4 +1,4 @@
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import cheerio from 'cheerio';
 import { DataValidator } from 'shared/data-validator';
 import { getDomainName, processAndStoreData } from 'shared/helpers';
@@ -9,7 +9,6 @@ export const router = createCheerioRouter();
 async function processCouponItem(
   merchantName: string,
   element: cheerio.Element,
-  domain: string,
   sourceUrl: string
 ) {
   const $coupon = cheerio.load(element);
@@ -69,7 +68,6 @@ async function processCouponItem(
 
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
-  validator.addValue('domain', domain);
   validator.addValue('title', voucherTitle);
   validator.addValue('idInSite', idInSite);
   validator.addValue('description', description);
@@ -101,16 +99,10 @@ router.addHandler(Label.listing, async (context) => {
 
     const merchantName = merchantElement.text()?.split('rabattkoder')[0];
 
-    const domain = getDomainName(request.url);
-
-    if (!domain) {
-      throw new Error('domain name not found');
-    }
-
     const validCoupons = $('.coupon-list .coupon-wrapper');
 
     for (const element of validCoupons) {
-      await processCouponItem(merchantName, element, domain, request.url);
+      await processCouponItem(merchantName, element, request.url);
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
