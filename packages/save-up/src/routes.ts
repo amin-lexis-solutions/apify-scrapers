@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import { getDomainName, processAndStoreData } from 'shared/helpers';
+import { processAndStoreData } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(

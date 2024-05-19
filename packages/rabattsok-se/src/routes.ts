@@ -1,7 +1,7 @@
 import { createCheerioRouter, log } from 'crawlee';
 import cheerio from 'cheerio';
 import { DataValidator } from 'shared/data-validator';
-import { getDomainName, processAndStoreData } from 'shared/helpers';
+import { processAndStoreData } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 export const router = createCheerioRouter();
@@ -85,16 +85,16 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
+    log.error('Request queue is missing');
   }
 
   try {
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`\nProcessing URL: ${request.url}`);
 
     const merchantElement = $('.bread .breadcrumb .active');
 
     if (!merchantElement) {
-      throw new Error('merchan name not found');
+      log.warning('merchan name not found');
     }
 
     const merchantName = merchantElement.text()?.split('rabattkoder')[0];

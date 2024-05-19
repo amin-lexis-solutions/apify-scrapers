@@ -8,7 +8,6 @@ import {
   generateCouponId,
   checkCouponIds,
   CouponItemResult,
-  getDomainName,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
