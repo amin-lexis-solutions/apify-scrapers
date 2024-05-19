@@ -11,7 +11,7 @@ import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
   merchantName: string,
-  domain: string,
+  domain: string | null,
   isExpired: boolean,
   couponElement: cheerio.Element,
   sourceUrl: string
@@ -98,8 +98,7 @@ router.addHandler(Label.listing, async (context) => {
       // Parse the JSON data
       const jsonData = JSON.parse(scriptContent);
       const merchantName = jsonData.name;
-      const domain = getDomainName(jsonData.url);
-
+      const domain = getDomainName(request.url);
       // Check if valid page
       if (!merchantName) {
         console.log(`Not Merchant URL: ${request.url}`);

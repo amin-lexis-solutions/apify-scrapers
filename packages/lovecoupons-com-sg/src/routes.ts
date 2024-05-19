@@ -30,7 +30,7 @@ function extractAllText(elem: cheerio.Cheerio): string {
 
 function processCouponItem(
   merchantName: string,
-  domain: string,
+  domain: string | null,
   isExpired: boolean,
   couponElement: cheerio.Element,
   sourceUrl: string

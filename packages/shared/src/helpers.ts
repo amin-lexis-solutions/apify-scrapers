@@ -64,7 +64,9 @@ export function generateCouponId(
 ): string {
   const normalizedMerchant = normalizeString(merchantName);
   const normalizedVoucher = normalizeString(idInSite);
-  const normalizedUrl = normalizeString(getDomainName(sourceUrl));
+
+  const domain = getDomainName(sourceUrl);
+  const normalizedUrl = domain ? normalizeString(domain) : '';
 
   const combinedString = `${normalizedMerchant}|${normalizedVoucher}|${normalizedUrl}`;
 
@@ -114,18 +116,29 @@ export function formatDateTime(text: string): string {
 }
 
 // Extracts the domain name from a URL and removes 'www.' if present
-export function getDomainName(url: string): string {
+// In this context domain refers to where coupons is applied.
+export function getDomainName(url: string): string | null {
   const parsedUrl = new URL(url);
+  let domain: string | undefined = parsedUrl.pathname;
 
-  // Extract hostname from URL or an empty string if the URL is invalid
-  let hostname = parsedUrl?.hostname || '';
-
-  // Remove 'www.' if present
-  if (hostname.startsWith('www.')) {
-    hostname = hostname.substring(4);
+  // Remove 'http://' or 'https://' if present
+  domain = domain?.replace(/^(http:\/\/|https:\/\/)/, '');
+  // Removes the last character (/)
+  if (domain.endsWith('/')) {
+    domain = domain?.slice(0, -1);
   }
-
-  return hostname;
+  // Extract domain from pathname if there's a dot (.)
+  if (!domain.includes('.') && parsedUrl.hostname.includes('.')) {
+    domain = parsedUrl?.hostname?.split('/')?.[0];
+  } else {
+    domain = domain.split('/')?.pop();
+  }
+  // Remove 'www' subdomain if present
+  if (domain?.startsWith('www.')) {
+    domain = domain.slice(4);
+  }
+  // Ensure domain contains a dot (.)
+  return domain?.includes('.') ? domain : null;
 }
 
 // Sleeps for the specified number of milliseconds
@@ -148,6 +161,7 @@ export async function processAndStoreData(validator: DataValidator) {
 }
 
 // Just a wrapper around getDomainName in case already existing code needs to be reused
-export function extractDomainFromUrl(url: string): string {
+// Domain can be null if does not exist.
+export function extractDomainFromUrl(url: string): string | null {
   return getDomainName(url);
 }
