@@ -16,10 +16,10 @@ async function processCouponItem(
   let titleCss = '';
   let codeCss = '';
   if (!isExpired) {
-    titleCss = 'p.offer-cpn__title';
+    titleCss = 'h3.offer-cpn__title';
     codeCss = 'span.code-btn__value';
   } else {
-    titleCss = 'h3';
+    titleCss = 'p';
     codeCss = 'span.expired-cpn-sec__code';
   }
 

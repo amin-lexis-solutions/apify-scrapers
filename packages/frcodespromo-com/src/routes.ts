@@ -79,11 +79,12 @@ router.addHandler(Label.listing, async (context) => {
     console.log(`\nProcessing URL: ${request.url}`);
 
     let merchantName = $('a.golink').attr('title');
+
     if (!merchantName) {
       throw new Error('Unable to find merchant name');
     }
 
-    merchantName = merchantName.trim();
+    merchantName = merchantName.trim()?.toLowerCase();
 
     // Extract valid coupons
     const validCoupons = $('div#coupon_list div.c_list > div[data-type]');

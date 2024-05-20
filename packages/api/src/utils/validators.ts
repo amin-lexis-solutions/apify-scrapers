@@ -96,6 +96,9 @@ export class Resource {
 
   @IsString()
   status: string;
+
+  @IsNumber()
+  usageTotalUsd: number;
 }
 
 export class WebhookRequestBody {

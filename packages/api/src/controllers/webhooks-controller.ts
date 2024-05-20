@@ -12,6 +12,7 @@ import {
   validDateOrNull,
   getToleranceMultiplier,
   removeDuplicateCoupons,
+  getGoogleActorPriceInUsdMicroCents,
 } from '../utils/utils';
 import {
   SerpWebhookRequestBody,
@@ -48,6 +49,7 @@ export class WebhooksController {
     const datasetId = webhookData.resource.defaultDatasetId;
     const actorRunId = webhookData.eventData.actorRunId;
     const status = webhookData.resource.status;
+    const usageTotalUsd = webhookData.resource.usageTotalUsd;
     const { sourceId, localeId } = webhookData;
 
     const targetPages = new Set<string>();
@@ -58,7 +60,7 @@ export class WebhooksController {
 
     const run = await prisma.processedRun.create({
       data: {
-        actorId: sourceId,
+        sourceId,
         actorRunId,
         status,
       },
@@ -336,6 +338,7 @@ export class WebhooksController {
           errorCount: errors.length,
           processingErrors: errors,
           processedAt: new Date(),
+          costInUsdMicroCents: Number(usageTotalUsd) * 1000000,
         },
       });
 
@@ -440,6 +443,21 @@ export class WebhooksController {
       } catch (e) {
         console.error(`Error processing SERP data: ${e}`);
       }
+    });
+
+    // Update the processedRun record
+    await prisma.processedRun.create({
+      data: {
+        localeId: localeId,
+        actorRunId,
+        status,
+        resultCount: filteredData.length,
+        createdCount: validData.length,
+        processedAt: new Date(),
+        costInUsdMicroCents: getGoogleActorPriceInUsdMicroCents(
+          filteredData.length
+        ),
+      },
     });
 
     return new StandardResponse(

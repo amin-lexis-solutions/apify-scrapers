@@ -1,6 +1,6 @@
 import cheerio from 'cheerio';
 import * as he from 'he';
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
   processAndStoreData,
@@ -9,6 +9,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  getDomainName,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -21,6 +22,7 @@ function processCouponItem(
   merchantName: string,
   isExpired: boolean,
   couponElement: cheerio.Element,
+  domain: string | null,
   sourceUrl: string
 ): CouponItemResult {
   const $coupon = cheerio.load(couponElement);
@@ -76,6 +78,7 @@ function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
+  validator.addValue('domain', domain);
   validator.addValue('title', voucherTitle);
   validator.addValue('idInSite', idInSite);
   validator.addValue('description', description);
@@ -120,6 +123,12 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Unable to find merchant name');
     }
 
+    const domain = getDomainName(request.url);
+
+    if (!domain) {
+      log.warning('domain name is missing');
+    }
+
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
@@ -129,7 +138,13 @@ router.addHandler(Label.listing, async (context) => {
       'div.voucherGroup div.voucherCard:not(.voucherCard--expired)'
     );
     for (const element of validCoupons) {
-      result = processCouponItem(merchantName, false, element, request.url);
+      result = processCouponItem(
+        merchantName,
+        false,
+        element,
+        domain,
+        request.url
+      );
       if (!result.hasCode) {
         await processAndStoreData(result.validator);
       } else {
@@ -143,7 +158,13 @@ router.addHandler(Label.listing, async (context) => {
       'div.voucherGroup div.voucherCard.voucherCard--expired'
     );
     for (const element of expiredCoupons) {
-      result = processCouponItem(merchantName, true, element, request.url);
+      result = processCouponItem(
+        merchantName,
+        true,
+        element,
+        null,
+        request.url
+      );
       if (!result.hasCode) {
         await processAndStoreData(result.validator);
       } else {

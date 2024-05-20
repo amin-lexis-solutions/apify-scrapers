@@ -3,6 +3,7 @@ import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { apify } from '../lib/apify';
 import { getMerchantsForLocale } from '../lib/oberst-api';
+import { CostLimit } from '../middlewares/api-middleware';
 import { prisma } from '../lib/prisma';
 import { getWebhookUrl } from '../utils/utils';
 import {
@@ -26,6 +27,7 @@ export class TargetsController {
     summary: 'Find target pages',
     description: 'For a given locale (or all) find target pages to be updated',
   })
+  @CostLimit()
   @ResponseSchema(StandardResponse)
   async findTargetPages(
     @Body() body: FindTargetPagesBody
@@ -78,6 +80,7 @@ export class TargetsController {
     description:
       'Provide a number of locales to find target pages for. Outdated locales will be searched first',
   })
+  @CostLimit()
   @ResponseSchema(StandardResponse)
   async findNLocales(@Body() body: RunNLocalesBody): Promise<StandardResponse> {
     const { limitDomainsPerLocale, localesCount } = body;
@@ -172,6 +175,7 @@ export class TargetsController {
     summary: 'Run scrapes on target pages',
     description: 'Run scrapes on target pages for active sources',
   })
+  @CostLimit()
   @ResponseSchema(StandardResponse)
   async runTargetPages(
     @Body() body: RunTargetPagesBody

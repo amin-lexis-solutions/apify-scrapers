@@ -16,7 +16,7 @@ export const router = createCheerioRouter();
 // Function to process a single coupon item from the webpage
 function processCouponItem(
   merchantName: string,
-  domain: string,
+  domain: string | null,
   couponElement: cheerio.Element,
   couponUrl: string
 ): CouponItemResult {
@@ -81,7 +81,7 @@ function processCouponItem(
   return { generatedHash, hasCode, couponUrl, validator };
 }
 // Handler function for processing coupon listings
-router.addHandler(Label.listing, async ({ request, $ }) => {
+router.addHandler(Label.listing, async ({ request, $, log }) => {
   try {
     console.log(`Listing ${request.url}`);
     // Extract the merchant name
@@ -92,6 +92,10 @@ router.addHandler(Label.listing, async ({ request, $ }) => {
     }
     // Extract coupon list elements from the webpage
     const domain = getDomainName(request.url);
+
+    if (!domain) {
+      log.warning('Domain is missing!');
+    }
 
     const couponList = $('.promo-container.code');
 

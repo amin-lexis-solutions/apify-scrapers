@@ -30,7 +30,7 @@ class DataValidator {
   };
   private schema: Record<string, FieldSchema> = {
     idInSite: { type: 'string', required: true },
-    domain: { type: 'domain', required: false },
+    domain: { type: 'string', required: false },
     merchantName: { type: 'string', required: true },
     title: { type: 'string', required: true },
     description: { type: 'string', required: false },

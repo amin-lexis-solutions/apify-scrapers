@@ -1,4 +1,4 @@
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
 import { processAndStoreData, generateHash } from 'shared/helpers';
@@ -60,7 +60,7 @@ const getCoupon = (elemCode) => {
 const processCoupon = async (context) => {
   const { request, $, crawler } = context;
   if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
+    log.error('Request queue is missing');
   }
 
   const label = request.userData.label;
