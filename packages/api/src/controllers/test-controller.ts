@@ -1,140 +1,84 @@
-import {
-  Authorized,
-  BadRequestError,
-  Body,
-  Get,
-  JsonController,
-  Param,
-  Post,
-  QueryParams,
-} from 'routing-controllers';
-import { prisma } from '../lib/prisma';
-import {
-  StandardResponse,
-  RunTestBody,
-  ListTestRequestBody,
-  TestRequestBody,
-} from '../utils/validators';
+import { Authorized, Body, JsonController, Post } from 'routing-controllers';
+import { StandardResponse, RunTestBody } from '../utils/validators';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
-
+import { testSpec } from '../test/actors/specs/dynamicTemplate.spec';
+import path from 'path';
+import { readFileSync } from 'fs';
+import { prisma } from '@api/lib/prisma';
 @JsonController('/tests')
 @Authorized()
 @OpenAPI({ security: [{ bearerAuth: [] }] })
 export class TestController {
-  @Get('/')
-  @OpenAPI({
-    summary: 'List tests',
-    description: 'Get a list of tests with pagination and optional filtering',
-  })
-  @ResponseSchema(StandardResponse)
-  async getList(@QueryParams() params: ListTestRequestBody) {
-    const { page, pageSize, actorId, status } = params;
-
-    const offset = (page - 1) * pageSize;
-
-    const [totalResults, data] = await Promise.all([
-      prisma.test.count({ where: { apifyActorId: actorId, status } }),
-      prisma.test.findMany({
-        skip: offset,
-        take: pageSize,
-        where: {
-          apifyActorId: actorId,
-          status,
-        },
-      }),
-    ]);
-
-    const lastPage = Math.ceil(totalResults / pageSize);
-    const currentPageResults = data.length;
-
-    return new StandardResponse(
-      `Success! ${totalResults} total results found. Showing page ${page} of ${lastPage}`,
-      false,
-      {
-        totalResults,
-        currentPageResults,
-        currentPage: page,
-        lastPage,
-        results: data,
-      }
-    );
-  }
-
   @Post('/run')
   @OpenAPI({
-    summary: 'Schedule actor test',
-    description: 'Actor testing',
+    summary: 'Run testing actor',
+    description: 'Run testing actor for active scrapers',
   })
   @ResponseSchema(StandardResponse)
   async scheduleActors(@Body() params: RunTestBody) {
-    const { actors } = params;
+    const { maxConcurrency } = params;
 
-    const actorsIds: string[] = [];
-
-    actors.forEach((element) => {
-      actorsIds.push(element?.actorId);
-    });
-
-    const source = await prisma.source.findMany({
-      where: { apifyActorId: { in: actorsIds } },
-    });
-
-    if (source.length == 0) {
-      throw new BadRequestError('Actors not found.');
-    }
-
-    let actorsAdded = 0;
-
-    for (const actor of actors) {
-      actorsAdded++;
-
-      await prisma.test.create({
-        data: {
-          apifyActorId: actor.actorId,
-          startUrls: actor.startUrls,
-        },
-      });
-    }
-
-    return new StandardResponse(
-      `Added ${actorsAdded} actors to test`,
-      false,
-      {}
-    );
-  }
-
-  @Post('/:id')
-  @OpenAPI({
-    summary: 'Testing actor',
-    description: 'Update actor testing data',
-  })
-  @ResponseSchema(StandardResponse)
-  async test(
-    @Param('id') id: string,
-    @Body() params: TestRequestBody
-  ): Promise<StandardResponse> {
-    if (!id || id.trim() === '') {
-      throw new BadRequestError(
-        'ID parameter is required and cannot be empty.'
+    try {
+      const configJson = readFileSync(
+        path.resolve(__dirname, '../test/actors/config.json'),
+        'utf-8'
       );
+      const testList = JSON.parse(configJson);
+      let runningTests = 0;
+
+      for (const id in testList) {
+        if (maxConcurrency <= runningTests) {
+          console.log(
+            `Already scheduled the maximum ${maxConcurrency} number of actors. Skipping test`
+          );
+          break;
+        }
+        // Apify testing actor input
+        const input = {
+          testSpec,
+          customData: {
+            actorId: id,
+            startUrls: testList[id],
+          },
+          testName: `Test actor ${id}`,
+          slackChannel: '#public-actors-tests-notifications',
+          slackPrefix: '@lead-dev @actor-owner',
+          // defaultTimeout apify testing actor
+          defaultTimeout: 120000,
+          verboseLogs: true,
+          abortRuns: true,
+          filter: [],
+          email: '',
+          retryFailedTests: false,
+        };
+        // Call apify testing actors
+        const response = await fetch(
+          `https://api.apify.com/v2/acts/pocesar~actor-testing/runs?token=${process.env.API_KEY_APIFY}`,
+          {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(input),
+          }
+        );
+        // Apify testing result
+        const result = await response.json();
+        // Record test data
+        await prisma.test.create({
+          data: {
+            apifyActorId: id,
+            apifyTestRunId: result.data.id,
+            status: result.data.status,
+          },
+        });
+        runningTests++;
+        console.log(`Running apify testing actor - runId ${result.data.id}`);
+      }
+      return new StandardResponse(
+        `Apify testing actor runs sucessfully ${runningTests} tests`,
+        false
+      );
+    } catch (e) {
+      console.log(e);
     }
-    const { status, apifyRunId, lastApifyRunAt } = params;
-
-    const existingTest = await prisma.test.findUnique({
-      where: { id },
-    });
-
-    if (!existingTest) {
-      throw new BadRequestError('Test not found.');
-    }
-
-    const updatedTest = await prisma.test.update({
-      where: { id },
-      data: { lastApifyRunAt, status, apifyRunId },
-    });
-
-    return new StandardResponse('Test saved successfully', false, {
-      updatedTest: updatedTest,
-    });
   }
 }

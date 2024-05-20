@@ -134,9 +134,8 @@ model CouponStats {
 }
 model Test {
   id                  String @id @default(uuid())
-  apifyRunId          String?
+  apifyTestRunId      String
   apifyActorId        String
-  lastApifyRunAt      DateTime?
-  startUrls           String[]
-  status              String?
+  status              String
+  createdAt       DateTime   @default(now())
 }
