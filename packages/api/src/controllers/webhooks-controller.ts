@@ -16,6 +16,7 @@ import {
 import {
   SerpWebhookRequestBody,
   StandardResponse,
+  TestWebhookRequestBody,
   WebhookRequestBody,
 } from '../utils/validators';
 
@@ -446,5 +447,37 @@ export class WebhooksController {
       `Data processed successfully. Created ${validData.length} / ${filteredData.length}  new records.`,
       false
     );
+  }
+
+  @Post('/tests')
+  @OpenAPI({
+    summary: 'Receive Test webhook data',
+    description:
+      'Store the data received from the TEST webhook. Do not call this endpoint directly, it is meant to be called by Apify.',
+  })
+  @ResponseSchema(StandardResponse)
+  async receiveTestData(
+    @Body() webhookData: TestWebhookRequestBody
+  ): Promise<StandardResponse> {
+    const apifyTestRunId = webhookData.eventData.actorRunId;
+    const status = webhookData.resource.status;
+    const { actorId } = webhookData;
+
+    if (!actorId) {
+      return new StandardResponse('actorId is a required field', true);
+    }
+
+    try {
+      await prisma.test.create({
+        data: {
+          apifyActorId: actorId,
+          status,
+          apifyTestRunId,
+        },
+      });
+    } catch (e) {
+      console.error(`Error saving data: ${e}`);
+    }
+    return new StandardResponse(`Test data processed successfully.`, false);
   }
 }

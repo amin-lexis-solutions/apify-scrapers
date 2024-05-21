@@ -19,7 +19,7 @@
     "prisma:studio": "./node_modules/.bin/prisma studio --schema prisma/schema.prisma",
     "schedule:actors": "./node_modules/.bin/ts-node ./src/crons/schedule-actors.ts",
     "schedule:find-serp": "./node_modules/.bin/ts-node ./src/crons/schedule-find-serp.ts",
-    "schedule:test": "./node_modules/.bin/ts-node ./src/crons/schedule-test.ts",
+    "schedule:tests": "./node_modules/.bin/ts-node ./src/crons/schedule-test.ts",
     "schedule:periodic-coupons-cleanup": "./node_modules/.bin/ts-node ./src/crons/schedule-coupons-cleanup.ts"
   },
   "repository": {
