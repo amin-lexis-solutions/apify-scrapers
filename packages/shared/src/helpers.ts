@@ -117,7 +117,7 @@ export function formatDateTime(text: string): string {
 
 // Extracts the domain name from a URL and removes 'www.' if present
 // In this context domain refers to where coupons is applied.
-export function getDomainName(url: string): string | null {
+export function getDomainName(url: string): string {
   const parsedUrl = new URL(url);
   let domain: string | undefined = parsedUrl.pathname;
 
@@ -138,7 +138,7 @@ export function getDomainName(url: string): string | null {
     domain = domain.slice(4);
   }
   // Ensure domain contains a dot (.)
-  return domain?.includes('.') ? domain : null;
+  return domain?.includes('.') ? domain : '';
 }
 
 // Sleeps for the specified number of milliseconds
