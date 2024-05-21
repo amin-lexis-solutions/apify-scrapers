@@ -93,28 +93,3 @@ export function getGoogleActorPriceInUsdMicroCents(
 
   return PRICE_PER_1000_RESULTS_IN_USD * (totalResults / 1000) * 1000000;
 }
-
-export function generateApifyTestingActorInput(
-  testSpec: string,
-  actorId: string,
-  startUrls: any
-) {
-  // Apify testing actor input
-  return {
-    testSpec,
-    customData: {
-      actorId,
-      startUrls,
-    },
-    testName: `Test actor ${actorId}`,
-    slackChannel: '#public-actors-tests-notifications',
-    slackPrefix: '@lead-dev @actor-owner',
-    // defaultTimeout apify testing actor
-    defaultTimeout: 120000,
-    verboseLogs: true,
-    abortRuns: true,
-    filter: [],
-    email: '',
-    retryFailedTests: false,
-  };
-}

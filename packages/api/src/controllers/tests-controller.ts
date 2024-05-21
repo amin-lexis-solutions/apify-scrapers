@@ -1,10 +1,8 @@
+import * as Sentry from '@sentry/node';
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { StandardResponse, RunTestBody } from '../utils/validators';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
-import {
-  generateApifyTestingActorInput,
-  getWebhookUrl,
-} from '@api/utils/utils';
+import { getWebhookUrl } from '@api/utils/utils';
 import { testSpec } from '../test/actors/specs/dynamicTemplate.spec';
 import path from 'path';
 import { readFileSync } from 'fs';
@@ -18,6 +16,30 @@ function getTestConfigJson() {
     'utf-8'
   );
   return JSON.parse(configJson);
+}
+
+export function generateApifyTestingActorInput(
+  actorId: string,
+  startUrls: any
+) {
+  // Apify testing actor input
+  return {
+    testSpec,
+    customData: {
+      actorId,
+      startUrls,
+    },
+    testName: `Test actor ${actorId}`,
+    slackChannel: '#public-actors-tests-notifications',
+    slackPrefix: '@lead-dev @actor-owner',
+    // defaultTimeout apify testing actor
+    defaultTimeout: 120000,
+    verboseLogs: true,
+    abortRuns: true,
+    filter: [],
+    email: '',
+    retryFailedTests: false,
+  };
 }
 
 @JsonController('/tests')
@@ -38,7 +60,7 @@ export class TestsController {
 
       const lastTestRuns = await prisma.test.findMany({
         where: {
-          lastTestRunAt: { gt: dayjs().subtract(7, 'days').toDate() },
+          lastRunAt: { gt: dayjs().subtract(7, 'days').toDate() },
         },
       });
 
@@ -59,7 +81,6 @@ export class TestsController {
         }
 
         const testingActorInput = generateApifyTestingActorInput(
-          testSpec,
           actorId,
           actorIdToStartingUrlsMapping[actorId]
         );
@@ -82,15 +103,19 @@ export class TestsController {
             ],
           })
           .then(() => {
-            runningTestsCount++;
             console.log(`Started test for ${actorId}`);
           })
           .catch((e) => {
-            console.error(e);
+            Sentry.captureMessage(
+              `Error starting test for actor ${actorId} - error: ${JSON.stringify(
+                e
+              )}`
+            );
             return new StandardResponse('Error starting test', true, {
               error: e,
             });
           });
+        runningTestsCount++;
       }
       return new StandardResponse(
         `Test started for ${runningTestsCount} actors`,

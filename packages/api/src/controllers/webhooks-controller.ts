@@ -485,6 +485,10 @@ export class WebhooksController {
       return new StandardResponse('actorId is a required field', true);
     }
 
+    if (status !== 'SUCCEEDED') {
+      Sentry.captureMessage(`Actor test ${apifyTestRunId} - status ${status}`);
+    }
+
     try {
       await prisma.test.create({
         data: {
@@ -494,7 +498,9 @@ export class WebhooksController {
         },
       });
     } catch (e) {
-      console.error(`Error saving data: ${e}`);
+      Sentry.captureMessage(
+        `Error saving actor test ${actorId} - ${JSON.stringify(e)}`
+      );
     }
     return new StandardResponse(`Test data processed successfully.`, false);
   }
