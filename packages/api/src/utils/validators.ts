@@ -183,3 +183,17 @@ export class RunTestBody {
   @IsNumber()
   maxConcurrency: number;
 }
+
+export class TestWebhookRequestBody {
+  @ValidateNested()
+  @Type(() => EventData)
+  eventData: EventData;
+
+  @ValidateNested()
+  @Type(() => Resource)
+  resource: Resource;
+
+  @IsString()
+  @IsOptional()
+  actorId: string;
+}
