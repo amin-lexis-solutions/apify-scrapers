@@ -490,12 +490,10 @@ export class WebhooksController {
     }
 
     try {
-      await prisma.test.create({
-        data: {
-          apifyActorId: actorId,
-          status,
-          apifyTestRunId,
-        },
+      await prisma.test.upsert({
+        create: { apifyActorId: actorId, status, apifyTestRunId },
+        update: { status, apifyTestRunId },
+        where: { apifyActorId: actorId },
       });
     } catch (e) {
       Sentry.captureMessage(

@@ -58,7 +58,8 @@ export class TestsController {
     try {
       const actorIdToStartingUrlsMapping = getTestConfigJson();
 
-      const lastTestRuns = await prisma.test.findMany({
+      const lastTestRuns = await prisma.test.groupBy({
+        by: ['apifyActorId'],
         where: {
           lastRunAt: { gt: dayjs().subtract(7, 'days').toDate() },
         },
