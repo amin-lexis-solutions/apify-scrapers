@@ -61,12 +61,11 @@ router.addHandler(Label.listing, async ({ request, body, log }) => {
     const htmlContent = body instanceof Buffer ? body.toString() : body;
     const $ = cheerio.load(htmlContent);
 
-    // Check if this is an DATA page
-    // Use the function in your code
-    const includes = ['.brand-index_content-main', '.brand-index'];
-    const excludes = ['.home-index'];
+    // Check if this is an index page
+    const includes = ['.brand-index_content-main', '.brand-index']; // Add selectors that are present on the index page
+    const excludes = ['.home-index']; // Add selectors that are present on the other page
 
-    if (!isDataPage($, includes, excludes)) {
+    if (!isIndexPage($, includes, excludes)) {
       log.info(`Skip URL: ${request.url} - Not a data page`);
       await Dataset.pushData({
         __action: 'no-index-page',
@@ -96,7 +95,7 @@ router.addHandler(Label.listing, async ({ request, body, log }) => {
 });
 
 // Define a function to check if the page matches the selectors
-function isDataPage(
+function isIndexPage(
   $: cheerio.Root,
   includes: string[],
   excludes: string[]
