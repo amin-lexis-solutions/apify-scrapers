@@ -156,85 +156,84 @@ router.addHandler(Label.listing, async (context) => {
     // Check if valid page
     if (!merchantName) {
       console.log(`Not Merchant URL: ${request.url}`);
-    } else {
-      // Extract valid coupons
-      const validCoupons = $(
-        'section.card-offers > ul > li.type-promo, section.card-offers > ul > li.type-code'
-      );
-      const couponsWithCode: any = {};
-      const idsToCheck: string[] = [];
-      let result: CouponItemResult = {} as any;
-      for (let i = 0; i < validCoupons.length; i++) {
-        const element = validCoupons[i];
-        result = processCouponItem(merchantName, false, element, request.url);
-        if (!result.hasCode) {
-          await processAndStoreData(result.validator);
-        } else {
-          couponsWithCode[result.generatedHash] = requestForCouponWithCode(
-            result
-          );
-          couponsWithCode[result.generatedHash].userData.sourceUrl =
-            request.url;
-          idsToCheck.push(result.generatedHash);
-        }
+    }
+
+    // Extract valid coupons
+    const validCoupons = $(
+      'section.card-offers > ul > li.type-promo, section.card-offers > ul > li.type-code'
+    );
+    const couponsWithCode: any = {};
+    const idsToCheck: string[] = [];
+    let result: CouponItemResult = {} as any;
+    for (let i = 0; i < validCoupons.length; i++) {
+      const element = validCoupons[i];
+      result = processCouponItem(merchantName, false, element, request.url);
+      if (!result.hasCode) {
+        await processAndStoreData(result.validator);
+      } else {
+        couponsWithCode[result.generatedHash] = requestForCouponWithCode(
+          result
+        );
+        couponsWithCode[result.generatedHash].userData.sourceUrl = request.url;
+        idsToCheck.push(result.generatedHash);
       }
-      // We don't extract expired coupons, because they don't have id and we cannot match them with the ones in the DB
-      // const expiredCoupons = $('section.archive-offers > article');
-      // for (let i = 0; i < expiredCoupons.length; i++) {
-      //   const element = expiredCoupons[i];
-      //   await processCouponItem(
-      //     crawler.requestQueue,
-      //     merchantName,
-      //     true,
-      //     element,
-      //     request.url
-      //   );
-      // }
-      // Call the API to check if the coupon exists
-      // const nonExistingIds = await checkCouponIds(idsToCheck);
+    }
+    // We don't extract expired coupons, because they don't have id and we cannot match them with the ones in the DB
+    // const expiredCoupons = $('section.archive-offers > article');
+    // for (let i = 0; i < expiredCoupons.length; i++) {
+    //   const element = expiredCoupons[i];
+    //   await processCouponItem(
+    //     crawler.requestQueue,
+    //     merchantName,
+    //     true,
+    //     element,
+    //     request.url
+    //   );
+    // }
+    // Call the API to check if the coupon exists
+    // const nonExistingIds = await checkCouponIds(idsToCheck);
 
-      // Open a named key-value store
-      const store = await KeyValueStore.open('coupons');
+    // Open a named key-value store
+    const store = await KeyValueStore.open('coupons');
 
-      const couponsWithCodes = await store.getValue('coupons');
+    const couponsWithCodes = await store.getValue('coupons');
 
-      // convert unknown type to object
-      const existingRequests = couponsWithCodes || {};
+    // convert unknown type to object
+    const existingRequests = couponsWithCodes || {};
 
-      // merge the new requests with the existing ones
-      const mergedRequests = {
-        ...existingRequests,
-        ...couponsWithCode,
-      };
+    // merge the new requests with the existing ones
+    const mergedRequests = {
+      ...existingRequests,
+      ...couponsWithCode,
+    };
 
-      await store.setValue('coupons', mergedRequests);
+    await store.setValue('coupons', mergedRequests);
 
-      const queue = crawler.requestQueue;
+    const queue = crawler.requestQueue;
 
-      console.log(`Handled requests count: ${queue.handledCount()}`);
+    console.log(`Handled requests count: ${queue.handledCount()}`);
 
-      // Queue the requests for the coupons with codes
-      console.log(`Queuing ${Object.keys(mergedRequests).length} requests`);
+    // Queue the requests for the coupons with codes
+    console.log(`Queuing ${Object.keys(mergedRequests).length} requests`);
 
-      // Check if the queue is finished
-      const isQueueFinished = await queue.fetchNextRequest();
-      if (isQueueFinished === null) {
-        console.log('Queue is finished');
-        // mergedRequests keys as an array of strings
-        const keys = Object.keys(mergedRequests);
-        const nonExistingIds = await checkCouponIds(keys);
-        console.log('Non-existing IDs count:', nonExistingIds.length);
+    // Check if the queue is finished
+    const isQueueFinished = await queue.fetchNextRequest();
+    if (isQueueFinished === null) {
+      console.log('Queue is finished');
+      // mergedRequests keys as an array of strings
+      const keys = Object.keys(mergedRequests);
+      const nonExistingIds = await checkCouponIds(keys);
+      console.log('Non-existing IDs count:', nonExistingIds.length);
 
-        // Filter out the non-existing IDs from the merged requests
-        if (nonExistingIds.length > 0) {
-          let currentResult: any;
-          for (const id of nonExistingIds) {
-            currentResult = mergedRequests[id];
-            // Add the coupon URL to the request queue
-            await crawler.requestQueue.addRequest(currentResult, {
-              forefront: true,
-            });
-          }
+      // Filter out the non-existing IDs from the merged requests
+      if (nonExistingIds.length > 0) {
+        let currentResult: any;
+        for (const id of nonExistingIds) {
+          currentResult = mergedRequests[id];
+          // Add the coupon URL to the request queue
+          await crawler.requestQueue.addRequest(currentResult, {
+            forefront: true,
+          });
         }
       }
     }

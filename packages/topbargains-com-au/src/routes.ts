@@ -1,5 +1,5 @@
 import cheerio from 'cheerio';
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
   processAndStoreData,
@@ -8,6 +8,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  getDomainName,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -15,6 +16,7 @@ function processCouponItem(
   merchantName: string,
   isExpired: boolean,
   couponElement: cheerio.Element,
+  domain: string | null,
   sourceUrl: string
 ): CouponItemResult {
   const $coupon = cheerio.load(couponElement);
@@ -65,6 +67,7 @@ function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
+  validator.addValue('domain', domain);
   validator.addValue('title', voucherTitle);
   validator.addValue('idInSite', idInSite);
   validator.addValue('description', description);
@@ -110,6 +113,14 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Unable to find merchant name');
     }
 
+    const domainUrlLink = $('.field-content a')?.attr('href') || '';
+
+    if (!domainUrlLink) {
+      log.warning('Unable to find domain name');
+    }
+
+    const domain = getDomainName(domainUrlLink);
+
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
@@ -122,7 +133,13 @@ router.addHandler(Label.listing, async (context) => {
       if ($(element).find('div.coupon-cloumn > a[data-coupon]').length === 0) {
         continue;
       }
-      result = processCouponItem(merchantName, false, element, request.url);
+      result = processCouponItem(
+        merchantName,
+        false,
+        element,
+        domain,
+        request.url
+      );
       if (!result.hasCode) {
         await processAndStoreData(result.validator);
       } else {
@@ -140,7 +157,13 @@ router.addHandler(Label.listing, async (context) => {
       if ($(element).find('div.coupon-cloumn > a[data-coupon]').length === 0) {
         continue;
       }
-      result = processCouponItem(merchantName, true, element, request.url);
+      result = processCouponItem(
+        merchantName,
+        true,
+        element,
+        domain,
+        request.url
+      );
       if (!result.hasCode) {
         await processAndStoreData(result.validator);
       } else {

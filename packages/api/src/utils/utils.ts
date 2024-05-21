@@ -13,7 +13,8 @@ export function generateHash(
 ): string {
   const normalizedMerchant = normalizeString(merchantName);
   const normalizedVoucher = normalizeString(idInSite);
-  const normalizedUrl = normalizeString(getDomainName(sourceUrl));
+  const domain = getDomainName(sourceUrl);
+  const normalizedUrl = domain ? normalizeString(domain) : '';
 
   const combinedString = `${normalizedMerchant}|${normalizedVoucher}|${normalizedUrl}`;
 
@@ -83,6 +84,14 @@ export function getMerchantName(url: string): string {
   const match = regex.exec(url);
   const name = match?.groups?.domain || '';
   return name;
+}
+
+export function getGoogleActorPriceInUsdMicroCents(
+  totalResults: number
+): number {
+  const PRICE_PER_1000_RESULTS_IN_USD = 3.5;
+
+  return PRICE_PER_1000_RESULTS_IN_USD * (totalResults / 1000) * 1000000;
 }
 
 export function generateApifyTestingActorInput(

@@ -2,7 +2,7 @@ import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData, getDomainName } from 'shared/helpers';
+import { processAndStoreData } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 function extractAndFormatDate(input: string | null): string | null {
@@ -26,7 +26,7 @@ function extractAndFormatDate(input: string | null): string | null {
 async function processCouponItem(
   couponElement: cheerio.Element,
   sourceUrl: string,
-  sourceDomain: string
+  sourceDomain: string | undefined
 ) {
   const $coupon = cheerio.load(couponElement);
 
@@ -103,7 +103,7 @@ async function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -116,7 +116,11 @@ router.addHandler(Label.listing, async (context) => {
 
     console.log(`\nProcessing URL: ${request.url}`);
 
-    const domain = getDomainName(request.url);
+    const domain = $('.contacts .details .link')?.attr('href')?.split('@')?.[1];
+
+    if (!domain) {
+      log.warning('Domain is missing');
+    }
     // Extract valid coupons
     const validCoupons = $('div#couponContainer > div.coupon');
     for (const validCoupon of validCoupons) {

@@ -1,13 +1,18 @@
 import cheerio from 'cheerio';
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData, formatDateTime } from 'shared/helpers';
+import {
+  processAndStoreData,
+  formatDateTime,
+  getDomainName,
+} from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
   merchantName: string,
   couponElement: cheerio.Element,
+  domain: string | null,
   sourceUrl: string
 ) {
   const $coupon = cheerio.load(couponElement);
@@ -90,6 +95,8 @@ async function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
+  validator.addValue('domain', domain);
+
   validator.addValue('title', voucherTitle);
   validator.addValue('description', description);
   validator.addValue('idInSite', idInSite);
@@ -138,10 +145,17 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Merchant name is missing');
     }
 
+    const merchantUrl = $('.subheading p a')?.attr('href');
+
+    const domain = merchantUrl ? getDomainName(merchantUrl) : null;
+
+    if (!domain) {
+      log.warning('domain name is missing');
+    }
     // Extract valid coupons
     const validCoupons = $('div.rect_shape > div.company_vocuher');
     for (const element of validCoupons) {
-      await processCouponItem(merchantName, element, request.url);
+      await processCouponItem(merchantName, element, domain, request.url);
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

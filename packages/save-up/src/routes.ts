@@ -69,6 +69,7 @@ router.addHandler(Label.listing, async ({ request, body }) => {
     const $ = cheerio.load(htmlContent);
 
     const merchantNameElem = $('div.breadcrumbs span.breadcrumb_last');
+
     if (!merchantNameElem) {
       throw new Error('Unable to find merchant name element');
     }
