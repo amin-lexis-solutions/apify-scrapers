@@ -67,7 +67,7 @@ export class WebhooksController {
     });
 
     setTimeout(async () => {
-      const scrapedData = (await fetch(
+      let scrapedData = (await fetch(
         `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&token=${process.env.API_KEY_APIFY}`
       )
         .then(async (res) => {
@@ -89,6 +89,9 @@ export class WebhooksController {
         archivedCount = 0;
       const couponStats = {} as any;
       const errors: Record<string, any>[] = [];
+
+      const nonIndexPages = scrapedData.filter((item: any) => item.__action);
+      scrapedData = scrapedData.filter((item: any) => !item.__action);
 
       for (let i = 0; i < scrapedData.length; i++) {
         const item = scrapedData[i];
@@ -229,93 +232,110 @@ export class WebhooksController {
         }
       }
 
-      // Calculate stats for each source
-      const updatePromises = Object.keys(couponStats).map(async (sourceUrl) => {
-        const couponCount = couponStats[sourceUrl].count;
+      // Calculate stats and detect anomalies if there are any coupons
+      if (scrapedData.length > 0) {
+        // Calculate stats for each source
+        const updatePromises = Object.keys(couponStats).map(
+          async (sourceUrl) => {
+            const couponCount = couponStats[sourceUrl].count;
 
-        // Fetch historical data for the source from the last 14 days
-        const ANOMALY_DETECTION_DAYS =
-          Number(process.env.ANOMALY_DETECTION_DAYS) || 14;
+            // Fetch historical data for the source from the last 14 days
+            const ANOMALY_DETECTION_DAYS =
+              Number(process.env.ANOMALY_DETECTION_DAYS) || 14;
 
-        const historicalData = await prisma.couponStats.findMany({
-          where: {
-            sourceUrl,
-            createdAt: {
-              gte: dayjs().subtract(ANOMALY_DETECTION_DAYS, 'day').toDate(),
-            },
-          },
-        });
+            const historicalData = await prisma.couponStats.findMany({
+              where: {
+                sourceUrl,
+                createdAt: {
+                  gte: dayjs().subtract(ANOMALY_DETECTION_DAYS, 'day').toDate(),
+                },
+              },
+            });
 
-        const counts = historicalData.map(
-          (data) => data.couponsCount
-        ) as number[];
+            const counts = historicalData.map(
+              (data) => data.couponsCount
+            ) as number[];
 
-        // Calculate the average and handel the case where all counts are the same or no counts are provided
-        const averageCount =
-          counts.length > 0
-            ? counts.reduce((a, b) => a + b) / counts.length
-            : couponCount;
+            // Calculate the average and handel the case where all counts are the same or no counts are provided
+            const averageCount =
+              counts.length > 0
+                ? counts.reduce((a, b) => a + b) / counts.length
+                : couponCount;
 
-        // Calculate the tolerance multiplier based on the average count
-        const toleranceMultiplier = getToleranceMultiplier(averageCount);
-        const surgeThreshold = averageCount * (1 + toleranceMultiplier);
-        const plungeThreshold = Math.max(
-          1,
-          averageCount * (1 - toleranceMultiplier)
+            // Calculate the tolerance multiplier based on the average count
+            const toleranceMultiplier = getToleranceMultiplier(averageCount);
+            const surgeThreshold = averageCount * (1 + toleranceMultiplier);
+            const plungeThreshold = Math.max(
+              1,
+              averageCount * (1 - toleranceMultiplier)
+            );
+
+            let anomalyType: 'Surge' | 'Plunge' | null = null;
+            if (couponCount > surgeThreshold) {
+              anomalyType = 'Surge';
+            } else if (couponCount < plungeThreshold) {
+              anomalyType = 'Plunge';
+            }
+
+            // Update the couponStats object with the new calculated values
+            couponStats[sourceUrl] = {
+              ...couponStats[sourceUrl],
+              historical: counts,
+              surgeThreshold,
+              plungeThreshold,
+              anomalyType,
+            };
+          }
         );
 
-        let anomalyType: 'Surge' | 'Plunge' | null = null;
-        if (couponCount > surgeThreshold) {
-          anomalyType = 'Surge';
-        } else if (couponCount < plungeThreshold) {
-          anomalyType = 'Plunge';
-        }
+        // Wait for all updates to complete
+        await Promise.all(updatePromises);
 
-        // Update the couponStats object with the new calculated values
-        couponStats[sourceUrl] = {
-          ...couponStats[sourceUrl],
-          historical: counts,
-          surgeThreshold,
-          plungeThreshold,
-          anomalyType,
-        };
-      });
-
-      // Wait for all updates to complete
-      await Promise.all(updatePromises);
-
-      // Now that all updates are complete, proceed with database operations
-      const statsData = Object.keys(couponStats).map((sourceUrl) => ({
-        sourceUrl,
-        couponsCount: couponStats[sourceUrl].count,
-        surgeThreshold: couponStats[sourceUrl].surgeThreshold,
-        plungeThreshold: couponStats[sourceUrl].plungeThreshold,
-      }));
-
-      try {
-        await prisma.couponStats.createMany({ data: statsData });
-      } catch (e) {
-        // If the stats creation fails, log the error and statsData and continue
-        Sentry.captureMessage(
-          `Error creating coupon stats for source ${sourceId} :
-           ${JSON.stringify(statsData)}  : ${e} `
-        );
-      }
-
-      const anomaliesData = Object.keys(couponStats)
-        .filter((sourceUrl) => couponStats[sourceUrl].anomalyType)
-        .map((sourceUrl) => ({
+        // Now that all updates are complete, proceed with database operations
+        const statsData = Object.keys(couponStats).map((sourceUrl) => ({
           sourceUrl,
-          anomalyType: couponStats[sourceUrl].anomalyType,
-          couponCount: couponStats[sourceUrl].count,
+          couponsCount: couponStats[sourceUrl].count,
+          surgeThreshold: couponStats[sourceUrl].surgeThreshold,
+          plungeThreshold: couponStats[sourceUrl].plungeThreshold,
         }));
 
-      if (anomaliesData.length > 0) {
-        Sentry.captureMessage(
-          `Anomalies detected for source ${sourceId}: ${JSON.stringify(
-            anomaliesData
-          )}`
-        );
+        try {
+          await prisma.couponStats.createMany({ data: statsData });
+        } catch (e) {
+          // If the stats creation fails, log the error and statsData and continue
+          Sentry.captureMessage(
+            `Error creating coupon stats for source ${sourceId} :
+           ${JSON.stringify(statsData)}  : ${e} `
+          );
+        }
+
+        const anomaliesData = Object.keys(couponStats)
+          .filter((sourceUrl) => couponStats[sourceUrl].anomalyType)
+          .map((sourceUrl) => ({
+            sourceUrl,
+            anomalyType: couponStats[sourceUrl].anomalyType,
+            couponCount: couponStats[sourceUrl].count,
+          }));
+
+        if (anomaliesData.length > 0) {
+          Sentry.captureMessage(
+            `Anomalies detected for source ${sourceId}: ${JSON.stringify(
+              anomaliesData
+            )}`
+          );
+        }
+      }
+
+      // Mark the nonIndexPages for the targetPages
+      if (nonIndexPages.length > 0) {
+        const targetPagesArray = nonIndexPages.map((item: any) => item?.__url);
+        await prisma.targetPage.updateMany({
+          where: { url: { in: targetPagesArray } },
+          data: {
+            markedAsNonIndexAt: dayjs().toDate(),
+            lastApifyRunAt: dayjs().toDate(),
+          },
+        });
       }
 
       // update lastApifyRunAt for the targetPages
@@ -323,7 +343,7 @@ export class WebhooksController {
         const targetPagesArray = Array.from(targetPages);
         await prisma.targetPage.updateMany({
           where: { url: { in: targetPagesArray } },
-          data: { lastApifyRunAt: new Date() },
+          data: { lastApifyRunAt: dayjs().toDate() },
         });
       }
 
