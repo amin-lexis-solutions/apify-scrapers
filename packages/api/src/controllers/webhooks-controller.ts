@@ -329,6 +329,20 @@ export class WebhooksController {
       // Mark the nonIndexPages for the targetPages
       if (nonIndexPages.length > 0) {
         const targetPagesArray = nonIndexPages.map((item: any) => item?.__url);
+
+        // Disable the targetPages that are marked as non-index and not disabled yet
+        await prisma.targetPage.updateMany({
+          where: {
+            url: { in: targetPagesArray },
+            markedAsNonIndexAt: {
+              not: null,
+              lt: dayjs().subtract(1, 'day').toDate(),
+            },
+            disabledAt: null,
+          },
+          data: { disabledAt: dayjs().toDate() },
+        });
+
         await prisma.targetPage.updateMany({
           where: { url: { in: targetPagesArray } },
           data: {
