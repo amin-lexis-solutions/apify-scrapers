@@ -137,3 +137,10 @@ model CouponStats {
   plungeThreshold Int // Number of standard deviations below the mean
   createdAt       DateTime   @default(now())
 }
+model Test {
+  id                  String      @id @default(uuid())
+  apifyTestRunId      String
+  apifyActorId        String
+  status              String
+  lastRunAt           DateTime    @default(now())
+}

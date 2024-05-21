@@ -13,7 +13,8 @@ export function generateHash(
 ): string {
   const normalizedMerchant = normalizeString(merchantName);
   const normalizedVoucher = normalizeString(idInSite);
-  const normalizedUrl = normalizeString(getDomainName(sourceUrl));
+  const domain = getDomainName(sourceUrl);
+  const normalizedUrl = domain ? normalizeString(domain) : '';
 
   const combinedString = `${normalizedMerchant}|${normalizedVoucher}|${normalizedUrl}`;
 
