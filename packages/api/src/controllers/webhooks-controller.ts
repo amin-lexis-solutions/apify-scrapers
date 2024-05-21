@@ -336,6 +336,15 @@ export class WebhooksController {
             lastApifyRunAt: dayjs().toDate(),
           },
         });
+        // Log a warning to Sentry if non-index pages are detected
+        Sentry.captureException(
+          new Error(
+            `Non-index pages detected on this actor run ${actorRunId}`
+          ) as any,
+          {
+            extra: { nonIndexPages },
+          }
+        );
       }
 
       // update lastApifyRunAt for the targetPages
