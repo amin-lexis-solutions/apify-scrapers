@@ -4,6 +4,22 @@ import { DataValidator } from 'shared/data-validator';
 import { processAndStoreData, generateHash } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
+// Define a function to check if the page matches the selectors
+function isIndexPage(
+  $: cheerio.Root,
+  indexPageSelectors: string[],
+  nonIndexPageSelectors: string[]
+): boolean {
+  const isIncluded = indexPageSelectors.some(
+    (selector) => $(selector).length > 0
+  );
+  const isExcluded = nonIndexPageSelectors.some(
+    (selector) => $(selector).length > 0
+  );
+
+  return isIncluded && !isExcluded;
+}
+
 async function processCouponItem(
   merchantName: string,
   couponElement: cheerio.Element,
@@ -62,13 +78,13 @@ router.addHandler(Label.listing, async ({ request, body, log }) => {
     const $ = cheerio.load(htmlContent);
 
     // Check if this is an index page
-    const includes = ['.brand-index_content-main', '.brand-index']; // Add selectors that are present on the index page
-    const excludes = ['.home-index']; // Add selectors that are present on the other page
+    const indexPageSelectors = ['.brand-index_content-main', '.brand-index']; // Add selectors that are present on the index page
+    const nonIndexPageSelectors = ['.home-index']; // Add selectors that are present on the other page
 
-    if (!isIndexPage($, includes, excludes)) {
+    if (!isIndexPage($, indexPageSelectors, nonIndexPageSelectors)) {
       log.info(`Skip URL: ${request.url} - Not a data page`);
       await Dataset.pushData({
-        __action: 'no-index-page',
+        __isNotIndexPage: true,
         __url: request.url,
       });
       return;
@@ -93,17 +109,5 @@ router.addHandler(Label.listing, async ({ request, body, log }) => {
     // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
-
-// Define a function to check if the page matches the selectors
-function isIndexPage(
-  $: cheerio.Root,
-  includes: string[],
-  excludes: string[]
-): boolean {
-  const isIncluded = includes.some((selector) => $(selector).length > 0);
-  const isExcluded = excludes.some((selector) => $(selector).length > 0);
-
-  return isIncluded && !isExcluded;
-}
 
 export { router };

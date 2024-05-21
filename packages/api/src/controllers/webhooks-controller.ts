@@ -90,8 +90,10 @@ export class WebhooksController {
       const couponStats = {} as any;
       const errors: Record<string, any>[] = [];
 
-      const nonIndexPages = scrapedData.filter((item: any) => item.__action);
-      scrapedData = scrapedData.filter((item: any) => !item.__action);
+      const nonIndexPages = scrapedData.filter(
+        (item: any) => item.__isNotIndexPage
+      );
+      scrapedData = scrapedData.filter((item: any) => !item.__isNotIndexPage);
 
       for (let i = 0; i < scrapedData.length; i++) {
         const item = scrapedData[i];
@@ -344,7 +346,10 @@ export class WebhooksController {
         });
 
         await prisma.targetPage.updateMany({
-          where: { url: { in: targetPagesArray } },
+          where: {
+            url: { in: targetPagesArray },
+            markedAsNonIndexAt: { not: null },
+          },
           data: {
             markedAsNonIndexAt: dayjs().toDate(),
             lastApifyRunAt: dayjs().toDate(),
