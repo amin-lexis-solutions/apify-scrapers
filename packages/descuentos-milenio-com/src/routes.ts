@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, Dataset } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { processAndStoreData, generateHash } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
@@ -53,13 +53,27 @@ async function processCouponItem(
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
 
-router.addHandler(Label.listing, async ({ request, body }) => {
+router.addHandler(Label.listing, async ({ request, body, log }) => {
   if (request.userData.label !== Label.listing) return;
 
   try {
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`\nProcessing URL: ${request.url}`);
     const htmlContent = body instanceof Buffer ? body.toString() : body;
     const $ = cheerio.load(htmlContent);
+
+    // Check if this is an DATA page
+    // Use the function in your code
+    const includes = ['.brand-index_content-main', '.brand-index'];
+    const excludes = ['.home-index'];
+
+    if (!isDataPage($, includes, excludes)) {
+      log.info(`Skip URL: ${request.url} - Not a data page`);
+      await Dataset.pushData({
+        __action: 'no-index-page',
+        __url: request.url,
+      });
+      return;
+    }
 
     let merchantName = $(
       'section.brand-index_content-heading-block a img'
@@ -80,5 +94,17 @@ router.addHandler(Label.listing, async ({ request, body }) => {
     // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
+
+// Define a function to check if the page matches the selectors
+function isDataPage(
+  $: cheerio.Root,
+  includes: string[],
+  excludes: string[]
+): boolean {
+  const isIncluded = includes.some((selector) => $(selector).length > 0);
+  const isExcluded = excludes.some((selector) => $(selector).length > 0);
+
+  return isIncluded && !isExcluded;
+}
 
 export { router };
