@@ -106,18 +106,20 @@ model TargetLocale {
 
 // Maps to a page we want to scrape using an Apify actor
 model TargetPage {
-  id             String    @id @default(uuid())
-  url            String    @unique
-  domain         String
-  title          String
-  searchTerm     String
-  searchPosition Int
-  searchDomain   String // e.g. google.com.sg
-  apifyRunId     String?
-  lastApifyRunAt DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @default(now())
-  localeId       String
+  id                 String    @id @default(uuid())
+  url                String    @unique
+  domain             String
+  title              String
+  searchTerm         String
+  searchPosition     Int
+  searchDomain       String // e.g. google.com.sg
+  apifyRunId         String?
+  lastApifyRunAt     DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @default(now())
+  localeId           String
+  markedAsNonIndexAt DateTime?
+  disabledAt         DateTime?
 
   locale TargetLocale @relation(fields: [localeId], references: [id])
 

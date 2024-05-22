@@ -222,6 +222,7 @@ export class TargetsController {
         where: {
           AND: [
             { domain: { in: sourceDomains } },
+            { disabledAt: null },
             {
               OR: [
                 { lastApifyRunAt: null },

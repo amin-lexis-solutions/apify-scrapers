@@ -1,8 +1,24 @@
 import * as cheerio from 'cheerio';
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, Dataset } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { processAndStoreData, generateHash } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
+
+// Define a function to check if the page matches the selectors
+function isIndexPage(
+  $: cheerio.Root,
+  indexPageSelectors: string[],
+  nonIndexPageSelectors: string[]
+): boolean {
+  const isIndexPage = indexPageSelectors.some(
+    (selector) => $(selector).length > 0
+  );
+  const isNonIndexPage = nonIndexPageSelectors.some(
+    (selector) => $(selector).length > 0
+  );
+
+  return isIndexPage && !isNonIndexPage;
+}
 
 async function processCouponItem(
   merchantName: string,
@@ -53,13 +69,26 @@ async function processCouponItem(
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
 
-router.addHandler(Label.listing, async ({ request, body }) => {
+router.addHandler(Label.listing, async ({ request, body, log }) => {
   if (request.userData.label !== Label.listing) return;
 
   try {
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`\nProcessing URL: ${request.url}`);
     const htmlContent = body instanceof Buffer ? body.toString() : body;
     const $ = cheerio.load(htmlContent);
+
+    // Check if this is an index page
+    const indexPageSelectors = ['.brand-index_content-main', '.brand-index']; // Add selectors that are present on the index page
+    const nonIndexPageSelectors = ['.home-index']; // Add selectors that are present on the other page
+
+    if (!isIndexPage($, indexPageSelectors, nonIndexPageSelectors)) {
+      log.info(`Skip URL: ${request.url} - Not a data page`);
+      await Dataset.pushData({
+        __isNotIndexPage: true,
+        __url: request.url,
+      });
+      return;
+    }
 
     let merchantName = $(
       'section.brand-index_content-heading-block a img'
