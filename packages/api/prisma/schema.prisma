@@ -140,7 +140,7 @@ model CouponStats {
 model Test {
   id                  String      @id @default(uuid())
   apifyTestRunId      String
-  apifyActorId        String
+  apifyActorId        String      @unique
   status              String
   lastRunAt           DateTime    @default(now())
 }
