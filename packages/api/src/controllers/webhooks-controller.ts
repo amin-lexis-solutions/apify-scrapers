@@ -506,9 +506,9 @@ export class WebhooksController {
     ).then((res) => res.json());
 
     const filteredData = removeDuplicates
-      ? this.filterDuplicateDomains(data)
+      ? this.filterDuplicateDomains(data) // Remove duplicate domains
       : data;
-    const validData = this.prepareSerpData(filteredData, actorRunId, localeId);
+    const validData = this.prepareSerpData(filteredData, actorRunId, localeId); // Prepare the data for storage
 
     for (const item of validData) {
       try {
@@ -542,6 +542,7 @@ export class WebhooksController {
     );
   }
 
+  // Remove duplicate domains from the SERP data to avoid duplicates
   private filterDuplicateDomains(
     data: ApifyGoogleSearchResult[]
   ): ApifyGoogleSearchResult[] {
@@ -562,6 +563,7 @@ export class WebhooksController {
     });
   }
 
+  // Prepare the SERP data for storage
   private prepareSerpData(
     data: ApifyGoogleSearchResult[],
     actorRunId: string,
