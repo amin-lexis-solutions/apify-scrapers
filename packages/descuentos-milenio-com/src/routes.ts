@@ -57,7 +57,7 @@ async function processCouponItem(
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
 
-router.addHandler(Label.listing, async ({ request, body, log }) => {
+router.addHandler(Label.listing, async ({ request, body }) => {
   if (request.userData.label !== Label.listing) return;
 
   try {

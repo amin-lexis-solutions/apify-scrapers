@@ -15,7 +15,7 @@ import {
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler, log } = context;
+  const { request, $, crawler } = context;
 
   if (request.userData.label !== Label.listing) return;
 

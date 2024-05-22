@@ -109,111 +109,108 @@ function processCouponItem(
 // Export the router function that determines which handler to use based on the request label
 const router = Router.create<PuppeteerCrawlingContext>();
 
-router.addHandler(
-  Label.listing,
-  async ({ page, request, enqueueLinks, log }) => {
-    if (request.userData.label !== Label.listing) return;
+router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
+  if (request.userData.label !== Label.listing) return;
 
-    try {
-      console.log(`\nProcessing URL: ${request.url}`);
+  try {
+    console.log(`\nProcessing URL: ${request.url}`);
 
-      await page.waitForFunction(() => {
-        return !!window.__NEXT_DATA__;
-      });
+    await page.waitForFunction(() => {
+      return !!window.__NEXT_DATA__;
+    });
 
-      const htmlContent = await page.content();
-      const jsonPattern = /<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s;
-      const match = htmlContent.match(jsonPattern);
+    const htmlContent = await page.content();
+    const jsonPattern = /<script id="__NEXT_DATA__"[^>]*>(.*?)<\/script>/s;
+    const match = htmlContent.match(jsonPattern);
 
-      let jsonData;
-      let retailerId;
-      if (match && match[1]) {
-        jsonData = JSON.parse(match[1]);
-        retailerId = jsonData.query.clientId;
-        jsonData = jsonData.props.pageProps;
-      } else {
-        throw new Error(
-          'No matching script tag found or no JSON content present'
-        );
-      }
-
-      if (!jsonData.retailer) {
-        throw new Error('Retailer data is missing in the parsed JSON');
-      }
-
-      console.log(
-        `\n\nFound ${jsonData.vouchers.length} active vouchers and ${jsonData.expiredVouchers.length} expired vouchers\n    at: ${request.url}\n`
+    let jsonData;
+    let retailerId;
+    if (match && match[1]) {
+      jsonData = JSON.parse(match[1]);
+      retailerId = jsonData.query.clientId;
+      jsonData = jsonData.props.pageProps;
+    } else {
+      throw new Error(
+        'No matching script tag found or no JSON content present'
       );
-
-      const merchantName = jsonData.retailer.name;
-      const merchantUrl = jsonData.retailer.merchant_url;
-      const domain = getDomainName(merchantUrl);
-
-      const activeVouchers = jsonData.vouchers.map((voucher) => ({
-        ...voucher,
-        is_expired: false,
-      }));
-      const expiredVouchers = jsonData.expiredVouchers.map((voucher) => ({
-        ...voucher,
-        is_expired: true,
-      }));
-      const vouchers = [...activeVouchers, ...expiredVouchers];
-
-      const hasAnomaly = await checkExistingCouponsAnomaly(
-        request.url,
-        vouchers.length
-      );
-
-      if (hasAnomaly) {
-        return;
-      }
-
-      const couponsWithCode: CouponHashMap = {};
-      const idsToCheck: string[] = [];
-      let result: CouponItemResult;
-
-      for (const voucher of vouchers) {
-        result = processCouponItem(
-          merchantName,
-          domain,
-          retailerId,
-          voucher,
-          request.url
-        );
-        if (!result.hasCode) {
-          await processAndStoreData(result.validator);
-        } else {
-          couponsWithCode[result.generatedHash] = result;
-          idsToCheck.push(result.generatedHash);
-        }
-      }
-
-      // Call the API to check if the coupon exists
-      const nonExistingIds = await checkCouponIds(idsToCheck);
-
-      if (nonExistingIds.length > 0) {
-        let currentResult: CouponItemResult;
-        let validatorData;
-        for (const id of nonExistingIds) {
-          currentResult = couponsWithCode[id];
-          validatorData = currentResult.validator.getData();
-
-          await enqueueLinks({
-            urls: [currentResult.couponUrl],
-            userData: {
-              label: Label.getCode,
-              validatorData,
-            },
-            forefront: true,
-          });
-        }
-      }
-    } finally {
-      // We don't catch so that the error is logged in Sentry, but use finally
-      // since we want the Apify actor to end successfully and not waste resources by retrying.
     }
+
+    if (!jsonData.retailer) {
+      throw new Error('Retailer data is missing in the parsed JSON');
+    }
+
+    console.log(
+      `\n\nFound ${jsonData.vouchers.length} active vouchers and ${jsonData.expiredVouchers.length} expired vouchers\n    at: ${request.url}\n`
+    );
+
+    const merchantName = jsonData.retailer.name;
+    const merchantUrl = jsonData.retailer.merchant_url;
+    const domain = getDomainName(merchantUrl);
+
+    const activeVouchers = jsonData.vouchers.map((voucher) => ({
+      ...voucher,
+      is_expired: false,
+    }));
+    const expiredVouchers = jsonData.expiredVouchers.map((voucher) => ({
+      ...voucher,
+      is_expired: true,
+    }));
+    const vouchers = [...activeVouchers, ...expiredVouchers];
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      vouchers.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
+
+    const couponsWithCode: CouponHashMap = {};
+    const idsToCheck: string[] = [];
+    let result: CouponItemResult;
+
+    for (const voucher of vouchers) {
+      result = processCouponItem(
+        merchantName,
+        domain,
+        retailerId,
+        voucher,
+        request.url
+      );
+      if (!result.hasCode) {
+        await processAndStoreData(result.validator);
+      } else {
+        couponsWithCode[result.generatedHash] = result;
+        idsToCheck.push(result.generatedHash);
+      }
+    }
+
+    // Call the API to check if the coupon exists
+    const nonExistingIds = await checkCouponIds(idsToCheck);
+
+    if (nonExistingIds.length > 0) {
+      let currentResult: CouponItemResult;
+      let validatorData;
+      for (const id of nonExistingIds) {
+        currentResult = couponsWithCode[id];
+        validatorData = currentResult.validator.getData();
+
+        await enqueueLinks({
+          urls: [currentResult.couponUrl],
+          userData: {
+            label: Label.getCode,
+            validatorData,
+          },
+          forefront: true,
+        });
+      }
+    }
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
-);
+});
 
 router.addHandler(Label.getCode, async ({ page, request }) => {
   if (request.userData.label !== Label.getCode) return;

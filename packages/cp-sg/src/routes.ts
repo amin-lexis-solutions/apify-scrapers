@@ -58,7 +58,7 @@ async function processCouponItem(
   return { generatedHash, hasCode, couponUrl: '', validator };
 }
 // Handler function for processing coupon listings
-router.addHandler(Label.listing, async ({ request, $, log }) => {
+router.addHandler(Label.listing, async ({ request, $ }) => {
   if (request.userData.label !== Label.listing) return;
 
   try {

@@ -104,7 +104,7 @@ function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, body, crawler, log } = context;
+  const { request, body, crawler } = context;
 
   if (request.userData.label !== Label.listing) return;
 
