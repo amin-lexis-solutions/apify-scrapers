@@ -7,6 +7,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
@@ -80,6 +81,15 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
     }
 
     const validCoupons = await page.$$('.list_coupons li .offer_card');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
 
     // Extract validCoupons
 

@@ -1,7 +1,10 @@
 import * as cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData } from 'shared/helpers';
+import {
+  checkExistingCouponsAnomaly,
+  processAndStoreData,
+} from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
@@ -89,6 +92,16 @@ router.addHandler(Label.listing, async ({ request, body }) => {
 
     // Refactor to use a loop for valid coupons
     const validCoupons = $('ul.coupon-list.valid-coupons > li[data-id]');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
+
     for (let i = 0; i < validCoupons.length; i++) {
       const element = validCoupons[i];
       await processCouponItem(merchantName, false, element, request.url);

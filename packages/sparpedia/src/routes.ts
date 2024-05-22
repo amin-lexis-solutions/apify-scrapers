@@ -9,6 +9,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -121,6 +122,16 @@ router.addHandler(Label.listing, async (context) => {
     const validCoupons = $(
       'div.current-shop-offers > div.offer-default.not-expired'
     );
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
+
     for (let i = 0; i < validCoupons.length; i++) {
       const element = validCoupons[i];
       result = processCouponItem(merchantName, false, element, request.url);

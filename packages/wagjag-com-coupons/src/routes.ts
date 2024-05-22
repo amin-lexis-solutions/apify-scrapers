@@ -2,7 +2,11 @@ import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData, getDomainName } from 'shared/helpers';
+import {
+  processAndStoreData,
+  getDomainName,
+  checkExistingCouponsAnomaly,
+} from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
@@ -118,6 +122,16 @@ router.addHandler(Label.listing, async (context) => {
 
     // Extract valid coupons
     const validCoupons = $('div.promotion-list__promotions > div');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
+
     for (let i = 0; i < validCoupons.length; i++) {
       const element = validCoupons[i];
       await processCouponItem(

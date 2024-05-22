@@ -8,6 +8,7 @@ import {
   CouponItemResult,
   CouponHashMap,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -88,6 +89,15 @@ router.addHandler(Label.listing, async (context) => {
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      vouchers.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
 
     for (const voucher of vouchers) {
       await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings

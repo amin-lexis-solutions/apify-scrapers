@@ -5,6 +5,7 @@ import {
   getDomainName,
   processAndStoreData,
   generateHash,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { DataValidator } from 'shared/data-validator';
 import { Label } from 'shared/actor-utils';
@@ -105,6 +106,16 @@ router.addHandler(Label.listing, async (context) => {
       } else {
         // Extract valid coupons
         const validCoupons = $('ul.sc-a8fe2b69-0 > li > div');
+
+        const hasAnomaly = await checkExistingCouponsAnomaly(
+          request.url,
+          validCoupons.length
+        );
+
+        if (hasAnomaly) {
+          return;
+        }
+
         for (let i = 0; i < validCoupons.length; i++) {
           const element = validCoupons[i];
           await processCouponItem(

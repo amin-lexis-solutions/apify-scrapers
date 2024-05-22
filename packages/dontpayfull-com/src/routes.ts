@@ -7,6 +7,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { createPuppeteerRouter } from 'crawlee';
 
@@ -82,6 +83,15 @@ router.addHandler(Label.listing, async ({ request, page, enqueueLinks }) => {
     const idsToCheck: string[] = [];
     let result: any;
     // Loop through each coupon element and process it
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      couponList.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
 
     for (const element of couponList) {
       try {

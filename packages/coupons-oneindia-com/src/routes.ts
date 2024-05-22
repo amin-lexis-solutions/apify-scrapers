@@ -5,6 +5,7 @@ import {
   CouponHashMap,
   CouponItemResult,
   checkCouponIds,
+  checkExistingCouponsAnomaly,
   formatDateTime,
   generateCouponId,
   getDomainName,
@@ -88,6 +89,15 @@ router.addHandler(Label.listing, async ({ request, page, enqueueLinks }) => {
     }));
 
     const vouchers = [...activeVouchers, ...expiredVouchers];
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      vouchers.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
 
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];

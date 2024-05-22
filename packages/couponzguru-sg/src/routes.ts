@@ -6,6 +6,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { DataValidator } from 'shared/data-validator';
 import { Label } from 'shared/actor-utils';
@@ -74,6 +75,14 @@ router.addHandler(Label.listing, async ({ request, $, log }) => {
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
 
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
     // Loop through each coupon element and process it
     for (const coupon of validCoupons) {
       result = processCouponItem(merchantName, coupon, request.url);

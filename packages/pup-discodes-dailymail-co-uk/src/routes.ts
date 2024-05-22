@@ -8,6 +8,7 @@ import {
   CouponItemResult,
   CouponHashMap,
   formatDateTime,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
@@ -156,9 +157,19 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
     }));
     const vouchers = [...activeVouchers, ...expiredVouchers];
 
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      vouchers.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
+
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
+
     for (const voucher of vouchers) {
       result = processCouponItem(
         merchantName,

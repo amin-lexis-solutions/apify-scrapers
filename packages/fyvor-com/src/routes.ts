@@ -11,6 +11,7 @@ import {
   CouponItemResult,
   CouponHashMap,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -120,6 +121,16 @@ router.addHandler(Label.listing, async (context) => {
 
     // Extract valid coupons
     const validCoupons = $('div.c_list:not(.expired) > div[itemprop="offers"]');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
+
     for (let i = 0; i < validCoupons.length; i++) {
       const element = validCoupons[i];
       result = processCouponItem(

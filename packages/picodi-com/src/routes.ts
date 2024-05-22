@@ -8,6 +8,7 @@ import {
   generateCouponId,
   checkCouponIds,
   CouponItemResult,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -162,9 +163,20 @@ router.addHandler(Label.listing, async (context) => {
     const validCoupons = $(
       'section.card-offers > ul > li.type-promo, section.card-offers > ul > li.type-code'
     );
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
+
     const couponsWithCode: any = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult = {} as any;
+
     for (let i = 0; i < validCoupons.length; i++) {
       const element = validCoupons[i];
       result = processCouponItem(merchantName, false, element, request.url);

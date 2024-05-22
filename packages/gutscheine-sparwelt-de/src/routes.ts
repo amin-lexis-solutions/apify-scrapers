@@ -1,7 +1,12 @@
 import { createCheerioRouter } from 'crawlee';
 import { parse } from 'node-html-parser';
 import { DataValidator } from 'shared/data-validator';
-import { getDomainName, processAndStoreData, sleep } from 'shared/helpers';
+import {
+  checkExistingCouponsAnomaly,
+  getDomainName,
+  processAndStoreData,
+  sleep,
+} from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 async function fetchVoucherCode(
@@ -55,6 +60,15 @@ router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
       return;
     }
     console.log(`Found ${selCoupons.length} coupons`);
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      selCoupons.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
 
     for (const couponDiv of selCoupons) {
       const voucherId = couponDiv.getAttribute('data-ssr-vouchers-item');

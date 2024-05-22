@@ -6,6 +6,7 @@ import {
   CouponHashMap,
   checkCouponIds,
   CouponItemResult,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
@@ -50,12 +51,16 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
 
     const validCoupons = await page.$$('.-horizontal.m-offer');
 
-    if (!validCoupons) {
-      throw new Error('Valid coupons not found');
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      return;
     }
 
     // Extract validCoupons
-
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;

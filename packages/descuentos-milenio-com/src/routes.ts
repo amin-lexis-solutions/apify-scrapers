@@ -1,7 +1,11 @@
 import * as cheerio from 'cheerio';
 import { createCheerioRouter, Dataset } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData, generateHash } from 'shared/helpers';
+import {
+  processAndStoreData,
+  generateHash,
+  checkExistingCouponsAnomaly,
+} from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 // Define a function to check if the page matches the selectors
@@ -101,6 +105,16 @@ router.addHandler(Label.listing, async ({ request, body, log }) => {
 
     // Refactor to use a loop for valid coupons
     const validCoupons = $('ul.main-section_discounts > li > div.card-primary');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      return;
+    }
+
     for (const element of validCoupons) {
       await processCouponItem(merchantName, element, request.url);
     }

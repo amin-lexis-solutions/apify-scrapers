@@ -1,9 +1,10 @@
+import * as Sentry from '@sentry/node';
 import crypto from 'crypto';
 import * as chrono from 'chrono-node';
 import moment from 'moment';
 import axios from 'axios';
 import { DataValidator } from './data-validator';
-import { Dataset } from 'apify';
+import { Dataset, log } from 'apify';
 
 export type CouponItemResult = {
   generatedHash: string;
@@ -21,9 +22,7 @@ function normalizeString(s: string): string {
 
 export async function fetchSentryUrl() {
   try {
-    const response = await axios.get(
-      'https://codes-api-d9jbl.ondigitalocean.app/sentry/dsn'
-    );
+    const response = await axios.get(`${process.env.BASE_URL}/sentry/dsn`);
     console.log('Sentry URL:', response.data.url);
     return response.data.url as string;
   } finally {
@@ -36,7 +35,7 @@ export async function checkCouponIds(ids: any[]): Promise<any[]> {
   try {
     // Send a POST request to the API to check if the coupon IDs exist
     const response = await axios.post(
-      'https://codes-api-d9jbl.ondigitalocean.app/items/match-ids',
+      `${process.env.BASE_URL}/items/match-ids`,
       { ids: ids }
     );
 
@@ -164,4 +163,37 @@ export async function processAndStoreData(validator: DataValidator) {
 // Domain can be null if does not exist.
 export function extractDomainFromUrl(url: string): string | null {
   return getDomainName(url);
+}
+
+export async function checkExistingCouponsAnomaly(
+  sourceUrl: string,
+  couponsCount: number
+) {
+  log.info(`checkExistingCouponsAnomaly - ${sourceUrl}`);
+
+  try {
+    const response = await axios.post(
+      `${process.env.BASE_URL}/items/anomaly-detector`,
+      {
+        sourceUrl,
+        couponsCount,
+      }
+    );
+
+    const hasAnomaly = response?.data?.anomalyType;
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${sourceUrl}`);
+
+      Sentry.captureException(`Coupons anomaly detected`, {
+        extra: {
+          url: sourceUrl,
+          couponsCount,
+        },
+      });
+    }
+    return hasAnomaly;
+  } catch (e) {
+    log.error(`Error fetching coupons anomaly`, { e });
+  }
 }
