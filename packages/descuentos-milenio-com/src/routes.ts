@@ -10,14 +10,14 @@ function isIndexPage(
   indexPageSelectors: string[],
   nonIndexPageSelectors: string[]
 ): boolean {
-  const isIncluded = indexPageSelectors.some(
+  const isIndexPage = indexPageSelectors.some(
     (selector) => $(selector).length > 0
   );
-  const isExcluded = nonIndexPageSelectors.some(
+  const isNonIndexPage = nonIndexPageSelectors.some(
     (selector) => $(selector).length > 0
   );
 
-  return isIncluded && !isExcluded;
+  return isIndexPage && !isNonIndexPage;
 }
 
 async function processCouponItem(

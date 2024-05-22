@@ -348,7 +348,7 @@ export class WebhooksController {
         await prisma.targetPage.updateMany({
           where: {
             url: { in: targetPagesArray },
-            markedAsNonIndexAt: { not: null },
+            markedAsNonIndexAt: null,
           },
           data: {
             markedAsNonIndexAt: dayjs().toDate(),
