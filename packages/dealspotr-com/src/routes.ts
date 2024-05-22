@@ -134,7 +134,6 @@ router.addHandler(Label.listing, async (context) => {
     );
 
     if (hasAnomaly) {
-      log.error(`Coupons anomaly detected - ${request.url}`);
       return;
     }
     // Use for...of loop to handle async operations within loop

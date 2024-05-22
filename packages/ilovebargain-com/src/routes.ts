@@ -32,7 +32,6 @@ router.addHandler(Label.listing, async (context) => {
     );
 
     if (hasAnomaly) {
-      log.error(`Coupons anomaly detected - ${request.url}`);
       return;
     }
     // Iterate over each coupon to extract url

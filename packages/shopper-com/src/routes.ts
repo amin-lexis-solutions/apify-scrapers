@@ -71,7 +71,6 @@ router.addHandler(Label.listing, async ({ request, $ }) => {
     );
 
     if (hasAnomaly) {
-      log.error(`Coupons anomaly detected - ${request.url}`);
       return;
     }
     // Initialize variables

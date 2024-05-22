@@ -59,7 +59,7 @@ function checkVoucherCode(code: string | null | undefined) {
 
 function processCouponItem(
   merchantName: string,
-  domain: string | null,
+  domain: string,
   retailerId: string,
   voucher: any,
   sourceUrl: string
@@ -165,7 +165,6 @@ router.addHandler(
       );
 
       if (hasAnomaly) {
-        log.error(`Coupons anomaly detected - ${request.url}`);
         return;
       }
 

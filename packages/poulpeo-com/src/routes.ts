@@ -54,17 +54,12 @@ router.addHandler(
 
       const validCoupons = await page.$$('.-horizontal.m-offer');
 
-      if (!validCoupons) {
-        throw new Error('Valid coupons not found');
-      }
-
       const hasAnomaly = await checkExistingCouponsAnomaly(
         request.url,
         validCoupons.length
       );
 
       if (hasAnomaly) {
-        log.error(`Coupons anomaly detected - ${request.url}`);
         return;
       }
 

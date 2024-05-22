@@ -83,7 +83,6 @@ router.addHandler(Label.listing, async ({ request, body, log }) => {
     );
 
     if (hasAnomaly) {
-      log.error(`Coupons anomaly detected - ${request.url}`);
       return;
     }
 
