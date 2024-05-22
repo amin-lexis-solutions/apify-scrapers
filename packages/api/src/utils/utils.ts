@@ -11,8 +11,8 @@ export function generateHash(
   idInSite: string,
   sourceUrl: string
 ): string {
-  const normalizedMerchant = normalizeString(merchantName);
-  const normalizedVoucher = normalizeString(idInSite);
+  const normalizedMerchant = normalizeString(merchantName || '');
+  const normalizedVoucher = normalizeString(idInSite || '');
   const domain = getDomainName(sourceUrl);
   const normalizedUrl = domain ? normalizeString(domain) : '';
 
@@ -25,10 +25,7 @@ export function generateHash(
 
 export function validDateOrNull(dateString: string) {
   const date = new Date(dateString);
-  if (isNaN(date.getTime())) {
-    return null;
-  }
-  return date.toISOString();
+  return !dateString || isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 export function getWebhookUrl(path: string): string {
