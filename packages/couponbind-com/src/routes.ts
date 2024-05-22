@@ -9,6 +9,7 @@ import {
   CouponItemResult,
   CouponHashMap,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 
 export const router = createCheerioRouter();
@@ -98,6 +99,16 @@ router.addHandler(Label.listing, async ({ request, $, log }) => {
     }
 
     const couponList = $('.promo-container.code');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      couponList.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
 
     // Initialize variables
     const couponsWithCode: CouponHashMap = {};

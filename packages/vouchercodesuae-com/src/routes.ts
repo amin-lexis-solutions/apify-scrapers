@@ -6,6 +6,7 @@ import {
   processAndStoreData,
   formatDateTime,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
@@ -154,6 +155,17 @@ router.addHandler(Label.listing, async (context) => {
     }
     // Extract valid coupons
     const validCoupons = $('div.rect_shape > div.company_vocuher');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
+
     for (const element of validCoupons) {
       await processCouponItem(merchantName, element, domain, request.url);
     }

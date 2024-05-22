@@ -10,6 +10,7 @@ import {
   CouponItemResult,
   CouponHashMap,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -71,7 +72,7 @@ function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -127,10 +128,20 @@ router.addHandler(Label.listing, async (context) => {
       }
     );
 
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
     // Use for...of loop to handle async operations within loop
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
+
     for (const element of validCoupons.toArray()) {
       // Since element is a native DOM element, wrap it with Cheerio to use jQuery-like methods
       result = processCouponItem(merchantName, domain, element, request.url);

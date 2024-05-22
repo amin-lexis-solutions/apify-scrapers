@@ -7,6 +7,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
@@ -63,6 +64,16 @@ router.addHandler(Label.listing, async ({ request, $ }) => {
     const merchantName = domain?.split('.com')?.[0];
     // Extract valid coupons
     const validCoupons = $('.couponcards-container .couponcard-container');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
     // Initialize variables
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];

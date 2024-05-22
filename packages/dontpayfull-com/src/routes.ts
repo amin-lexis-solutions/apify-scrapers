@@ -7,116 +7,134 @@ import {
   checkCouponIds,
   CouponItemResult,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { createPuppeteerRouter } from 'crawlee';
 
 export const router = createPuppeteerRouter();
 
 // Handler function for processing coupon listings
-router.addHandler(Label.listing, async ({ request, page, enqueueLinks }) => {
-  if (request.userData.label !== Label.listing) return;
+router.addHandler(
+  Label.listing,
+  async ({ request, page, enqueueLinks, log }) => {
+    if (request.userData.label !== Label.listing) return;
 
-  async function processCoupon(element, merchantName, domain, sourceUrl) {
-    let hasCode = false;
+    async function processCoupon(element, merchantName, domain, sourceUrl) {
+      let hasCode = false;
 
-    const title = await element.$eval('h3', (title) =>
-      title?.textContent?.trim()
-    );
-    const idInSite = await element.evaluate((node) =>
-      node?.getAttribute('data-id')
-    );
-    // // Throw an error if ID is not found
-    if (!idInSite) {
-      return;
-    }
-    hasCode = await element.evaluate((node) => {
-      const attr = node?.getAttribute('data-coupon');
-      return attr;
-    });
-    // Create a data validator instance
-    const validator = new DataValidator();
-    // Add required and optional values to the validator
-    validator.addValue('merchantName', merchantName);
-    validator.addValue('domain', domain);
-    validator.addValue('title', title);
-    validator.addValue('sourceUrl', sourceUrl);
-    validator.addValue('idInSite', idInSite);
-
-    validator.addValue('isShown', true);
-    validator.addValue('isExpired', false);
-    // Generate a hash for the coupon
-    const generatedHash = generateCouponId(merchantName, idInSite, request.url);
-
-    const couponUrl = `https://www.dontpayfull.com/at/${domain}?c=${idInSite}#c${idInSite}`;
-
-    return { generatedHash, hasCode, couponUrl, validator };
-  }
-  async function makeRequest(url, validator) {
-    await enqueueLinks({
-      urls: [url],
-      userData: {
-        label: Label.getCode,
-        validatorData: validator.getData(),
-      },
-      forefront: true,
-    });
-  }
-  try {
-    console.log(`Listing ${request.url}`);
-    // Extract the merchant name
-
-    const merchantName = await page.$eval('.sidebar-menu-box a', (a) =>
-      a?.getAttribute('data-store')
-    );
-    // Throw an error if merchant name is not found
-    if (!merchantName) {
-      throw new Error('merchantName not found');
-    }
-    // Extract coupon list elements from the webpage
-    const domain = getDomainName(request.url);
-
-    const couponList = await page.$$('#active-coupons li.obox.code');
-
-    // Initialize variables
-    const couponsWithCode: CouponHashMap = {};
-    const idsToCheck: string[] = [];
-    let result: any;
-    // Loop through each coupon element and process it
-
-    for (const element of couponList) {
-      try {
-        result = await processCoupon(
-          element,
-          merchantName,
-          domain,
-          request.url
-        );
-        if (!result.hasCode) {
-          await processAndStoreData(result.validator);
-        } else {
-          couponsWithCode[result.generatedHash] = result;
-          idsToCheck.push(result.generatedHash);
-        }
-      } catch (error) {
-        console.error('Error processing coupon:', error);
+      const title = await element.$eval('h3', (title) =>
+        title?.textContent?.trim()
+      );
+      const idInSite = await element.evaluate((node) =>
+        node?.getAttribute('data-id')
+      );
+      // // Throw an error if ID is not found
+      if (!idInSite) {
+        return;
       }
+      hasCode = await element.evaluate((node) => {
+        const attr = node?.getAttribute('data-coupon');
+        return attr;
+      });
+      // Create a data validator instance
+      const validator = new DataValidator();
+      // Add required and optional values to the validator
+      validator.addValue('merchantName', merchantName);
+      validator.addValue('domain', domain);
+      validator.addValue('title', title);
+      validator.addValue('sourceUrl', sourceUrl);
+      validator.addValue('idInSite', idInSite);
+
+      validator.addValue('isShown', true);
+      validator.addValue('isExpired', false);
+      // Generate a hash for the coupon
+      const generatedHash = generateCouponId(
+        merchantName,
+        idInSite,
+        request.url
+      );
+
+      const couponUrl = `https://www.dontpayfull.com/at/${domain}?c=${idInSite}#c${idInSite}`;
+
+      return { generatedHash, hasCode, couponUrl, validator };
     }
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkCouponIds(idsToCheck);
-
-    if (nonExistingIds?.length == 0) return;
-
-    let currentResult: CouponItemResult;
-
-    for (const id of nonExistingIds) {
-      currentResult = couponsWithCode[id];
-      await makeRequest(currentResult.couponUrl, currentResult.validator);
+    async function makeRequest(url, validator) {
+      await enqueueLinks({
+        urls: [url],
+        userData: {
+          label: Label.getCode,
+          validatorData: validator.getData(),
+        },
+        forefront: true,
+      });
     }
-  } catch {
-    // We don't catch so that the error is logged in Sentry, but use finally
-    // since we want the Apify actor to end successfully and not waste resources by retrying.
+    try {
+      console.log(`Listing ${request.url}`);
+      // Extract the merchant name
+
+      const merchantName = await page.$eval('.sidebar-menu-box a', (a) =>
+        a?.getAttribute('data-store')
+      );
+      // Throw an error if merchant name is not found
+      if (!merchantName) {
+        throw new Error('merchantName not found');
+      }
+      // Extract coupon list elements from the webpage
+      const domain = getDomainName(request.url);
+
+      const couponList = await page.$$('#active-coupons li.obox.code');
+
+      // Initialize variables
+      const couponsWithCode: CouponHashMap = {};
+      const idsToCheck: string[] = [];
+      let result: any;
+      // Loop through each coupon element and process it
+
+      const hasAnomaly = await checkExistingCouponsAnomaly(
+        request.url,
+        couponList.length
+      );
+
+      if (hasAnomaly) {
+        log.error(`Coupons anomaly detected - ${request.url}`);
+        return;
+      }
+
+      for (const element of couponList) {
+        try {
+          result = await processCoupon(
+            element,
+            merchantName,
+            domain,
+            request.url
+          );
+          if (!result.hasCode) {
+            await processAndStoreData(result.validator);
+          } else {
+            couponsWithCode[result.generatedHash] = result;
+            idsToCheck.push(result.generatedHash);
+          }
+        } catch (error) {
+          console.error('Error processing coupon:', error);
+        }
+      }
+      // Call the API to check if the coupon exists
+      const nonExistingIds = await checkCouponIds(idsToCheck);
+
+      if (nonExistingIds?.length == 0) return;
+
+      let currentResult: CouponItemResult;
+
+      for (const id of nonExistingIds) {
+        currentResult = couponsWithCode[id];
+        await makeRequest(currentResult.couponUrl, currentResult.validator);
+      }
+    } catch {
+      // We don't catch so that the error is logged in Sentry, but use finally
+      // since we want the Apify actor to end successfully and not waste resources by retrying.
+    }
   }
-});
+);
 // Handler function for processing coupon code
 router.addHandler(Label.getCode, async ({ page, request }) => {
   if (request.userData.label !== Label.getCode) return;

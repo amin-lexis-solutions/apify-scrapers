@@ -10,6 +10,7 @@ import {
   CouponItemResult,
   CouponHashMap,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -137,6 +138,17 @@ router.addHandler(Label.listing, async (context) => {
     const validCoupons = $(
       'div.voucherGroup div.voucherCard:not(.voucherCard--expired)'
     );
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
+
     for (const element of validCoupons) {
       result = processCouponItem(
         merchantName,

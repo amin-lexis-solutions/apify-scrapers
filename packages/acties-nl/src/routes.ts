@@ -10,6 +10,7 @@ import {
   CouponItemResult,
   CouponHashMap,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -180,6 +181,16 @@ router.addHandler(Label.listing, async (context) => {
           title,
         });
       });
+
+      const hasAnomaly = await checkExistingCouponsAnomaly(
+        request.url,
+        vouchers.length
+      );
+
+      if (hasAnomaly) {
+        log.error(`Coupons anomaly detected - ${request.url}`);
+        return;
+      }
 
       // Process each voucher
       const couponsWithCode: CouponHashMap = {};

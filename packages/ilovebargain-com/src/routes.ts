@@ -9,12 +9,13 @@ import {
   CouponHashMap,
   checkCouponIds,
   CouponItemResult,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -24,6 +25,16 @@ router.addHandler(Label.listing, async (context) => {
   try {
     // Find all valid coupons on the page
     const validCoupons = $('#codes .offer-item');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
     // Iterate over each coupon to extract url
     for (const coupon of validCoupons) {
       const id = $(coupon).attr('data-cid');

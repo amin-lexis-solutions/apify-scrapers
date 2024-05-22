@@ -2,7 +2,10 @@ import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData } from 'shared/helpers';
+import {
+  checkExistingCouponsAnomaly,
+  processAndStoreData,
+} from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 function extractAndFormatDate(input: string | null): string | null {
@@ -123,6 +126,17 @@ router.addHandler(Label.listing, async (context) => {
     }
     // Extract valid coupons
     const validCoupons = $('div#couponContainer > div.coupon');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
+
     for (const validCoupon of validCoupons) {
       await processCouponItem(validCoupon, request.url, domain);
     }

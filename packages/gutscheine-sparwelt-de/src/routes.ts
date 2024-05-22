@@ -1,7 +1,12 @@
 import { createCheerioRouter } from 'crawlee';
 import { parse } from 'node-html-parser';
 import { DataValidator } from 'shared/data-validator';
-import { getDomainName, processAndStoreData, sleep } from 'shared/helpers';
+import {
+  checkExistingCouponsAnomaly,
+  getDomainName,
+  processAndStoreData,
+  sleep,
+} from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 async function fetchVoucherCode(
@@ -32,69 +37,82 @@ async function fetchVoucherCode(
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
 
-router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
-  if (request.userData.label !== Label.listing) return;
+router.addHandler(
+  Label.listing,
+  async ({ request, body, enqueueLinks, log }) => {
+    if (request.userData.label !== Label.listing) return;
 
-  try {
-    console.log(`Request URL: ${request.url}`);
-    const content = typeof body === 'string' ? body : body.toString();
+    try {
+      console.log(`Request URL: ${request.url}`);
+      const content = typeof body === 'string' ? body : body.toString();
 
-    const sectionWithCoupons = parse(content).querySelector(
-      '.providerpage__section:has(div#gutscheine)'
-    );
+      const sectionWithCoupons = parse(content).querySelector(
+        '.providerpage__section:has(div#gutscheine)'
+      );
 
-    if (!sectionWithCoupons) {
-      console.log('No section found with div#gutscheine');
-      return;
-    }
-    const selCoupons = sectionWithCoupons.querySelectorAll(
-      'div.voucher-teaser-list > div'
-    );
-    if (selCoupons.length < 1) {
-      console.log('No coupons found in the specified section');
-      return;
-    }
-    console.log(`Found ${selCoupons.length} coupons`);
-
-    for (const couponDiv of selCoupons) {
-      const voucherId = couponDiv.getAttribute('data-ssr-vouchers-item');
-      if (!voucherId) {
-        console.warn('Voucher ID is missing in a coupon div.');
-        continue;
+      if (!sectionWithCoupons) {
+        console.log('No section found with div#gutscheine');
+        return;
       }
-      console.log(`Found voucher ID: ${voucherId}`);
-      const hasCode = !couponDiv.querySelector('button.ui-btn--ci-blue-600');
-      console.log(`Voucher ID ${voucherId} has code: ${hasCode}`);
+      const selCoupons = sectionWithCoupons.querySelectorAll(
+        'div.voucher-teaser-list > div'
+      );
+      if (selCoupons.length < 1) {
+        console.log('No coupons found in the specified section');
+        return;
+      }
+      console.log(`Found ${selCoupons.length} coupons`);
 
-      const detailsUrl = `https://www.sparwelt.de/hinge/graphql?query=%0A++query+VoucherById($id:+ID!)+%7B%0A++++voucher(id:+$id)+%7B%0A++++++id%0A++++++title%0A++++++provider+%7B%0A++++++++id%0A++++++++title%0A++++++++slug%0A++++++++domainUrl%0A++++++++image%0A++++++++affiliateDeeplink+%7B%0A++++++++++url%0A++++++++++id%0A++++++++%7D%0A++++++++minOrderValueWording%0A++++++%7D%0A++++++affiliateDeeplink+%7B%0A++++++++id%0A++++++++url%0A++++++%7D%0A++++++teaserDescription%0A++++++savingValue%0A++++++savingType%0A++++++minOrderValue%0A++++++limitProduct%0A++++++limitCustomer%0A++++++dateEnd%0A++++%7D%0A++%7D%0A&variables=%7B%22id%22:%22%2Fhinge%2Fvouchers%2F${voucherId}%22%7D`;
-      const validator = new DataValidator();
-      validator.addValue('sourceUrl', request.url);
-      validator.addValue('idInSite', voucherId);
-      const validatorData = validator.getData();
+      const hasAnomaly = await checkExistingCouponsAnomaly(
+        request.url,
+        selCoupons.length
+      );
 
-      if (hasCode) {
-        const voucherCodeURL = `https://www.sparwelt.de/hinge/vouchercodes/${voucherId}`;
-        const voucherCode = await fetchVoucherCode(voucherCodeURL);
-        if (voucherCode) {
-          validator.addValue('code', voucherCode);
+      if (hasAnomaly) {
+        log.error(`Coupons anomaly detected - ${request.url}`);
+        return;
+      }
+
+      for (const couponDiv of selCoupons) {
+        const voucherId = couponDiv.getAttribute('data-ssr-vouchers-item');
+        if (!voucherId) {
+          console.warn('Voucher ID is missing in a coupon div.');
+          continue;
         }
-      }
+        console.log(`Found voucher ID: ${voucherId}`);
+        const hasCode = !couponDiv.querySelector('button.ui-btn--ci-blue-600');
+        console.log(`Voucher ID ${voucherId} has code: ${hasCode}`);
 
-      // Forward to the details page
-      await enqueueLinks({
-        urls: [detailsUrl],
-        userData: {
-          label: Label.details,
-          validatorData: validatorData,
-        },
-        forefront: true,
-      });
+        const detailsUrl = `https://www.sparwelt.de/hinge/graphql?query=%0A++query+VoucherById($id:+ID!)+%7B%0A++++voucher(id:+$id)+%7B%0A++++++id%0A++++++title%0A++++++provider+%7B%0A++++++++id%0A++++++++title%0A++++++++slug%0A++++++++domainUrl%0A++++++++image%0A++++++++affiliateDeeplink+%7B%0A++++++++++url%0A++++++++++id%0A++++++++%7D%0A++++++++minOrderValueWording%0A++++++%7D%0A++++++affiliateDeeplink+%7B%0A++++++++id%0A++++++++url%0A++++++%7D%0A++++++teaserDescription%0A++++++savingValue%0A++++++savingType%0A++++++minOrderValue%0A++++++limitProduct%0A++++++limitCustomer%0A++++++dateEnd%0A++++%7D%0A++%7D%0A&variables=%7B%22id%22:%22%2Fhinge%2Fvouchers%2F${voucherId}%22%7D`;
+        const validator = new DataValidator();
+        validator.addValue('sourceUrl', request.url);
+        validator.addValue('idInSite', voucherId);
+        const validatorData = validator.getData();
+
+        if (hasCode) {
+          const voucherCodeURL = `https://www.sparwelt.de/hinge/vouchercodes/${voucherId}`;
+          const voucherCode = await fetchVoucherCode(voucherCodeURL);
+          if (voucherCode) {
+            validator.addValue('code', voucherCode);
+          }
+        }
+
+        // Forward to the details page
+        await enqueueLinks({
+          urls: [detailsUrl],
+          userData: {
+            label: Label.details,
+            validatorData: validatorData,
+          },
+          forefront: true,
+        });
+      }
+    } finally {
+      // We don't catch so that the error is logged in Sentry, but use finally
+      // since we want the Apify actor to end successfully and not waste resources by retrying.
     }
-  } finally {
-    // We don't catch so that the error is logged in Sentry, but use finally
-    // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
-});
+);
 
 router.addHandler(Label.details, async ({ request, body }) => {
   if (request.userData.label !== Label.details) return;

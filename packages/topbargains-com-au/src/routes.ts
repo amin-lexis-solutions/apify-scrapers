@@ -9,6 +9,7 @@ import {
   CouponItemResult,
   CouponHashMap,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -129,6 +130,17 @@ router.addHandler(Label.listing, async (context) => {
     const validCoupons = $(
       'div.view-coupons-block-store-pages div.main-coupon-wrapper'
     );
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
+
     for (const element of validCoupons) {
       if ($(element).find('div.coupon-cloumn > a[data-coupon]').length === 0) {
         continue;

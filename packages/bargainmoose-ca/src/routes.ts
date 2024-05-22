@@ -10,6 +10,7 @@ import {
   CouponItemResult,
   CouponHashMap,
   getDomainName,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -120,12 +121,23 @@ router.addHandler(Label.listing, async (context) => {
     if (!domain) {
       log.warning('Domain is missing');
     }
-
     // Extract valid coupons
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
+
     const validCoupons = $('div.promotion-list__promotions > div');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
+
     for (let i = 0; i < validCoupons.length; i++) {
       const element = validCoupons[i];
       result = processCouponItem(merchantName, domain, element, request.url);

@@ -1,7 +1,10 @@
 import * as cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData } from 'shared/helpers';
+import {
+  checkExistingCouponsAnomaly,
+  processAndStoreData,
+} from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
@@ -60,11 +63,12 @@ async function processCouponItem(
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
 
-router.addHandler(Label.listing, async ({ request, body }) => {
+router.addHandler(Label.listing, async ({ request, body, log }) => {
   if (request.userData.label !== Label.listing) return;
 
   try {
     console.log(`\nProcessing URL: ${request.url}`);
+
     const htmlContent = body instanceof Buffer ? body.toString() : body;
     const $ = cheerio.load(htmlContent);
 
@@ -77,6 +81,17 @@ router.addHandler(Label.listing, async ({ request, body }) => {
     const merchantName = merchantNameElem.text().trim();
 
     const validCoupons = $('ul#vouchers > li > div');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
+
     for (const element of validCoupons) {
       await processCouponItem(merchantName, element, request.url);
     }

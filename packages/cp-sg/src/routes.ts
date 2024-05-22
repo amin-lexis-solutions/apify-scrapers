@@ -8,6 +8,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
@@ -57,7 +58,7 @@ async function processCouponItem(
   return { generatedHash, hasCode, couponUrl: '', validator };
 }
 // Handler function for processing coupon listings
-router.addHandler(Label.listing, async ({ request, $ }) => {
+router.addHandler(Label.listing, async ({ request, $, log }) => {
   if (request.userData.label !== Label.listing) return;
 
   try {
@@ -71,6 +72,16 @@ router.addHandler(Label.listing, async ({ request, $ }) => {
     }
     // Extract coupons
     const couponList = $('.store-listing-item');
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      couponList.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
 
     // Initialize variables
     const couponsWithCode: CouponHashMap = {};

@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/node';
 import crypto from 'crypto';
 import * as chrono from 'chrono-node';
 import moment from 'moment';
@@ -164,4 +165,33 @@ export async function processAndStoreData(validator: DataValidator) {
 // Domain can be null if does not exist.
 export function extractDomainFromUrl(url: string): string | null {
   return getDomainName(url);
+}
+
+export async function checkExistingCouponsAnomaly(
+  sourceUrl: string,
+  couponsCount: number
+) {
+  try {
+    const response = await axios.post(
+      'https://codes-api-d9jbl.ondigitalocean.app/items/anomaly-detector',
+      {
+        sourceUrl,
+        couponsCount,
+      }
+    );
+
+    const hasAnomaly = response?.data?.anomalyType;
+
+    if (hasAnomaly) {
+      Sentry.captureException(`Coupons anomaly detected`, {
+        extra: {
+          url: sourceUrl,
+          couponsCount,
+        },
+      });
+    }
+    return hasAnomaly;
+  } catch (e) {
+    console.log(e);
+  }
 }

@@ -8,6 +8,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -63,7 +64,7 @@ interface ShoppingShop {
 
 function processCouponItem(
   merchantName: string,
-  domain: string,
+  domain: string | null,
   couponItem: OfferNode,
   sourceUrl: string
 ): CouponItemResult {
@@ -122,7 +123,7 @@ function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -161,7 +162,7 @@ router.addHandler(Label.listing, async (context) => {
 
     let offers;
     let merchantName: string;
-    let domain: string;
+    let domain: string | null;
     let noNode = false;
     if (jsonData.data.offers && jsonData.data.offers.length > 0) {
       offers = jsonData.data.offers as OfferItem[];
@@ -186,6 +187,17 @@ router.addHandler(Label.listing, async (context) => {
       console.log(`Merchant name not found: ${request.url}`);
       return;
     }
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      offers.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
+
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;

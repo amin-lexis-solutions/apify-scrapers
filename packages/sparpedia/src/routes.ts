@@ -9,6 +9,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
+  checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 
@@ -90,7 +91,7 @@ function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -121,6 +122,17 @@ router.addHandler(Label.listing, async (context) => {
     const validCoupons = $(
       'div.current-shop-offers > div.offer-default.not-expired'
     );
+
+    const hasAnomaly = await checkExistingCouponsAnomaly(
+      request.url,
+      validCoupons.length
+    );
+
+    if (hasAnomaly) {
+      log.error(`Coupons anomaly detected - ${request.url}`);
+      return;
+    }
+
     for (let i = 0; i < validCoupons.length; i++) {
       const element = validCoupons[i];
       result = processCouponItem(merchantName, false, element, request.url);

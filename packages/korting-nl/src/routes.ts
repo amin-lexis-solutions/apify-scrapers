@@ -1,7 +1,11 @@
 import { createCheerioRouter, log } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData, generateHash } from 'shared/helpers';
+import {
+  processAndStoreData,
+  generateHash,
+  checkExistingCouponsAnomaly,
+} from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
 export const router = createCheerioRouter();
@@ -59,6 +63,7 @@ const getCoupon = (elemCode) => {
 // Main processing function
 const processCoupon = async (context) => {
   const { request, $, crawler } = context;
+
   if (!crawler.requestQueue) {
     log.error('Request queue is missing');
   }
@@ -67,9 +72,22 @@ const processCoupon = async (context) => {
   if (!label) return;
 
   const pageType = $('.rh-mini-sidebar').length ? 'listing' : 'detail';
+
   console.log(`\nProcessing URL: ${request.url}`);
 
   const merchantName = getMerchantName($, pageType);
+
+  const validCoupons = $('article.offer_grid').toArray();
+
+  const hasAnomaly = await checkExistingCouponsAnomaly(
+    request.url,
+    validCoupons.length
+  );
+
+  if (hasAnomaly) {
+    log.error(`Coupons anomaly detected - ${request.url}`);
+    return;
+  }
 
   if (pageType === 'listing') {
     $('article.offer_grid').each((_, elem) => {
