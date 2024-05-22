@@ -101,7 +101,7 @@ export class WebhooksController {
       });
 
       // Send Sentry notification
-      this.Sentry_Notification(
+      this.sendSentryNotification(
         scrapedData.length,
         couponStats,
         errors,
@@ -456,7 +456,7 @@ export class WebhooksController {
     return scrapedData;
   }
 
-  private Sentry_Notification(
+  private sendSentryNotification(
     resultCount: number,
     couponStats: any,
     errors: any[],
