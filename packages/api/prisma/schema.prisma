@@ -123,8 +123,6 @@ model TargetPage {
 
   locale TargetLocale @relation(fields: [localeId], references: [id])
 
-  stats CouponStats[]
-
   @@index([localeId])
   @@index([url])
 }
@@ -132,7 +130,6 @@ model TargetPage {
 // Tracking for coupon counts over time to detect anomalies in target pages
 model CouponStats {
   id              String     @id @default(uuid())
-  targetPage      TargetPage @relation(fields: [sourceUrl], references: [url])
   sourceUrl       String
   couponsCount    Int // Number of coupons on the page     
   surgeThreshold  Int // Number of standard deviations above the mean
