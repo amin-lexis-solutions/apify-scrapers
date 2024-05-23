@@ -1,7 +1,6 @@
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from './data-validator';
 import {
-  processAndStoreData,
   sleep,
   getDomainName,
   generateCouponId,

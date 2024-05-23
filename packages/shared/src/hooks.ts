@@ -1,6 +1,5 @@
 import * as Sentry from '@sentry/node';
 import { checkExistingCouponsAnomaly, processAndStoreData } from './helpers';
-import { DataValidator } from './data-validator';
 
 export const preProcess = async (...args: any[]) => {
   try {
@@ -23,7 +22,7 @@ export const preProcess = async (...args: any[]) => {
 export const postProcess = async (...args: any[]) => {
   try {
     const [validator, context] = args;
-      if (context && validator) {
+    if (context && validator) {
       await processAndStoreData(validator, context);
     }
     return false;
