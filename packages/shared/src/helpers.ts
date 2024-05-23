@@ -145,12 +145,18 @@ export function sleep(milliseconds: number) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-export async function processAndStoreData(validator: DataValidator) {
+export async function processAndStoreData(
+  validator: DataValidator,
+  context: any
+) {
   try {
     validator.finalCheck();
-
     // Get processed data from validator
     const processedData = validator.getData();
+
+    // Add metadata to the processed data
+    processedData.metadata = context?.request?.userData || {};
+
     // save the data to the dataset
     Dataset.pushData(processedData);
   } finally {

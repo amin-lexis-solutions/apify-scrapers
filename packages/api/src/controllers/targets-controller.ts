@@ -233,6 +233,9 @@ export class TargetsController {
             },
           ],
         },
+        include: {
+          locale: true,
+        },
       });
 
       if (pages.length === 0) {
@@ -256,7 +259,16 @@ export class TargetsController {
           `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.name}.`
         );
 
-        const startUrls = pagesChunk.map((page) => ({ url: page.url }));
+        // const startUrls = pagesChunk.map((page) => ({ url: page.url }));
+        const startUrls = pagesChunk.map((page) => ({
+          url: page.url,
+          metadata: {
+            targetPageId: page.id,
+            localeId: page.localeId, // temporary fail-back for the actor
+            locale: page.locale.locale, // e.g. en_US or en_GB
+          },
+        }));
+
         const targetIds = pagesChunk.map((page) => page.id);
 
         try {

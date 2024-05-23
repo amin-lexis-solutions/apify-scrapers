@@ -272,7 +272,8 @@ export class WebhooksController {
     return {
       id,
       sourceId,
-      localeId,
+      localeId: item.metadata.localeId || localeId, // temp Fallback to the webhook localeId required for now , will be removed once all sources are updated
+      localeName: item.metadata.locale || null,
       idInSite: item.idInSite,
       domain: item.domain || null,
       merchantName: item.merchantName,
@@ -510,6 +511,7 @@ export class WebhooksController {
       : data;
     const validData = this.prepareSerpData(filteredData, actorRunId, localeId); // Prepare the data for storage
 
+    // Store the SERP data using upsert change localeId value
     for (const item of validData) {
       try {
         await prisma.targetPage.upsert({

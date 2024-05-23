@@ -36,6 +36,7 @@ model Coupon {
   lastSeenAt         DateTime       @default(now())
   archivedAt         DateTime?
   localeId           String
+  localeName         String?
   archivedReason     ArchiveReason?
 
   source Source       @relation(fields: [sourceId], references: [id])

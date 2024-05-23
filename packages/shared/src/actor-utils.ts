@@ -9,7 +9,7 @@ import {
 import { PuppeteerCrawler } from 'crawlee';
 
 type Input = {
-  startUrls: Array<{ url: string }>;
+  startUrls: Array<{ url: string; metadata?: any }>;
   proxyConfiguration?: any;
 };
 
@@ -24,8 +24,11 @@ type MainFunctionArgs = {
 
 const getStartUrlsArray = (startUrls) => {
   if (startUrls) {
-    return startUrls.map(({ url }) => {
-      return url;
+    return startUrls.map((item: { url: string; metadata?: any }) => {
+      return {
+        url: item.url,
+        metadata: item.metadata || {},
+      };
     });
   }
 };
@@ -68,6 +71,7 @@ export async function prepareCheerioScraper(
       Sentry.captureException(error, {
         extra: {
           url: request.url,
+          userData: request.userData,
           numberOfRetries: request.retryCount,
         },
       });
@@ -96,7 +100,7 @@ export async function prepareCheerioScraper(
 
   let domain;
   let countryCode;
-  for (const url of startUrls) {
+  for (const { url, metadata } of startUrls) {
     if (args.extractDomainAndCountryCode) {
       domain = new URL(url).hostname;
       // Get the country code as the last part of the domain
@@ -107,9 +111,10 @@ export async function prepareCheerioScraper(
         countryCode,
       };
     }
+
     await crawler.requestQueue.addRequest({
       url,
-      userData: userData,
+      userData: { ...userData, ...metadata },
       headers: customHeaders,
     });
   }
@@ -168,10 +173,11 @@ export async function preparePuppeteerScraper(
   }
 
   // Manually add each URL to the request queue
-  for (const url of startUrls) {
+  for (const { url, metadata } of startUrls) {
     await crawler.requestQueue.addRequest({
       url,
       userData: {
+        ...metadata,
         label: Label.listing,
       },
       headers: customHeaders,

@@ -116,7 +116,16 @@ function getActorInputSpec() {
         type: 'array',
         description:
           "A static list of URLs to scrape. <br><br>For details, see the <a href='https://apify.com/apify/cheerio-scraper#start-urls' target='_blank' rel='noopener'>Start URLs</a> section in the README.",
-        prefill: [{ url: 'https://apify.com' }],
+        prefill: [
+          {
+            url: 'https://apify.com',
+            metadata: {
+              locale: 'en_US',
+              targetPageId: 'test',
+              localeId: 'test',
+            },
+          },
+        ],
         editor: 'requestListSources',
       },
       proxyConfiguration: {
