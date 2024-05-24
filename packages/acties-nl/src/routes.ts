@@ -9,7 +9,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
-  getDomainName,
+  getMerchantDomainFromUrl,
   checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
@@ -133,7 +133,7 @@ router.addHandler(Label.listing, async (context) => {
       const merchantName = merchantNameAttr ? merchantNameAttr.trim() : null;
 
       // Parsing domain from Link tag
-      const domain = getDomainName(
+      const domain = getMerchantDomainFromUrl(
         `https://${$('.right ul .link span')?.text()}`
       );
       // Check if the domain starts with 'www.' and remove it if present

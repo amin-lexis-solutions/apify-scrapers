@@ -9,7 +9,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
-  getDomainName,
+  getMerchantDomainFromUrl,
   checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
@@ -111,7 +111,7 @@ router.addHandler(Label.listing, async (context) => {
 
     const merchantName = scriptJson.name;
 
-    const domain = getDomainName(scriptJson.sameAs);
+    const domain = getMerchantDomainFromUrl(scriptJson.sameAs);
 
     // Extract valid coupons
     const validCoupons = $(

@@ -7,7 +7,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
-  getDomainName,
+  getMerchantDomainFromUrl,
   checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
@@ -82,7 +82,7 @@ router.addHandler(Label.listing, async (context) => {
       log.warning('Unable to find domain name');
     }
 
-    const domain = merchantUrl ? getDomainName(merchantUrl) : null;
+    const domain = merchantUrl ? getMerchantDomainFromUrl(merchantUrl) : null;
 
     const vouchers = props.Offers;
 

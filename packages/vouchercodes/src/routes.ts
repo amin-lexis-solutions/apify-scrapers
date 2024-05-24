@@ -4,7 +4,7 @@ import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
 import {
   checkExistingCouponsAnomaly,
-  getDomainName,
+  getMerchantDomainFromUrl,
   processAndStoreData,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
@@ -99,7 +99,7 @@ router.addHandler(Label.listing, async (context) => {
       .attr('href')
       ?.replace('mailto:', '');
 
-    const domain = merchantUrl ? getDomainName(merchantUrl) : null;
+    const domain = merchantUrl ? getMerchantDomainFromUrl(merchantUrl) : null;
 
     if (!domain) {
       log.warning('Domain name is missing');

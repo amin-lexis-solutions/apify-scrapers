@@ -8,7 +8,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
-  getDomainName,
+  getMerchantDomainFromUrl,
   checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
@@ -120,7 +120,7 @@ router.addHandler(Label.listing, async (context) => {
       log.warning('Unable to find domain name');
     }
 
-    const domain = getDomainName(domainUrlLink);
+    const domain = getMerchantDomainFromUrl(domainUrlLink);
 
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];

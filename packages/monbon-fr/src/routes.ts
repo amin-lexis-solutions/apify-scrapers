@@ -4,7 +4,7 @@ import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
 import {
   processAndStoreData,
-  getDomainName,
+  getMerchantDomainFromUrl,
   checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
@@ -104,7 +104,7 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Merchant name is missing');
     }
 
-    const domain = getDomainName(request.url);
+    const domain = getMerchantDomainFromUrl(request.url);
 
     if (!domain) {
       throw new Error('Domain is missing');

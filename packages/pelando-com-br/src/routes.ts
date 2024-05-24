@@ -2,7 +2,7 @@ import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import {
-  getDomainName,
+  getMerchantDomainFromUrl,
   processAndStoreData,
   generateHash,
   checkExistingCouponsAnomaly,
@@ -99,7 +99,7 @@ router.addHandler(Label.listing, async (context) => {
       // Parse the JSON data
       const jsonData = JSON.parse(scriptContent);
       const merchantName = jsonData.name;
-      const domain = getDomainName(request.url);
+      const domain = getMerchantDomainFromUrl(request.url);
       // Check if valid page
       if (!merchantName) {
         console.log(`Not Merchant URL: ${request.url}`);

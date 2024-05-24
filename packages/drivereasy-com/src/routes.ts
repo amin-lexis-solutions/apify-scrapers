@@ -6,7 +6,7 @@ import {
   CouponHashMap,
   checkCouponIds,
   CouponItemResult,
-  getDomainName,
+  getMerchantDomainFromUrl,
   checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
@@ -70,7 +70,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
   try {
     await page.waitForSelector('.list_coupons li');
 
-    const domain = getDomainName(request.url);
+    const domain = getMerchantDomainFromUrl(request.url);
 
     const merchantName = await page.$eval('.m_logo img', (node) =>
       node.getAttribute('alt')

@@ -3,7 +3,7 @@ import { parse } from 'node-html-parser';
 import { DataValidator } from 'shared/data-validator';
 import {
   checkExistingCouponsAnomaly,
-  getDomainName,
+  getMerchantDomainFromUrl,
   processAndStoreData,
   sleep,
 } from 'shared/helpers';
@@ -142,7 +142,7 @@ router.addHandler(Label.details, async ({ request, body }) => {
 
     // Extract domain name from URL
     const merchantUrl = provider.domainUrl;
-    const domainName = getDomainName(merchantUrl);
+    const domainName = getMerchantDomainFromUrl(merchantUrl);
 
     // Populate the validator with data
     // Add required values to the validator
