@@ -269,10 +269,11 @@ export class WebhooksController {
     archivedAt: Date | null,
     archivedReason: $Enums.ArchiveReason | null
   ) {
-
-
     let sourceUrl = item.sourceUrl || null;
-    if (sourceUrl !== item.metadata.targetPageUrl) {
+    if (
+      sourceUrl !== item.metadata.targetPageUrl &&
+      item.metadata.targetPageUrl !== null
+    ) {
       sourceUrl = item.metadata.targetPageUrl;
       Sentry.captureMessage(
         `sourceUrl mismatch for coupon ${id}. Expected: ${sourceUrl}, got: ${item.sourceUrl}`
