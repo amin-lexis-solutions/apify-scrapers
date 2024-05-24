@@ -108,7 +108,7 @@ async function main() {
       return prisma.coupon.update({
         where: { id: coupon.id },
         data: {
-          locale: coupon.locale,
+          locale: coupon.locale, // Skip DB change for now and use the existing locale
         },
       });
     });
