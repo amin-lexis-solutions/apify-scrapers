@@ -284,7 +284,7 @@ export class WebhooksController {
       id,
       sourceId,
       localeId: item.metadata.localeId || localeId, // temp Fallback to the webhook localeId required for now , will be removed once all sources are updated
-      localeName: item.metadata.locale || null,
+      locale: item.metadata.locale || null, // temp Fallback to the webhook locale required for now , will be removed once all sources are updated
       idInSite: item.idInSite,
       domain: item.domain || null,
       merchantName: item.merchantName,

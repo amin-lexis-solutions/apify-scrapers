@@ -17,6 +17,7 @@
     "prisma:seed:migrate-domains": "ts-node prisma/seeds/migrate_domains.ts",
     "prisma:seed:target-locales": "ts-node prisma/seeds/populate_all_target_locales.ts",
     "prisma:studio": "./node_modules/.bin/prisma studio --schema prisma/schema.prisma",
+    "data-migration:add-locale-column-coupon": "ts-node prisma/migrations/20240524102226_add_locale_column_to_coupon/data-migration.ts",
     "schedule:actors": "./node_modules/.bin/ts-node ./src/crons/schedule-actors.ts",
     "schedule:find-serp": "./node_modules/.bin/ts-node ./src/crons/schedule-find-serp.ts",
     "schedule:tests": "./node_modules/.bin/ts-node ./src/crons/schedule-test.ts",

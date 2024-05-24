@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@types/node": "18.11.18",
+    "@types/progress": "^2.0.7",
     "@typescript-eslint/eslint-plugin": "^5.52.0",
     "@typescript-eslint/parser": "^5.52.0",
     "cz-conventional-changelog": "^3.3.0",
@@ -40,6 +41,7 @@
     "import-sort-style-module": "^6.0.0",
     "lint-staged": "^10.5.3",
     "prettier": "2.2.1",
+    "progress": "^2.0.3",
     "typescript": "5.3.3"
   },
   "importSort": {
@@ -47,6 +49,5 @@
       "style": "module",
       "parser": "typescript"
     }
-  },
-  "dependencies": {}
+  }
 }
