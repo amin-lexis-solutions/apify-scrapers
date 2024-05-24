@@ -264,6 +264,7 @@ export class TargetsController {
           url: page.url,
           metadata: {
             targetPageId: page.id,
+            targetPageUrl: page.url,
             localeId: page.localeId, // temporary fail-back for the actor
             locale: page.locale.locale, // e.g. en_US or en_GB
           },

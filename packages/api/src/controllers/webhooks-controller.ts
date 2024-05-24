@@ -269,6 +269,16 @@ export class WebhooksController {
     archivedAt: Date | null,
     archivedReason: $Enums.ArchiveReason | null
   ) {
+
+
+    let sourceUrl = item.sourceUrl || null;
+    if (sourceUrl !== item.metadata.targetPageUrl) {
+      sourceUrl = item.metadata.targetPageUrl;
+      Sentry.captureMessage(
+        `sourceUrl mismatch for coupon ${id}. Expected: ${sourceUrl}, got: ${item.sourceUrl}`
+      );
+    }
+
     return {
       id,
       sourceId,
@@ -283,7 +293,7 @@ export class WebhooksController {
       expiryDateAt: validDateOrNull(item.expiryDateAt) || null,
       code: item.code || null,
       startDateAt: validDateOrNull(item.startDateAt) || null,
-      sourceUrl: item.sourceUrl || null,
+      sourceUrl: sourceUrl,
       isShown: item.isShown || null,
       isExpired: item.isExpired || null,
       isExclusive: item.isExclusive || null,
