@@ -36,10 +36,11 @@ model Coupon {
   lastSeenAt         DateTime       @default(now())
   archivedAt         DateTime?
   localeId           String
+  locale             String?
   archivedReason     ArchiveReason?
 
   source Source       @relation(fields: [sourceId], references: [id])
-  locale TargetLocale @relation(fields: [localeId], references: [id], onDelete: Cascade)
+  locale_relation TargetLocale @relation(fields: [localeId], references: [id], onDelete: Cascade)
 
   @@index([sourceId])
   @@index([localeId])

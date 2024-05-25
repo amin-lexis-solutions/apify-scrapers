@@ -269,10 +269,22 @@ export class WebhooksController {
     archivedAt: Date | null,
     archivedReason: $Enums.ArchiveReason | null
   ) {
+    let sourceUrl = item.sourceUrl || null;
+    if (
+      sourceUrl !== item.metadata.targetPageUrl &&
+      item.metadata.targetPageUrl !== null
+    ) {
+      sourceUrl = item.metadata.targetPageUrl;
+      Sentry.captureMessage(
+        `sourceUrl mismatch for coupon ${id}. Expected: ${sourceUrl}, got: ${item.sourceUrl}`
+      );
+    }
+
     return {
       id,
       sourceId,
-      localeId,
+      localeId: item.metadata.localeId || localeId, // temp Fallback to the webhook localeId required for now , will be removed once all sources are updated
+      locale: item.metadata.locale || null, // temp Fallback to the webhook locale required for now , will be removed once all sources are updated
       idInSite: item.idInSite,
       domain: item.domain || null,
       merchantName: item.merchantName,
@@ -282,7 +294,7 @@ export class WebhooksController {
       expiryDateAt: validDateOrNull(item.expiryDateAt) || null,
       code: item.code || null,
       startDateAt: validDateOrNull(item.startDateAt) || null,
-      sourceUrl: item.sourceUrl || null,
+      sourceUrl: sourceUrl,
       isShown: item.isShown || null,
       isExpired: item.isExpired || null,
       isExclusive: item.isExclusive || null,
@@ -510,6 +522,7 @@ export class WebhooksController {
       : data;
     const validData = this.prepareSerpData(filteredData, actorRunId, localeId); // Prepare the data for storage
 
+    // Store the SERP data using upsert change localeId value
     for (const item of validData) {
       try {
         await prisma.targetPage.upsert({
