@@ -11,7 +11,7 @@ import fs from 'fs';
 const prisma = new PrismaClient();
 
 // Set to true to update the coupon locales
-const UPDATE = true;
+const UPDATE = false;
 // Set to true to enable debug logging
 const DEBUG = false;
 
