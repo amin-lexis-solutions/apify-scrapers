@@ -297,76 +297,61 @@ export function getMostCommonLocale(...data: string[]): string {
 
 export function getAccurateLocale(
   targetPageLocale: string,
-  countryCode: string,
-  langCode: string,
+  countryCode: string | null,
+  langCode: string | null,
   oldLocale: string,
   locales: { locale: string; countryCode: string; languageCode: string }[]
 ): string {
+  let accurateLocale: string | null = null;
+
   if (countryCode && langCode) {
-    // Check if both country code and language code are in target page locale
     if (
       targetPageLocale.includes(countryCode.toUpperCase()) &&
       targetPageLocale.includes(langCode.toLowerCase())
     ) {
-      return targetPageLocale;
-    }
-
-    // Check if both country code and language code are in old locale
-    if (
+      accurateLocale = targetPageLocale;
+    } else if (
       oldLocale.includes(countryCode.toUpperCase()) &&
       oldLocale.includes(langCode.toLowerCase())
     ) {
-      return oldLocale;
+      accurateLocale = oldLocale;
+    } else {
+      const matchingLocale = locales.find(
+        (locale) =>
+          locale.countryCode.toUpperCase() === countryCode.toUpperCase() &&
+          locale.languageCode.toLowerCase() === langCode.toLowerCase()
+      );
+      accurateLocale = matchingLocale?.locale || null;
     }
-
-    // Find locale matching both country code and language code
-    const matchingLocale = locales.find(
-      (locale) =>
-        locale.countryCode.toUpperCase() === countryCode.toUpperCase() &&
-        locale.languageCode.toLowerCase() === langCode.toLowerCase()
-    );
-
-    return matchingLocale ? matchingLocale.locale : oldLocale;
   }
 
-  if (countryCode) {
-    // Check if country code is in target page locale
+  if (!accurateLocale && countryCode) {
     if (targetPageLocale.includes(countryCode.toUpperCase())) {
-      return targetPageLocale;
+      accurateLocale = targetPageLocale;
+    } else if (oldLocale.includes(countryCode.toUpperCase())) {
+      accurateLocale = oldLocale;
+    } else {
+      const matchingLocale = locales.find(
+        (locale) =>
+          locale.countryCode.toUpperCase() === countryCode.toUpperCase()
+      );
+      accurateLocale = matchingLocale?.locale || null;
     }
-
-    // Check if country code is in old locale
-    if (oldLocale.includes(countryCode.toUpperCase())) {
-      return oldLocale;
-    }
-
-    // Find locale matching country code
-    const matchingLocale = locales.find(
-      (locale) => locale.countryCode.toUpperCase() === countryCode.toUpperCase()
-    );
-
-    return matchingLocale ? matchingLocale.locale : oldLocale;
   }
 
-  if (langCode) {
-    // Check if language code is in target page locale
+  if (!accurateLocale && langCode) {
     if (targetPageLocale.includes(langCode.toLowerCase())) {
-      return targetPageLocale;
+      accurateLocale = targetPageLocale;
+    } else if (oldLocale.includes(langCode.toLowerCase())) {
+      accurateLocale = oldLocale;
+    } else {
+      const matchingLocale = locales.find(
+        (locale) => locale.languageCode.toLowerCase() === langCode.toLowerCase()
+      );
+      accurateLocale = matchingLocale?.locale || null;
     }
-
-    // Check if language code is in old locale
-    if (oldLocale.includes(langCode.toLowerCase())) {
-      return oldLocale;
-    }
-
-    // Find locale matching language code
-    const matchingLocale = locales.find(
-      (locale) => locale.languageCode.toLowerCase() === langCode.toLowerCase()
-    );
-
-    return matchingLocale ? matchingLocale.locale : oldLocale;
   }
 
-  // Return old locale if no other conditions are met
-  return oldLocale;
+  // Fallback to oldLocale if no accurate locale was found
+  return accurateLocale || oldLocale;
 }

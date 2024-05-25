@@ -3,7 +3,6 @@ import ProgressBar from 'progress';
 import {
   getCountryCodeFromDomain,
   detectLanguage,
-  getMostCommonLocale,
   getAccurateLocale,
 } from './utils';
 import fs from 'fs';
@@ -74,19 +73,8 @@ async function main() {
           countryCode = getCountryCodeFromDomain(coupon.domain || '');
         }
 
-        const localeFromCountryCode = locales.find(
-          (l) => l.countryCode.toLowerCase() === countryCode?.toLowerCase()
-        );
         const langCode = detectLanguage(
           `${coupon.title} ${coupon.description}`
-        );
-        const locale = locales.find((l) => l.languageCode === langCode);
-
-        const mostCommonLocale = getMostCommonLocale(
-          targetPage?.locale?.locale || '',
-          localeFromCountryCode?.locale || '',
-          locale?.locale || '',
-          coupon.locale || ''
         );
 
         const accurateLocale = getAccurateLocale(
@@ -123,16 +111,15 @@ async function main() {
           );
 
           console.log(
-            `Coupon Match Domain Country Code ${countryCode} [Detected locale]: ${localeFromCountryCode?.locale} : [COUPON locale]: ${coupon.locale}`
+            `Coupon Match Domain Country Code ${countryCode} [Domain]: ${coupon.domain} : [COUPON locale]: ${coupon.locale}`
           );
 
           console.log(
-            `Coupon Match Language Detection ${langCode} [Detected locale]: ${locale?.locale} : [COUPON Locale]: ${coupon.locale}`
+            `Coupon Match Language Detection ${langCode}  : [COUPON Locale]: ${coupon.locale}`
           );
 
-          console.log(
-            `Coupon Match Most Common Locale [Detected locale]: ${mostCommonLocale} : [COUPON Locale]: ${coupon.locale}`
-          );
+          console.log(coupon.title + ' ' + coupon.description);
+
           console.log(
             `Coupon Match Most Common Locale [Final locale]: ${accurateLocale} : [COUPON Locale]: ${coupon.locale}`
           );
