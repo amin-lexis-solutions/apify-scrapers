@@ -34,7 +34,7 @@ async function main() {
       sourceUrl: true,
       domain: true,
       description: true,
-      locale: true
+      locale: true,
     },
   });
 
@@ -151,16 +151,17 @@ async function main() {
 
   console.log('Stats:');
   console.table({
-    'Total Coupons': coupons.length,
+    'Total Coupons Processed': coupons.length,
     'Coupons Matching Target Page URL': stats.correctTargetPageCount,
-    'Coupons Not Matching Target Page Url and Locale':
+    'Coupons Not Matching (URL and Locale) in Target Pages':
       stats.couponsNotMatchTargetPageAndLocale.length,
-    'Coupons Not Matching Target Page URL':
+    'Coupons Not Matching (URL) in Target Pages':
       stats.couponsNotMatchTargetPageUrl.length,
-    'Coupons Not Matching Target Page Locale':
+    'Locale Collisions Between Coupons and Target Pages':
       stats.couponsNotMatchTargetPageLocale.length,
-    'Coupons With Correct Locale': stats.couponsWithCorrectLocale.length,
-    'Coupons Locale To Be Updated': stats.couponsToBeUpdated.length,
+    'Coupons with Correct Locale (No Changes Made)':
+      stats.couponsWithCorrectLocale.length,
+    'Coupons Affected by This Update': stats.couponsToBeUpdated.length,
   });
 
   fs.writeFileSync('coupon_locale_stats.json', JSON.stringify(stats, null, 2));
