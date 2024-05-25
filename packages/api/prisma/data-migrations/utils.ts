@@ -302,23 +302,71 @@ export function getAccurateLocale(
   oldLocale: string,
   locales: { locale: string; countryCode: string; languageCode: string }[]
 ): string {
-  let locale: any = null;
+  if (countryCode && langCode) {
+    // Check if both country code and language code are in target page locale
+    if (
+      targetPageLocale.includes(countryCode.toUpperCase()) &&
+      targetPageLocale.includes(langCode.toLowerCase())
+    ) {
+      return targetPageLocale;
+    }
+
+    // Check if both country code and language code are in old locale
+    if (
+      oldLocale.includes(countryCode.toUpperCase()) &&
+      oldLocale.includes(langCode.toLowerCase())
+    ) {
+      return oldLocale;
+    }
+
+    // Find locale matching both country code and language code
+    const matchingLocale = locales.find(
+      (locale) =>
+        locale.countryCode.toUpperCase() === countryCode.toUpperCase() &&
+        locale.languageCode.toLowerCase() === langCode.toLowerCase()
+    );
+
+    return matchingLocale ? matchingLocale.locale : oldLocale;
+  }
 
   if (countryCode) {
-    if (targetPageLocale.includes(countryCode)) return targetPageLocale;
-    if (oldLocale.includes(countryCode)) return oldLocale;
-    locale = locales.find(
-      (l) => l.countryCode.toLowerCase() === countryCode.toLowerCase()
+    // Check if country code is in target page locale
+    if (targetPageLocale.includes(countryCode.toUpperCase())) {
+      return targetPageLocale;
+    }
+
+    // Check if country code is in old locale
+    if (oldLocale.includes(countryCode.toUpperCase())) {
+      return oldLocale;
+    }
+
+    // Find locale matching country code
+    const matchingLocale = locales.find(
+      (locale) => locale.countryCode.toUpperCase() === countryCode.toUpperCase()
     );
-    if (locale) return locale.locale;
+
+    return matchingLocale ? matchingLocale.locale : oldLocale;
   }
 
   if (langCode) {
-    if (targetPageLocale.includes(langCode)) return targetPageLocale;
-    if (oldLocale.includes(langCode)) return oldLocale;
-    locale = locales.find((l) => l.languageCode === langCode);
-    if (locale) return locale.locale;
+    // Check if language code is in target page locale
+    if (targetPageLocale.includes(langCode.toLowerCase())) {
+      return targetPageLocale;
+    }
+
+    // Check if language code is in old locale
+    if (oldLocale.includes(langCode.toLowerCase())) {
+      return oldLocale;
+    }
+
+    // Find locale matching language code
+    const matchingLocale = locales.find(
+      (locale) => locale.languageCode.toLowerCase() === langCode.toLowerCase()
+    );
+
+    return matchingLocale ? matchingLocale.locale : oldLocale;
   }
 
+  // Return old locale if no other conditions are met
   return oldLocale;
 }
