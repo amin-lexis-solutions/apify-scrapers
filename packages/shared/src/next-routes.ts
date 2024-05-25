@@ -179,7 +179,14 @@ router.addHandler(Label.listing, async (context) => {
 
     // pre-pressing hooks  here to avoid unnecessary requests
     try {
-      await preProcess(vouchers, context);
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: vouchers,
+          },
+        },
+        context
+      );
     } catch (error: any) {
       log.info(`Pre-Processing Error : ${error.message}`);
       return;
@@ -200,7 +207,19 @@ router.addHandler(Label.listing, async (context) => {
         userData.countryCode
       );
       if (!result.hasCode) {
-        await postProcess(result.validator, context);
+        try {
+          await postProcess(
+            {
+              SaveDataHandler: {
+                validator: result.validator,
+              },
+            },
+            context
+          );
+        } catch (error: any) {
+          log.info(`Post-Processing Error : ${error.message}`);
+          return;
+        }
       } else {
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
@@ -269,7 +288,14 @@ router.addHandler(Label.getCode, async (context) => {
     validator.addValue('code', code);
 
     // Process and store the data
-    await postProcess(validator, context);
+    await postProcess(
+      {
+        SaveDataHandler: {
+          validator,
+        },
+      },
+      context
+    );
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

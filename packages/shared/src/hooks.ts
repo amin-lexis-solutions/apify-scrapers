@@ -1,33 +1,58 @@
 import * as Sentry from '@sentry/node';
 import { checkExistingCouponsAnomaly, processAndStoreData } from './helpers';
 
-export const preProcess = async (...args: any[]) => {
-  try {
-    const [vouchers, context] = args;
+type AnomalyCheckHandler = {
+  coupons: any[];
+  url?: string;
+};
+type SaveDataHandler = {
+  validator: any;
+};
 
-    if (context && vouchers) {
-      const url = context.request.url;
-      if (await checkExistingCouponsAnomaly(url, vouchers.length)) {
+export const preProcess = async (load: any, context: any) => {
+  try {
+    const {
+      AnomalyCheckHandler,
+    }: {
+      AnomalyCheckHandler: AnomalyCheckHandler;
+    } = load;
+
+    if (!context) throw new Error('Context is missing');
+
+    if (AnomalyCheckHandler) {
+      if (
+        await checkExistingCouponsAnomaly(
+          AnomalyCheckHandler?.url || context.request.url,
+          AnomalyCheckHandler.coupons.length
+        )
+      ) {
         throw new Error('Anomaly detected');
       }
     }
 
     return false;
   } catch (error) {
-    Sentry.captureException(error as Error, { extra: { args } });
+    Sentry.captureException(error as Error, { extra: { load } });
     throw error;
   }
 };
 
-export const postProcess = async (...args: any[]) => {
+export const postProcess = async (load: any, context: any) => {
   try {
-    const [validator, context] = args;
-    if (context && validator) {
-      await processAndStoreData(validator, context);
+    const {
+      SaveDataHandler,
+    }: {
+      SaveDataHandler: SaveDataHandler;
+    } = load;
+
+    if (!context) throw new Error('Context is missing');
+
+    if (SaveDataHandler) {
+      await processAndStoreData(SaveDataHandler.validator, context);
     }
     return false;
   } catch (error) {
-    Sentry.captureException(error as Error, { extra: { args } });
+    Sentry.captureException(error as Error, { extra: { load } });
     throw error; // re-throw the error if you want it to propagate
   }
 };
