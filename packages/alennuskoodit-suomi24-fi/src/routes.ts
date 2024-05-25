@@ -3,7 +3,7 @@ import { DataValidator } from 'shared/data-validator';
 import {
   processAndStoreData,
   sleep,
-  getDomainName,
+  getMerchantDomainFromUrl,
   generateCouponId,
   checkCouponIds,
   CouponItemResult,
@@ -155,7 +155,7 @@ router.addHandler(Label.listing, async (context) => {
     // Declarations outside the loop
     const merchantName = jsonData.retailer.name;
     const merchantUrl = jsonData.retailer.merchant_url;
-    const domain = getDomainName(merchantUrl);
+    const domain = getMerchantDomainFromUrl(merchantUrl);
 
     // Combine active and expired vouchers
     const activeVouchers = jsonData.vouchers.map((voucher) => ({

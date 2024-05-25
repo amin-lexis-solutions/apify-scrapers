@@ -8,7 +8,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
-  getDomainName,
+  getMerchantDomainFromUrl,
   checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 
@@ -92,7 +92,7 @@ router.addHandler(Label.listing, async ({ request, $, log }) => {
       throw new Error('merchantName not found');
     }
     // Extract coupon list elements from the webpage
-    const domain = getDomainName(request.url);
+    const domain = getMerchantDomainFromUrl(request.url);
 
     if (!domain) {
       log.warning('Domain is missing!');

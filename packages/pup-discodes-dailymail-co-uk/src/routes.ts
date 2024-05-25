@@ -2,7 +2,7 @@ import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
   processAndStoreData,
-  getDomainName,
+  getMerchantDomainFromUrl,
   generateCouponId,
   checkCouponIds,
   CouponItemResult,
@@ -145,7 +145,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
 
     const merchantName = jsonData.retailer.name;
     const merchantUrl = jsonData.retailer.merchant_url;
-    const domain = getDomainName(merchantUrl);
+    const domain = getMerchantDomainFromUrl(merchantUrl);
 
     const activeVouchers = jsonData.vouchers.map((voucher) => ({
       ...voucher,

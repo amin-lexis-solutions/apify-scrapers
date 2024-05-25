@@ -64,7 +64,7 @@ export function generateCouponId(
   const normalizedMerchant = normalizeString(merchantName);
   const normalizedVoucher = normalizeString(idInSite);
 
-  const domain = getDomainName(sourceUrl);
+  const domain = getMerchantDomainFromUrl(sourceUrl);
   const normalizedUrl = domain ? normalizeString(domain) : '';
 
   const combinedString = `${normalizedMerchant}|${normalizedVoucher}|${normalizedUrl}`;
@@ -114,9 +114,9 @@ export function formatDateTime(text: string): string {
   return parsedDate.toISOString().split('Z')[0];
 }
 
-// Extracts the domain name from a URL and removes 'www.' if present
+// Extracts the domain from a URL and removes 'www.' if present
 // In this context domain refers to where coupons is applied.
-export function getDomainName(url: string): string {
+export function getMerchantDomainFromUrl(url: string): string {
   const parsedUrl = new URL(url);
   let domain: string | undefined = parsedUrl.pathname;
 
@@ -165,10 +165,10 @@ export async function processAndStoreData(
   }
 }
 
-// Just a wrapper around getDomainName in case already existing code needs to be reused
+// Just a wrapper around getDomainFromUrl in case already existing code needs to be reused
 // Domain can be null if does not exist.
 export function extractDomainFromUrl(url: string): string | null {
-  return getDomainName(url);
+  return getMerchantDomainFromUrl(url);
 }
 
 export async function checkExistingCouponsAnomaly(

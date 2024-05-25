@@ -5,7 +5,7 @@ import { DataValidator } from 'shared/data-validator';
 import {
   processAndStoreData,
   sleep,
-  getDomainName,
+  getMerchantDomainFromUrl,
   generateCouponId,
   checkCouponIds,
   CouponItemResult,
@@ -141,7 +141,7 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Merchant name is missing');
     }
 
-    const domain = getDomainName(domainUrl);
+    const domain = getMerchantDomainFromUrl(domainUrl);
 
     // Extract valid coupons
     const couponsWithCode: CouponHashMap = {};

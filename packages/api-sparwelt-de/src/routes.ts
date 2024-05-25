@@ -3,7 +3,7 @@ import { DataValidator } from 'shared/data-validator';
 import {
   processAndStoreData,
   sleep,
-  getDomainName,
+  getMerchantDomainFromUrl,
   generateCouponId,
   checkCouponIds,
   CouponItemResult,
@@ -167,14 +167,14 @@ router.addHandler(Label.listing, async (context) => {
     if (jsonData.data.offers && jsonData.data.offers.length > 0) {
       offers = jsonData.data.offers as OfferItem[];
       merchantName = offers[0].node.partnerShoppingShop.title;
-      domain = getDomainName(
+      domain = getMerchantDomainFromUrl(
         offers[0].node.partnerShoppingShop.shoppingShop.domainUrl
       );
     } else if (jsonData.data.vouchers && jsonData.data.vouchers.length > 0) {
       noNode = true;
       offers = jsonData.data.vouchers as OfferNode[];
       merchantName = jsonData.data.vouchers[0].partnerShoppingShop.title;
-      domain = getDomainName(
+      domain = getMerchantDomainFromUrl(
         jsonData.data.vouchers[0].partnerShoppingShop.shoppingShop.domainUrl
       );
     } else {

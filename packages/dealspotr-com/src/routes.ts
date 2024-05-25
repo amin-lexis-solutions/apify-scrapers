@@ -9,7 +9,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
-  getDomainName,
+  getMerchantDomainFromUrl,
   checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
@@ -98,7 +98,7 @@ router.addHandler(Label.listing, async (context) => {
           merchantName = jsonData.name; // Extract the merchant name
 
           // Extract the domain, removing 'www.' if present
-          domain = getDomainName(jsonData.url);
+          domain = getMerchantDomainFromUrl(jsonData.url);
 
           // Since we found our target, we stop processing further
           return false; // Break out of the .each loop
@@ -114,7 +114,7 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Merchant name is missing');
     }
 
-    // const domain = getDomainName(request.url);
+    // const domain = getMerchantDomainFromUrl(request.url);
     if (!domain) {
       throw new Error('Domain is missing');
     }

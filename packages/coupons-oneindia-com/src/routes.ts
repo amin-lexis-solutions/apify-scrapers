@@ -8,7 +8,7 @@ import {
   checkExistingCouponsAnomaly,
   formatDateTime,
   generateCouponId,
-  getDomainName,
+  getMerchantDomainFromUrl,
   processAndStoreData,
 } from 'shared/helpers';
 
@@ -76,7 +76,7 @@ router.addHandler(Label.listing, async ({ request, page, enqueueLinks }) => {
     // Declarations outside the loop
     const merchantName = jsonData.retailer.name;
     const merchantUrl = jsonData.retailer.merchant_url;
-    const domain = getDomainName(merchantUrl);
+    const domain = getMerchantDomainFromUrl(merchantUrl);
     // Combine active and expired vouchers
     const activeVouchers = jsonData.vouchers.map((voucher) => ({
       ...voucher,

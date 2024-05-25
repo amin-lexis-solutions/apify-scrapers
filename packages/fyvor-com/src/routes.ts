@@ -10,7 +10,7 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
-  getDomainName,
+  getMerchantDomainFromUrl,
   checkExistingCouponsAnomaly,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
@@ -109,7 +109,7 @@ router.addHandler(Label.listing, async (context) => {
       throw new Error('Merchant name is missing');
     }
 
-    const domain = getDomainName(request.url);
+    const domain = getMerchantDomainFromUrl(request.url);
 
     if (!domain) {
       throw new Error('Domain is missing');
