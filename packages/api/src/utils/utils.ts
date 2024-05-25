@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-import { getDomainName } from 'shared/helpers';
+import { getMerchantDomainFromUrl } from 'shared/helpers';
 
 export function normalizeString(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -13,7 +13,7 @@ export function generateHash(
 ): string {
   const normalizedMerchant = normalizeString(merchantName || '');
   const normalizedVoucher = normalizeString(idInSite || '');
-  const domain = getDomainName(sourceUrl);
+  const domain = getMerchantDomainFromUrl(sourceUrl);
   const normalizedUrl = domain ? normalizeString(domain) : '';
 
   const combinedString = `${normalizedMerchant}|${normalizedVoucher}|${normalizedUrl}`;
