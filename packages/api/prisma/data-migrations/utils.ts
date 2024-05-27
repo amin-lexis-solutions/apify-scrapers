@@ -308,56 +308,43 @@ export function getAccurateLocale(
   oldLocale: string,
   locales: { locale: string; countryCode: string; languageCode: string }[]
 ): string {
-  let accurateLocale: string | null = null;
-
   if (countryCode && langCode) {
-    if (
-      targetPageLocale.includes(countryCode.toUpperCase()) &&
-      targetPageLocale.includes(langCode.toLowerCase())
-    ) {
-      accurateLocale = targetPageLocale;
-    } else if (
-      oldLocale.includes(countryCode.toUpperCase()) &&
-      oldLocale.includes(langCode.toLowerCase())
-    ) {
-      accurateLocale = oldLocale;
-    } else {
-      const matchingLocale = locales.find(
-        (locale) =>
-          locale.countryCode.toUpperCase() === countryCode.toUpperCase() &&
-          locale.languageCode.toLowerCase() === langCode.toLowerCase()
-      );
-      accurateLocale = matchingLocale?.locale || null;
-    }
+    const foundLocale =
+      langCode.toLowerCase() + '_' + countryCode.toUpperCase();
+    if (targetPageLocale === foundLocale) return targetPageLocale;
+    if (oldLocale === foundLocale) return oldLocale;
+
+    const matchingLocale = locales.find(
+      (locale) =>
+        locale.countryCode.toUpperCase() === countryCode.toUpperCase() &&
+        locale.languageCode.toLowerCase() === langCode.toLowerCase()
+    );
+
+    if (matchingLocale?.locale) return matchingLocale?.locale;
   }
 
-  if (!accurateLocale && countryCode) {
-    if (targetPageLocale.includes(countryCode.toUpperCase())) {
-      accurateLocale = targetPageLocale;
-    } else if (oldLocale.includes(countryCode.toUpperCase())) {
-      accurateLocale = oldLocale;
-    } else {
-      const matchingLocale = locales.find(
-        (locale) =>
-          locale.countryCode.toUpperCase() === countryCode.toUpperCase()
-      );
-      accurateLocale = matchingLocale?.locale || null;
-    }
+  if (countryCode) {
+    if (targetPageLocale.includes(countryCode.toUpperCase()))
+      return targetPageLocale;
+
+    if (oldLocale.includes(countryCode.toUpperCase())) return oldLocale;
+
+    const matchingLocale = locales.find(
+      (locale) => locale.countryCode.toUpperCase() === countryCode.toUpperCase()
+    );
+    if (matchingLocale?.locale) return matchingLocale?.locale;
   }
 
-  if (!accurateLocale && langCode) {
-    if (targetPageLocale.includes(langCode.toLowerCase())) {
-      accurateLocale = targetPageLocale;
-    } else if (oldLocale.includes(langCode.toLowerCase())) {
-      accurateLocale = oldLocale;
-    } else {
-      const matchingLocale = locales.find(
-        (locale) => locale.languageCode.toLowerCase() === langCode.toLowerCase()
-      );
-      accurateLocale = matchingLocale?.locale || null;
-    }
-  }
+  if (!langCode) return oldLocale;
 
-  // Fallback to oldLocale if no accurate locale was found
-  return accurateLocale || oldLocale;
+  if (targetPageLocale.includes(langCode.toLowerCase())) {
+    return targetPageLocale;
+  }
+  if (oldLocale.includes(langCode.toLowerCase())) {
+    return oldLocale;
+  }
+  const matchingLocale = locales.find(
+    (locale) => locale.languageCode.toLowerCase() === langCode.toLowerCase()
+  );
+  return matchingLocale?.locale || oldLocale;
 }

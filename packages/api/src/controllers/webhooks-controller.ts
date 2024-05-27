@@ -256,6 +256,7 @@ export class WebhooksController {
       updateData,
       archivedAt,
       archivedReason,
+      locale: item.metadata.locale || null, // temp Fallback to the webhook locale required for now
     };
   }
 
