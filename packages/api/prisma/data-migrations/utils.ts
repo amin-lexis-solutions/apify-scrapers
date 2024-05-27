@@ -1,9 +1,15 @@
 import { parse } from 'tldts';
+import cld from 'cld';
 import { detect } from 'langdetect';
-
-export const detectLanguage = (text: string): string => {
-  const langCode = detect(text);
-  return langCode[0].lang ? langCode[0].lang : '';
+export const detectLanguage = async (text: string): Promise<string> => {
+  try {
+    const detect: any = await cld.detect(text || '');
+    if (detect?.languages[0]?.code) return detect?.languages[0]?.code;
+    throw new Error('Could not detect language');
+  } catch (error) {
+    const langCode = detect(text);
+    return langCode[0].lang ? langCode[0].lang : '';
+  }
 };
 
 export const getCountryCodeFromDomain = (domain: string): string => {
@@ -297,28 +303,48 @@ export function getMostCommonLocale(...data: string[]): string {
 
 export function getAccurateLocale(
   targetPageLocale: string,
-  countryCode: string,
-  langCode: string,
+  countryCode: string | null,
+  langCode: string | null,
   oldLocale: string,
   locales: { locale: string; countryCode: string; languageCode: string }[]
 ): string {
-  let locale: any = null;
+  if (countryCode && langCode) {
+    const foundLocale =
+      langCode.toLowerCase() + '_' + countryCode.toUpperCase();
+    if (targetPageLocale === foundLocale) return targetPageLocale;
+    if (oldLocale === foundLocale) return oldLocale;
+
+    const matchingLocale = locales.find(
+      (locale) =>
+        locale.countryCode.toUpperCase() === countryCode.toUpperCase() &&
+        locale.languageCode.toLowerCase() === langCode.toLowerCase()
+    );
+
+    if (matchingLocale?.locale) return matchingLocale?.locale;
+  }
 
   if (countryCode) {
-    if (targetPageLocale.includes(countryCode)) return targetPageLocale;
-    if (oldLocale.includes(countryCode)) return oldLocale;
-    locale = locales.find(
-      (l) => l.countryCode.toLowerCase() === countryCode.toLowerCase()
+    if (targetPageLocale.includes(countryCode.toUpperCase()))
+      return targetPageLocale;
+
+    if (oldLocale.includes(countryCode.toUpperCase())) return oldLocale;
+
+    const matchingLocale = locales.find(
+      (locale) => locale.countryCode.toUpperCase() === countryCode.toUpperCase()
     );
-    if (locale) return locale.locale;
+    if (matchingLocale?.locale) return matchingLocale?.locale;
   }
 
-  if (langCode) {
-    if (targetPageLocale.includes(langCode)) return targetPageLocale;
-    if (oldLocale.includes(langCode)) return oldLocale;
-    locale = locales.find((l) => l.languageCode === langCode);
-    if (locale) return locale.locale;
-  }
+  if (!langCode) return oldLocale;
 
-  return oldLocale;
+  if (targetPageLocale.includes(langCode.toLowerCase())) {
+    return targetPageLocale;
+  }
+  if (oldLocale.includes(langCode.toLowerCase())) {
+    return oldLocale;
+  }
+  const matchingLocale = locales.find(
+    (locale) => locale.languageCode.toLowerCase() === langCode.toLowerCase()
+  );
+  return matchingLocale?.locale || oldLocale;
 }
