@@ -111,7 +111,7 @@ const processCoupon = async (context) => {
         validator.addValue('code', coupon);
       }
 
-      processAndStoreData(validator);
+      processAndStoreData(validator, context);
     });
     return;
   }
@@ -140,7 +140,7 @@ const processCoupon = async (context) => {
     validator.addValue('code', coupon);
   }
 
-  processAndStoreData(validator);
+  processAndStoreData(validator, context);
 };
 
 router.addHandler(Label.listing, processCoupon);

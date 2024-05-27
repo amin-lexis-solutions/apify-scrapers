@@ -13,7 +13,8 @@ import { Label } from 'shared/actor-utils';
 // Export the router function that determines which handler to use based on the request label
 const router = Router.create<PuppeteerCrawlingContext>();
 
-router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
+router.addHandler(Label.listing, async (context) => {
+  const { page, request, enqueueLinks } = context;
   if (request.userData.label !== Label.listing) return;
 
   async function getMerchantName(page) {
@@ -109,7 +110,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
       } else {
-        await processAndStoreData(result.validator);
+        await processAndStoreData(result.validator, context);
       }
     }
     // Call the API to check if the coupon exists
@@ -148,7 +149,7 @@ router.addHandler(Label.getCode, async ({ page, request }) => {
       validator.addValue('code', code);
     }
 
-    await processAndStoreData(validator);
+    await processAndStoreData(validator, context);
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

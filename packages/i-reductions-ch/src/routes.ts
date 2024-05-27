@@ -1,6 +1,7 @@
 import { RequestQueue } from 'apify'; // Import types from Apify SDK
-import { DataValidator } from './data-validator';
-import { processAndStoreData, sleep } from './utils';
+import { DataValidator } from 'shared/data-validator';
+import { processAndStoreData } from 'shared/helpers';
+import { sleep } from 'shared/actor-utils';
 
 export enum Label {
   'sitemap' = 'SitemapPage',
@@ -206,7 +207,7 @@ export async function codeHandler(requestQueue: RequestQueue, context) {
     }
 
     // Process and store the data
-    await processAndStoreData(validator);
+    await processAndStoreData(validator, context);
   } catch (error) {
     // Handle any errors that occurred during the handler execution
     console.error(

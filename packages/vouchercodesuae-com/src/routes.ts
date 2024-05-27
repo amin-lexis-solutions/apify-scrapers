@@ -109,7 +109,7 @@ async function processCouponItem(
   if (hasCode) {
     validator.addValue('code', coupon);
   }
-  await processAndStoreData(validator);
+  await processAndStoreData(validator, context);
   return true;
 }
 

@@ -82,7 +82,8 @@ function processCouponItem(
   return { generatedHash, hasCode, couponUrl, validator };
 }
 // Handler function for processing coupon listings
-router.addHandler(Label.listing, async ({ request, $, log }) => {
+router.addHandler(Label.listing, async (context) => {
+  const { request, $, log } = context;
   try {
     console.log(`Listing ${request.url}`);
     // Extract the merchant name
@@ -118,7 +119,7 @@ router.addHandler(Label.listing, async ({ request, $, log }) => {
       result = processCouponItem(merchantName, domain, element, request.url);
       // If coupon has no code, process and store its data
       if (!result?.hasCode) {
-        await processAndStoreData(result.validator);
+        await processAndStoreData(result.validator, context);
       } else {
         // If coupon has a code, store it in a hashmap and add its ID for checking
         couponsWithCode[result.generatedHash] = result;
@@ -136,7 +137,7 @@ router.addHandler(Label.listing, async ({ request, $, log }) => {
     for (const id of nonExistingIds) {
       currentResult = couponsWithCode[id];
       // Add the coupon URL to the request queue
-      await processAndStoreData(currentResult?.validator);
+      await processAndStoreData(currentResult?.validator, context);
     }
   } finally {
     // Use finally to ensure the actor ends successfully

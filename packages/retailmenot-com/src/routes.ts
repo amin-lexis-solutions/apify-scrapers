@@ -15,7 +15,8 @@ import { Label } from 'shared/actor-utils';
 const router = Router.create<PuppeteerCrawlingContext>();
 
 // Add a handler for a specific label using router.addHandler()
-router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
+router.addHandler(Label.listing, async (context) => {
+  const { page, request, enqueueLinks } = context;
   // Check if the label in the request userData matches the label we're handling
   if (request.userData.label !== Label.listing) return;
 
@@ -112,7 +113,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
       result = { generatedHash, hasCode, couponUrl, validator };
       // If the coupon does not have a code, process and store its data using the validator
       if (!result.hasCode) {
-        await processAndStoreData(result.validator);
+        await processAndStoreData(result.validator, context);
       } else {
         // If the coupon has a code, store its details in the couponsWithCode object
         couponsWithCode[result.generatedHash] = result;
@@ -177,7 +178,7 @@ router.addHandler(Label.getCode, async ({ page, request }) => {
     }
 
     // Process and store data using the validator
-    await processAndStoreData(validator);
+    await processAndStoreData(validator, context);
   } finally {
     // We don't catch errors explicitly so that they are logged in Sentry,
     // but we use finally to ensure proper cleanup and termination of the actor.

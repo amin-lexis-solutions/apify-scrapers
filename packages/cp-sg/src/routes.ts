@@ -58,7 +58,8 @@ async function processCouponItem(
   return { generatedHash, hasCode, couponUrl: '', validator };
 }
 // Handler function for processing coupon listings
-router.addHandler(Label.listing, async ({ request, $ }) => {
+router.addHandler(Label.listing, async (context) => {
+  const { request, $ } = context;
   if (request.userData.label !== Label.listing) return;
 
   try {
@@ -99,7 +100,7 @@ router.addHandler(Label.listing, async ({ request, $ }) => {
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
       } else {
-        await processAndStoreData(result.validator);
+        await processAndStoreData(result.validator, context);
       }
     }
     // Call the API to check if the coupon exists
@@ -112,7 +113,7 @@ router.addHandler(Label.listing, async ({ request, $ }) => {
     for (const id of nonExistingIds) {
       currentResult = couponsWithCode[id];
       // Add the coupon URL to the request queue
-      await processAndStoreData(currentResult?.validator);
+      await processAndStoreData(currentResult?.validator, context);
     }
   } finally {
     // Use finally to ensure the actor ends successfully

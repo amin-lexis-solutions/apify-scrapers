@@ -57,13 +57,14 @@ async function processCouponItem(
     validator.addValue('code', code);
   }
 
-  await processAndStoreData(validator);
+  await processAndStoreData(validator, context);
 }
 
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
 
-router.addHandler(Label.listing, async ({ request, body }) => {
+router.addHandler(Label.listing, async (context) => {
+  const { request, body } = context;
   if (request.userData.label !== Label.listing) return;
 
   try {
