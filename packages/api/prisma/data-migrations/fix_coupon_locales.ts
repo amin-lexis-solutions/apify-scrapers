@@ -10,7 +10,7 @@ import fs from 'fs';
 const prisma = new PrismaClient();
 
 // Set to true to update the coupon locales
-const UPDATE = false;
+const UPDATE = true;
 // Set to true to enable debug logging
 const DEBUG = false;
 
@@ -60,8 +60,16 @@ async function main() {
 
   for (let i = 0; i < coupons.length; i += batchSize) {
     const batch = coupons.slice(i, i + batchSize);
+
+    const langCodes = await Promise.all(
+      batch.map(
+        async (coupon) =>
+          await detectLanguage(`${coupon.title}  ${coupon.description}`)
+      )
+    );
+
     await prisma.$transaction(
-      batch.map((coupon) => {
+      batch.map((coupon, index) => {
         const targetPage = targetPages.find(
           (tp) => tp.url === coupon.sourceUrl
         );
@@ -73,9 +81,7 @@ async function main() {
           countryCode = getCountryCodeFromDomain(coupon.domain || '');
         }
 
-        const langCode = detectLanguage(
-          `${coupon.title} ${coupon.description}`
-        );
+        const langCode = langCodes[index] || '';
 
         const accurateLocale = getAccurateLocale(
           targetPage?.locale?.locale || '',
@@ -87,12 +93,12 @@ async function main() {
 
         if (
           targetPage?.locale.locale !== coupon.locale &&
-          targetPage?.url != coupon.sourceUrl
+          targetPage?.url !== coupon.sourceUrl
         ) {
           stats.couponsNotMatchTargetPageAndLocale.push(coupon.id);
         } else if (targetPage?.locale.locale !== coupon.locale) {
           stats.couponsNotMatchTargetPageLocale.push(coupon.id);
-        } else if (targetPage?.url != coupon.sourceUrl) {
+        } else if (targetPage?.url !== coupon.sourceUrl) {
           stats.couponsNotMatchTargetPageUrl.push(coupon.id);
         } else {
           stats.correctTargetPageCount++;
@@ -115,7 +121,7 @@ async function main() {
           );
 
           console.log(
-            `Coupon Match Language Detection ${langCode}  : [COUPON Locale]: ${coupon.locale}`
+            `Coupon Match Language Detection ${langCode} : [COUPON Locale]: ${coupon.locale}`
           );
 
           console.log(coupon.title + ' ' + coupon.description);
@@ -130,7 +136,7 @@ async function main() {
           data: {
             locale: UPDATE ? accurateLocale : coupon.locale,
           },
-        });
+        } as any);
       })
     );
     bar.tick();

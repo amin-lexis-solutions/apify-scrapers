@@ -1,9 +1,15 @@
 import { parse } from 'tldts';
+import cld from 'cld';
 import { detect } from 'langdetect';
-
-export const detectLanguage = (text: string): string => {
-  const langCode = detect(text);
-  return langCode[0].lang ? langCode[0].lang : '';
+export const detectLanguage = async (text: string): Promise<string> => {
+  try {
+    const detect: any = await cld.detect(text || '');
+    if (detect?.languages[0]?.code) return detect?.languages[0]?.code;
+    throw new Error('Could not detect language');
+  } catch (error) {
+    const langCode = detect(text);
+    return langCode[0].lang ? langCode[0].lang : '';
+  }
 };
 
 export const getCountryCodeFromDomain = (domain: string): string => {
