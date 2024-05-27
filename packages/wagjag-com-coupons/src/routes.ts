@@ -83,7 +83,7 @@ async function processCouponItem(
     const coupon = elemCode.text().trim();
     validator.addValue('code', coupon);
   }
-  await processAndStoreData(validator);
+  await processAndStoreData(validator, context);
   return true;
 }
 

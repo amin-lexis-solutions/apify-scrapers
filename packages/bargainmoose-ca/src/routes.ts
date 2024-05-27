@@ -141,7 +141,7 @@ router.addHandler(Label.listing, async (context) => {
       const element = validCoupons[i];
       result = processCouponItem(merchantName, domain, element, request.url);
       if (!result.hasCode) {
-        await processAndStoreData(result.validator);
+        await processAndStoreData(result.validator, context);
       } else {
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
@@ -212,7 +212,7 @@ router.addHandler(Label.getCode, async (context) => {
     validator.addValue('code', code);
 
     // Process and store the data
-    await processAndStoreData(validator);
+    await processAndStoreData(validator, context);
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

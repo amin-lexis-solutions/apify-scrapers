@@ -109,7 +109,8 @@ function processCouponItem(
 // Export the router function that determines which handler to use based on the request label
 const router = Router.create<PuppeteerCrawlingContext>();
 
-router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
+router.addHandler(Label.listing, async (context) => {
+  const { page, request, enqueueLinks } = context;
   if (request.userData.label !== Label.listing) return;
 
   try {
@@ -179,7 +180,7 @@ router.addHandler(Label.listing, async ({ page, request, enqueueLinks }) => {
         request.url
       );
       if (!result.hasCode) {
-        await processAndStoreData(result.validator);
+        await processAndStoreData(result.validator, context);
       } else {
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
@@ -229,7 +230,7 @@ router.addHandler(Label.getCode, async ({ page, request }) => {
       const code = jsonCodeData.code;
       console.log(`Found code: ${code}\n    at: ${request.url}`);
       validator.addValue('code', code);
-      await processAndStoreData(validator);
+      await processAndStoreData(validator, context);
     } else {
       throw new Error('No matching pre tag found or no JSON content present');
     }

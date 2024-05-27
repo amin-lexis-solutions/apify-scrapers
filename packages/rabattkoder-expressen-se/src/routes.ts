@@ -83,7 +83,7 @@ async function processCouponItem(
     code = voucherCodeElement.text();
     validator.addValue('code', code);
   }
-  await processAndStoreData(validator);
+  await processAndStoreData(validator, context);
 }
 
 router.addHandler(Label.listing, async (context) => {

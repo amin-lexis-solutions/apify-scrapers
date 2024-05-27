@@ -74,7 +74,7 @@ async function processCouponItem(
     const coupon = elemCode.attr('data-code');
     validator.addValue('code', coupon);
   }
-  await processAndStoreData(validator);
+  await processAndStoreData(validator, context);
   return true;
 }
 
