@@ -4,6 +4,7 @@
 const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
+require('dotenv').config();
 
 // Parse actorId from first argument
 const actorId = process.argv[2];
@@ -97,6 +98,9 @@ function getActorSpec(actorId) {
     title: `${actorId} Scraper`,
     version: '0.0',
     input: './input.json',
+    environmentVariables: {
+      BASE_URL: process.env.BASE_URL,
+    },
     storages: {
       dataset: './output.json',
     },
