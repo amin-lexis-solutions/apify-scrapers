@@ -147,7 +147,7 @@ export function sleep(milliseconds: number) {
 
 export async function processAndStoreData(
   validator: DataValidator,
-  context: any
+  context?: any
 ) {
   try {
     validator.finalCheck();
