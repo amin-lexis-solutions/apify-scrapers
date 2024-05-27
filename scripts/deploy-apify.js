@@ -4,7 +4,6 @@
 const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
-require('dotenv').config();
 
 // Parse actorId from first argument
 const actorId = process.argv[2];
