@@ -117,7 +117,7 @@ router.addHandler(Label.getCode, async (context) => {
       // Add the generated hash to the list of IDs to check
       idsToCheck.push(result.generatedHash);
     } else {
-      await processAndStoreData(result.validator);
+      await processAndStoreData(result.validator, context);
     }
   }
 
@@ -131,6 +131,6 @@ router.addHandler(Label.getCode, async (context) => {
   for (const id of nonExistingIds) {
     currentResult = couponsWithCode[id];
     // Enqueue the coupon URL for further processing with appropriate label and validator data
-    await processAndStoreData(currentResult.validator);
+    await processAndStoreData(currentResult.validator, context);
   }
 });

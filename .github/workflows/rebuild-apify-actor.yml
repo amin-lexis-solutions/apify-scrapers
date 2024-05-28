@@ -34,4 +34,6 @@ jobs:
         run: apify login --token $APIFY_TOKEN
 
       - name: Deploy Apify Actor
+        env:
+          BASE_URL: 'https://tuna-unified-vertically.ngrok-free.app'
         run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh

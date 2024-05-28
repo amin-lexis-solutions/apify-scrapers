@@ -97,6 +97,9 @@ function getActorSpec(actorId) {
     title: `${actorId} Scraper`,
     version: '0.0',
     input: './input.json',
+    environmentVariables: {
+      BASE_URL: process.env.BASE_URL,
+    },
     storages: {
       dataset: './output.json',
     },

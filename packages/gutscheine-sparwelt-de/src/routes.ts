@@ -37,7 +37,8 @@ async function fetchVoucherCode(
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
 
-router.addHandler(Label.listing, async ({ request, body, enqueueLinks }) => {
+router.addHandler(Label.listing, async (context) => {
+  const { request, body, enqueueLinks } = context;
   if (request.userData.label !== Label.listing) return;
 
   try {
@@ -158,7 +159,7 @@ router.addHandler(Label.details, async ({ request, body }) => {
     validator.addValue('isShown', true);
 
     // Process and store the data
-    await processAndStoreData(validator);
+    await processAndStoreData(validator, context);
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

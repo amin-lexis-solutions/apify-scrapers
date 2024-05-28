@@ -80,7 +80,7 @@ async function processCouponItem(
   if (code) {
     validator.addValue('code', code);
   }
-  await processAndStoreData(validator);
+  await processAndStoreData(validator, context);
 }
 router.addHandler(Label.listing, async (context) => {
   const { request, $, crawler, log } = context;

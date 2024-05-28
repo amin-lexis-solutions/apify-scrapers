@@ -63,7 +63,7 @@ async function processCouponItem(
   }
 
   // Process and store the data
-  await processAndStoreData(validator);
+  await processAndStoreData(validator, context);
 }
 
 export const router = createCheerioRouter();

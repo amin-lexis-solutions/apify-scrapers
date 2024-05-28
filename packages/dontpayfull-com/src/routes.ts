@@ -14,7 +14,9 @@ import { createPuppeteerRouter } from 'crawlee';
 export const router = createPuppeteerRouter();
 
 // Handler function for processing coupon listings
-router.addHandler(Label.listing, async ({ request, page, enqueueLinks }) => {
+router.addHandler(Label.listing, async (context) => {
+  const { request, page, enqueueLinks } = context;
+
   if (request.userData.label !== Label.listing) return;
 
   async function processCoupon(element, merchantName, domain, sourceUrl) {
@@ -102,7 +104,7 @@ router.addHandler(Label.listing, async ({ request, page, enqueueLinks }) => {
           request.url
         );
         if (!result.hasCode) {
-          await processAndStoreData(result.validator);
+          await processAndStoreData(result.validator, context);
         } else {
           couponsWithCode[result.generatedHash] = result;
           idsToCheck.push(result.generatedHash);
@@ -161,7 +163,7 @@ router.addHandler(Label.getCode, async ({ page, request }) => {
     // Add the decoded code to the validator's data
 
     validator.addValue('code', code);
-    await processAndStoreData(validator);
+    await processAndStoreData(validator, context);
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.
