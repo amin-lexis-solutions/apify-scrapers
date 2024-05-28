@@ -27,7 +27,7 @@ async function process(
     ? await codeElement.evaluate((node) => node.textContent)
     : null;
 
-  const hasCode = code ? true : false;
+  const hasCode = !!code;
 
   const validator = new DataValidator();
 
@@ -100,20 +100,21 @@ router.addHandler(Label.listing, async (context) => {
     if (processedData.hasCode) {
       couponsWithCode[processedData.generatedHash] = processedData;
       idsToCheck.push(processedData.generatedHash);
-    } else {
-      try {
-        await postProcess(
-          {
-            SaveDataHandler: {
-              validator: processedData.validator,
-            },
+      continue;
+    }
+
+    try {
+      await postProcess(
+        {
+          SaveDataHandler: {
+            validator: processedData.validator,
           },
-          context
-        );
-      } catch (error: any) {
-        log.warning(`Post-Processing Error : ${error.message}`);
-        return;
-      }
+        },
+        context
+      );
+    } catch (error: any) {
+      log.warning(`Post-Processing Error : ${error.message}`);
+      return;
     }
   }
   // Call the API to check if the coupon exists
