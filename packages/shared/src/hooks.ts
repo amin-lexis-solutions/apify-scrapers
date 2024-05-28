@@ -1,8 +1,6 @@
 import * as Sentry from '@sentry/node';
 import { checkExistingCouponsAnomaly, processAndStoreData } from './helpers';
 
-
-
 /**
  * Type definition for the AnomalyCheckHandler object.
  * @typedef {Object} AnomalyCheckHandler
