@@ -52,6 +52,14 @@ async function main() {
       languageCode: true,
     },
   });
+
+  const targetPageUrlToLocale: any = {};
+
+  for (let i = 0; i < targetPages.length; i++) {
+    const url: string = targetPages[i].url;
+    targetPageUrlToLocale[url] = targetPages[i].locale.locale;
+  }
+
   const batchSize = 1000;
   const bar = new ProgressBar('Processing [:bar] :percent :etas', {
     total: Math.ceil(coupons.length / batchSize),
@@ -70,9 +78,8 @@ async function main() {
 
     await prisma.$transaction(
       batch.map((coupon, index) => {
-        const targetPage = targetPages.find(
-          (tp) => tp.url === coupon.sourceUrl
-        );
+        const url = coupon.sourceUrl;
+        const locale: any = targetPageUrlToLocale[url];
 
         let countryCode = getCountryCodeFromDomain(coupon.sourceUrl || '');
 
@@ -84,21 +91,18 @@ async function main() {
         const langCode = langCodes[index] || '';
 
         const accurateLocale = getAccurateLocale(
-          targetPage?.locale?.locale || '',
+          locale || '',
           countryCode || '',
           langCode || '',
           coupon.locale || '',
           locales
         );
 
-        if (
-          targetPage?.locale.locale !== coupon.locale &&
-          targetPage?.url !== coupon.sourceUrl
-        ) {
+        if (locale !== coupon.locale && url !== coupon.sourceUrl) {
           stats.couponsNotMatchTargetPageAndLocale.push(coupon.id);
-        } else if (targetPage?.locale.locale !== coupon.locale) {
+        } else if (locale !== coupon.locale) {
           stats.couponsNotMatchTargetPageLocale.push(coupon.id);
-        } else if (targetPage?.url !== coupon.sourceUrl) {
+        } else if (url !== coupon.sourceUrl) {
           stats.couponsNotMatchTargetPageUrl.push(coupon.id);
         } else {
           stats.correctTargetPageCount++;
@@ -113,7 +117,7 @@ async function main() {
         if (DEBUG) {
           console.log(`\n`);
           console.log(
-            `Coupon Match Base URL [TP locale]: ${targetPage?.locale.locale} : [COUPON locale]: ${coupon.locale}`
+            `Coupon Match Base URL [TP locale]: ${locale} : [COUPON locale]: ${coupon.locale}`
           );
 
           console.log(
