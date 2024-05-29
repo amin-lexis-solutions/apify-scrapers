@@ -9,6 +9,7 @@ import {
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
+  context: any,
   merchantName: string,
   isExpired: boolean,
   couponElement: cheerio.Element,
@@ -120,12 +121,24 @@ router.addHandler(Label.listing, async (context) => {
 
       for (let i = 0; i < validCoupons.length; i++) {
         const element = validCoupons[i];
-        await processCouponItem(merchantName, false, element, request.url);
+        await processCouponItem(
+          context,
+          merchantName,
+          false,
+          element,
+          request.url
+        );
       }
       const expiredCoupons = $('ul.expired-cpn-sec__items > li[data-offer-id]');
       for (let i = 0; i < expiredCoupons.length; i++) {
         const element = expiredCoupons[i];
-        await processCouponItem(merchantName, true, element, request.url);
+        await processCouponItem(
+          context,
+          merchantName,
+          true,
+          element,
+          request.url
+        );
       }
     }
   } finally {

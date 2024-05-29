@@ -27,6 +27,7 @@ function extractAndFormatDate(input: string | null): string | null {
 }
 
 async function processCouponItem(
+  context: any,
   couponElement: cheerio.Element,
   sourceUrl: string,
   sourceDomain: string | undefined
@@ -137,7 +138,7 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     for (const validCoupon of validCoupons) {
-      await processCouponItem(validCoupon, request.url, domain);
+      await processCouponItem(context, validCoupon, request.url, domain);
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

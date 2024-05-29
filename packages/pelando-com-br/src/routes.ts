@@ -11,6 +11,7 @@ import { DataValidator } from 'shared/data-validator';
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
+  context: any,
   merchantName: string,
   domain: string | null,
   isExpired: boolean,
@@ -119,6 +120,7 @@ router.addHandler(Label.listing, async (context) => {
         for (let i = 0; i < validCoupons.length; i++) {
           const element = validCoupons[i];
           await processCouponItem(
+            context,
             merchantName,
             domain,
             false,
@@ -130,6 +132,7 @@ router.addHandler(Label.listing, async (context) => {
         for (let i = 0; i < expiredCoupons.length; i++) {
           const element = expiredCoupons[i];
           await processCouponItem(
+            context,
             merchantName,
             domain,
             true,

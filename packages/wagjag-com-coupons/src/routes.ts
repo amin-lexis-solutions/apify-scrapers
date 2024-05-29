@@ -10,6 +10,7 @@ import {
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
+  context: any,
   merchantName: string,
   domain: string,
   couponElement: cheerio.Element,
@@ -135,6 +136,7 @@ router.addHandler(Label.listing, async (context) => {
     for (let i = 0; i < validCoupons.length; i++) {
       const element = validCoupons[i];
       await processCouponItem(
+        context,
         merchantName,
         domain,
         element,
