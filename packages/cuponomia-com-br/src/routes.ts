@@ -8,6 +8,7 @@ import {
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
+  context: any,
   merchantName: string,
   isExpired: boolean,
   couponElement: cheerio.Element,
@@ -105,14 +106,26 @@ router.addHandler(Label.listing, async (context) => {
 
     for (let i = 0; i < validCoupons.length; i++) {
       const element = validCoupons[i];
-      await processCouponItem(merchantName, false, element, request.url);
+      await processCouponItem(
+        context,
+        merchantName,
+        false,
+        element,
+        request.url
+      );
     }
 
     // Refactor to use a loop for expired coupons
     const expiredCoupons = $('ul.coupon-list.expired-coupons > li[data-id]');
     for (let i = 0; i < expiredCoupons.length; i++) {
       const element = expiredCoupons[i];
-      await processCouponItem(merchantName, true, element, request.url);
+      await processCouponItem(
+        context,
+        merchantName,
+        true,
+        element,
+        request.url
+      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

@@ -213,7 +213,8 @@ router.addHandler(Label.listing, async (context) => {
   }
 });
 
-router.addHandler(Label.getCode, async ({ page, request }) => {
+router.addHandler(Label.getCode, async (context) => {
+  const { page, request } = context;
   if (request.userData.label !== Label.getCode) return;
 
   try {

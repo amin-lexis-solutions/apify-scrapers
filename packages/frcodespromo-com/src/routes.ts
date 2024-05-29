@@ -9,6 +9,7 @@ import {
 import { Label } from 'shared/actor-utils';
 
 async function processCouponItem(
+  context: any,
   merchantName: string,
   couponElement: cheerio.Element,
   sourceUrl: string
@@ -102,7 +103,7 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     for (const element of validCoupons) {
-      await processCouponItem(merchantName, element, request.url);
+      await processCouponItem(context, merchantName, element, request.url);
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
