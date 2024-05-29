@@ -120,7 +120,7 @@ const SOURCES_DATA = [
   {
     apifyActorId: 'gtuQ1rl6nl3TvXyav',
     domains: ['apisparwelt'],
-    name: 'api-sparwelt-de',
+    name: 'sparwelt-de',
   },
   {
     apifyActorId: 'rDxNsvFgMMY6WtSfi',
