@@ -15,7 +15,7 @@ export type CouponItemResult = {
 
 export type CouponHashMap = { [key: string]: CouponItemResult };
 
-// Normalizes strings by trimming, converting to lowercase, and replacing multiple spaces with a single space
+// Normalizes strings by trimming, converting to lowercase, and replacing multiple spaces with a single space.
 function normalizeString(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
 }
