@@ -35,5 +35,5 @@ jobs:
 
       - name: Deploy Apify Actor
         env:
-          BASE_URL: 'https://tuna-unified-vertically.ngrok-free.app'
+          BASE_URL: 'https://codes-api-d9jbl.ondigitalocean.app'
         run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
