@@ -42,6 +42,7 @@ export class CouponsController {
       sourceName,
       sourceDomain,
       locale,
+      type,
     } = params;
 
     const where: Prisma.CouponWhereInput = {};
@@ -56,6 +57,10 @@ export class CouponsController {
 
     if (archived) {
       where.archivedAt = archived ? { not: null } : null;
+    }
+
+    if (type !== 'all') {
+      where.code = type === 'code' ? { not: null } : { equals: null };
     }
 
     const domain = merchantDomain;

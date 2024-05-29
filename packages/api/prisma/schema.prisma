@@ -46,6 +46,7 @@ model Coupon {
   @@index([localeId])
   @@index([archivedAt])
   @@index([domain])
+  @@index([code])
 }
 
 // A source of coupons, handled by an Apify actor
