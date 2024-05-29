@@ -111,7 +111,7 @@ router.addHandler(Label.listing, async (context) => {
   }
 });
 
-router.addHandler(Label.details, async () => {
+router.addHandler(Label.details, async (context) => {
   const { request, body } = context;
 
   if (request.userData.label !== Label.details) return;
