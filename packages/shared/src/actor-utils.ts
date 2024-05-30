@@ -47,7 +47,7 @@ export enum Label {
 
 export async function prepareCheerioScraper(
   router: RouterHandler<CheerioCrawlingContext<Input>>,
-  args: MainFunctionArgs
+  args?: MainFunctionArgs
 ) {
   const input = await Actor.getInput<Input>();
   const proxyConfiguration = await Actor.createProxyConfiguration(
@@ -65,7 +65,7 @@ export async function prepareCheerioScraper(
     proxyConfiguration,
     requestHandler: router,
     requestQueue,
-    maxRequestRetries: args.maxRequestRetries || 3,
+    maxRequestRetries: args?.maxRequestRetries || 3,
     failedRequestHandler: async ({ request, error }) => {
       // Log the error to Sentry
       Sentry.captureException(error, {
@@ -80,7 +80,7 @@ export async function prepareCheerioScraper(
 
   let customHeaders = CUSTOM_HEADERS;
   // If custom headers are provided, merge them with the default headers
-  if (args.customHeaders) {
+  if (args?.customHeaders) {
     customHeaders = { ...customHeaders, ...args.customHeaders };
   }
 
@@ -89,29 +89,10 @@ export async function prepareCheerioScraper(
   }
 
   // Manually add each URL to the request queue
-  let userData;
 
-  userData = { label: Label.listing };
+  const userData = { label: Label.listing };
 
-  if (args.domain && args.countryCode) {
-    userData.domain = args.domain;
-    userData.countryCode = args.countryCode;
-  }
-
-  let domain;
-  let countryCode;
   for (const { url, metadata } of startUrls) {
-    if (args.extractDomainAndCountryCode) {
-      domain = new URL(url).hostname;
-      // Get the country code as the last part of the domain
-      countryCode = domain.split('.').slice(-1)[0]; // Equivalent to Python's [-1]
-      userData = {
-        label: Label.listing,
-        domain,
-        countryCode,
-      };
-    }
-
     await crawler.requestQueue.addRequest({
       url,
       userData: { ...userData, ...metadata },
