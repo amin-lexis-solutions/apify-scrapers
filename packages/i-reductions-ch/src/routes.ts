@@ -163,9 +163,21 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
 
 export async function codeHandler(requestQueue: RequestQueue, context) {
   // context includes request, body, etc.
-  const { request, page } = context;
+  const { request, page, log } = context;
+
+  log.info(`\nProcessing URL: ${request.url}`);
 
   if (request.userData.label !== Label.getCode) return;
+
+  // wait for the page to fully load
+  await page.waitForSelector('#modalDiscount');
+
+  const showOfferElement = await page.$('.show-the-code button');
+  if (showOfferElement) {
+    await showOfferElement.click();
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForSelector('#modalDiscount');
+  }
 
   try {
     // Sleep for x seconds between requests to avoid rate limitings
@@ -179,14 +191,9 @@ export async function codeHandler(requestQueue: RequestQueue, context) {
     validator.loadData(validatorData);
 
     // Check for the presence of the modal body
-    const modalBodyExists =
-      (await page.$('div#modalDiscount div.modal-body')) !== null;
-    if (!modalBodyExists) {
-      throw new Error('Modal body not found');
-    }
 
     // Extract the code if present
-    const code = await page.evaluate(() => {
+    let code = await page.evaluate(() => {
       const codeInput: HTMLInputElement = document.querySelector(
         'input#code'
       ) as HTMLInputElement;
@@ -198,10 +205,11 @@ export async function codeHandler(requestQueue: RequestQueue, context) {
 
     if (code) {
       if (/^[*]+$/.test(code)) {
-        throw new Error('Code is hidden');
+        log.info('Code is only asterisks, ignoring it.');
+        code = null;
       }
-      console.log(`Found code: ${code}\n    at: ${request.url}`);
-      validator.addValue('code', code);
+      if (code) validator.addValue('code', code);
+      log.info(`Found code: ${code}\n    at: ${request.url}`);
     } else {
       console.log(`No visible code found at: ${request.url}`);
     }
@@ -210,7 +218,7 @@ export async function codeHandler(requestQueue: RequestQueue, context) {
     await processAndStoreData(validator, context);
   } catch (error) {
     // Handle any errors that occurred during the handler execution
-    console.error(
+    log.error(
       `An error occurred while processing the URL ${request.url}:`,
       error
     );
