@@ -1,71 +1,71 @@
 import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
-  processAndStoreData,
   sleep,
   generateCouponId,
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
   getMerchantDomainFromUrl,
-  checkExistingCouponsAnomaly,
+  logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
 
-function processCouponItem(
-  merchantName: string,
-  voucher: any,
-  domain: string | null,
-  sourceUrl: string
-): CouponItemResult {
+function processCouponItem(couponItem: any, $cheerio: any): CouponItemResult {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
-  const idInSite = voucher.OfferId.toString();
-
   // Add required values to the validator
-  validator.addValue('sourceUrl', sourceUrl);
-  validator.addValue('merchantName', merchantName);
-  validator.addValue('domain', domain);
-  validator.addValue('title', voucher.OfferTitle);
-  validator.addValue('idInSite', idInSite);
-  validator.addValue('isExclusive', voucher.IsExclusive);
-  validator.addValue('isExpired', voucher.Available);
+  validator.addValue('sourceUrl', couponItem.sourceUrl);
+  validator.addValue('merchantName', couponItem.merchantName);
+  validator.addValue('domain', couponItem.domain);
+  validator.addValue('title', couponItem.title);
+  validator.addValue('idInSite', couponItem.idInSite);
+  validator.addValue('isExclusive', $cheerio.IsExclusive);
+  validator.addValue('isExpired', !$cheerio.Available);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+  const generatedHash = generateCouponId(
+    couponItem.merchantName,
+    couponItem.idInSite,
+    couponItem.sourceUrl
+  );
 
-  if (voucher.OfferType !== 'OnlineCode') {
+  if ($cheerio.OfferType !== 'OnlineCode') {
     return { generatedHash, hasCode: false, couponUrl: '', validator };
   }
 
-  const parsedUrl = new URL(sourceUrl);
+  const parsedUrl = new URL(couponItem.sourceUrl);
 
-  const couponUrl = `https://${parsedUrl.hostname}${voucher.RedeemUrl}`;
+  const couponUrl = `https://${parsedUrl.hostname}/redeem-out/${couponItem.idInSite}?nonInteraction=False&showInterstitial=False`;
+
   return { generatedHash, hasCode: true, couponUrl, validator };
 }
 
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
+    logError('Request queue is missing');
+    return;
   }
 
   try {
     // Extracting request and body from context
 
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`Processing URL: ${request.url}`);
 
     // Extracting the 'props' attribute from the 'view-all-codes' element.
     const propsJson = $('view-all-codes').attr('props');
 
     if (!propsJson) {
-      throw new Error('view-all-codes props JSON is missing');
+      logError('view-all-codes props JSON is missing');
+      return;
     }
 
     const props = JSON.parse(propsJson.replace(/&quot;/g, '"'));
@@ -73,70 +73,113 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = props.MerchantName;
 
     if (!merchantName) {
-      log.warning('Unable to find merchant name');
+      logError('Unable to find merchant name');
+      return;
     }
 
-    const merchantUrl = $('p a')?.attr('href');
+    const merchantUrl = $('.accordion-mobile-content p a')?.attr('href');
 
     if (!merchantUrl) {
-      log.warning('Unable to find domain name');
+      log.warning('Unable to find merchantUrl');
     }
 
     const domain = merchantUrl ? getMerchantDomainFromUrl(merchantUrl) : null;
 
     const vouchers = props.Offers;
 
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: vouchers,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
 
-    const hasAnomaly = await checkExistingCouponsAnomaly(
-      request.url,
-      vouchers.length
-    );
-
-    if (hasAnomaly) {
-      return;
-    }
-
-    for (const voucher of vouchers) {
+    for (const element of vouchers) {
       await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings
-      result = processCouponItem(merchantName, voucher, domain, request.url);
-      if (!result.hasCode) {
-        await processAndStoreData(result.validator, context);
-      } else {
+
+      const idInSite = element.OfferId.toString();
+
+      if (!idInSite) {
+        logError(`not idInSite found in item`);
+        continue;
+      }
+
+      const title = element.OfferTitle;
+
+      if (!title) {
+        logError(`not title found in item`);
+        continue;
+      }
+
+      const couponItem = {
+        idInSite,
+        title,
+        merchantName,
+        domain,
+        sourceUrl: request.url,
+      };
+
+      result = processCouponItem(couponItem, element);
+
+      if (result.hasCode) {
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
+        continue;
+      }
+
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        log.warning(`Post-Processing Error : ${error.message}`);
+        return;
       }
     }
     // Call the API to check if the coupon exists
     const nonExistingIds = await checkCouponIds(idsToCheck);
 
-    if (nonExistingIds.length > 0) {
-      let currentResult: CouponItemResult;
-      for (const id of nonExistingIds) {
-        currentResult = couponsWithCode[id];
+    if (nonExistingIds.length == 0) return;
 
-        // Add the coupon URL with a POST method to the request queue, including the required headers
-        await crawler.requestQueue.addRequest(
-          {
-            url: currentResult.couponUrl,
-            method: 'POST', // Specify the request method as POST
-            headers: {
-              ...CUSTOM_HEADERS,
-              'Content-Type': 'application/json; charset=utf-8',
-              'Content-Length': '0', // Explicitly declare an empty request body
-            },
-            userData: {
-              label: Label.getCode,
-              validatorData: currentResult.validator.getData(),
-            },
+    let currentResult: CouponItemResult;
+    for (const id of nonExistingIds) {
+      currentResult = couponsWithCode[id];
+
+      // Add the coupon URL with a POST method to the request queue, including the required headers
+      await crawler.requestQueue.addRequest(
+        {
+          url: currentResult.couponUrl,
+          method: 'POST', // Specify the request method as POST
+          headers: {
+            ...CUSTOM_HEADERS,
+            'Content-Type': 'application/json; charset=utf-8',
+            'Content-Length': '0', // Explicitly declare an empty request body
           },
-          {
-            forefront: true,
-          }
-        );
-      }
+          userData: {
+            label: Label.getCode,
+            validatorData: currentResult.validator.getData(),
+          },
+        },
+        {
+          forefront: true,
+        }
+      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
@@ -169,17 +212,24 @@ router.addHandler(Label.getCode, async (context) => {
 
     // Validate the necessary data is present
     if (!jsonCodeData || !jsonCodeData.Code) {
-      throw new Error('Code data is missing in the parsed JSON');
+      log.warning('Code data is missing in the parsed JSON');
     }
 
     const code = jsonCodeData.Code;
-    console.log(`Found code: ${code}\n    at: ${request.url}`);
+    log.info(`Found code: ${code}\n    at: ${request.url}`);
 
     // Assuming the code should be added to the validator's data
     validator.addValue('code', code);
 
     // Process and store the data
-    await processAndStoreData(validator, context);
+    await postProcess(
+      {
+        SaveDataHandler: {
+          validator,
+        },
+      },
+      context
+    );
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

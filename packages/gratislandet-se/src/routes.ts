@@ -3,47 +3,30 @@ import cheerio from 'cheerio';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
 import {
-  checkExistingCouponsAnomaly,
-  processAndStoreData,
+  checkCouponIds,
+  CouponHashMap,
+  CouponItemResult,
+  generateHash,
+  logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
 
-async function processCouponItem(
-  context: any,
-  merchantName: string,
-  couponElement: cheerio.Element,
-  sourceUrl: string
-) {
-  const $coupon = cheerio.load(couponElement);
+async function processCouponItem(couponItem: any, $cheerio: cheerio.Root) {
+  const code = $cheerio('*').first().attr('data-code')?.trim();
 
-  let hasCode = false;
-  const code = $coupon('*').first().attr('data-code')?.trim();
-  if (code) {
-    hasCode = true;
-  }
-
-  const idInSite = $coupon('*').first().attr('data-offerid');
-  if (!idInSite) {
-    console.log('Coupon HTML:', $coupon.html());
-    throw new Error('Element data-offerid attr is missing');
-  }
-
-  // Extract the voucher title
-  const titleElement = $coupon('div.offerbox-store-title > p').first();
-  if (titleElement.length === 0) {
-    console.log('Coupon HTML:', $coupon.html());
-    throw new Error('Voucher title is missing');
-  }
-  const voucherTitle = he.decode(titleElement.text().trim());
+  const hasCode = !!code;
 
   // Extract the description
   let description = '';
-  let descElement = $coupon('div.offerbox-store-title div.longtext').first();
+  let descElement = $cheerio('div.offerbox-store-title div.longtext').first();
+
   if (descElement.length === 0) {
-    descElement = $coupon(
+    descElement = $cheerio(
       'div.offerbox-store-title span.slutdatum:last-child'
     ).first();
   }
+
   if (descElement.length > 0) {
     description = he.decode(descElement.text()).trim();
   }
@@ -51,37 +34,41 @@ async function processCouponItem(
   const validator = new DataValidator();
 
   // Add required and optional values to the validator
-  validator.addValue('sourceUrl', sourceUrl);
-  validator.addValue('merchantName', merchantName);
-  validator.addValue('title', voucherTitle);
-  validator.addValue('idInSite', idInSite);
+  validator.addValue('sourceUrl', couponItem.sourceUrl);
+  validator.addValue('merchantName', couponItem.merchantName);
+  validator.addValue('title', couponItem.title);
+  validator.addValue('idInSite', couponItem.idInSite);
   validator.addValue('description', description);
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
-  if (hasCode) {
-    validator.addValue('code', code);
-  }
+  hasCode ? validator.addValue('code', code) : null;
 
-  // Process and store the data
-  await processAndStoreData(validator, context);
+  const generatedHash = generateHash(
+    couponItem.merchantName,
+    couponItem.title,
+    couponItem.sourceUrl
+  );
+
+  return { generatedHash, validator, hasCode, couponUrl: '' };
 }
 
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
+    logError('Request queue is missing');
+    return;
   }
 
   try {
     // Extracting request and body from context
 
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`Processing URL: ${request.url}`);
 
     const merchantLink = $(
       'ol.breadcrumb > li:last-child > a > span[itemprop=name]'
@@ -92,23 +79,100 @@ router.addHandler(Label.listing, async (context) => {
     );
 
     if (!merchantName) {
-      throw new Error('Merchant name is missing');
+      logError('Merchant name is missing');
+      return;
     }
 
     // Extract valid coupons
     const validCoupons = $('div.active-offers-container div.offerbox-store');
 
-    const hasAnomaly = await checkExistingCouponsAnomaly(
-      request.url,
-      validCoupons.length
-    );
-
-    if (hasAnomaly) {
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: validCoupons,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 
+    // Extract valid coupons
+    const couponsWithCode: CouponHashMap = {};
+    const idsToCheck: string[] = [];
+    let result: CouponItemResult;
+
     for (const element of validCoupons) {
-      await processCouponItem(context, merchantName, element, request.url);
+      const $cheerio = cheerio.load(element);
+
+      const idInSite = $cheerio('*').first().attr('data-offerid');
+
+      if (!idInSite) {
+        logError('idInSite not found in item');
+        return;
+      }
+
+      // Extract the voucher title
+      const title = $cheerio('div.offerbox-store-title > p')
+        ?.first()
+        ?.text()
+        .trim();
+
+      if (!title) {
+        logError('titleElement not found in item');
+        return;
+      }
+
+      const couponItem = {
+        title,
+        idInSite,
+        merchantName,
+        sourceUrl: request.url,
+      };
+
+      result = await processCouponItem(couponItem, $cheerio);
+
+      if (result.hasCode) {
+        couponsWithCode[result.generatedHash] = result;
+        idsToCheck.push(result.generatedHash);
+        continue;
+      }
+
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        logError(`Post-Processing Error : ${error.message}`);
+        return;
+      }
+    }
+    // Call the API to check if the coupon exists
+    const nonExistingIds = await checkCouponIds(idsToCheck);
+
+    if (nonExistingIds.length == 0) return;
+
+    let currentResult: CouponItemResult;
+
+    for (const id of nonExistingIds) {
+      currentResult = couponsWithCode[id];
+      // Process and store the data
+      await postProcess(
+        {
+          SaveDataHandler: {
+            validator: currentResult.validator,
+          },
+        },
+        context
+      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

@@ -8,9 +8,10 @@ import {
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
-  checkExistingCouponsAnomaly,
+  logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
 
 interface OfferItem {
   cursor: string;
@@ -68,11 +69,9 @@ function processCouponItem(
   couponItem: OfferNode,
   sourceUrl: string
 ): CouponItemResult {
-  const voucherTitle = couponItem.title;
+  const idInSite = couponItem.voucher.id.split(':')[3];
 
-  const idInSite = couponItem.voucher.id.split(':')[3]; // value is like ":hinge:vouchers:123456"
-
-  let hasCode = couponItem.voucher.hasVoucherCode;
+  const hasCode = couponItem.voucher.hasVoucherCode;
 
   const code = couponItem.voucher.code;
 
@@ -98,22 +97,18 @@ function processCouponItem(
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
   validator.addValue('domain', domain);
-  validator.addValue('title', voucherTitle);
+  validator.addValue('title', couponItem.title);
   validator.addValue('description', description);
   validator.addValue('idInSite', idInSite);
   validator.addValue('isExpired', false);
   validator.addValue('isExclusive', isExclusive);
   validator.addValue('isShown', true);
 
-  let couponUrl = '';
-  if (hasCode) {
-    if (code !== null && code.trim() !== '') {
-      validator.addValue('code', code);
-      hasCode = false;
-    } else {
-      couponUrl = `https://www.sparwelt.de/hinge/vouchercodes/${idInSite}`;
-    }
-  }
+  code ? validator.addValue('code', code) : null;
+
+  const couponUrl = code
+    ? `https://www.sparwelt.de/hinge/vouchercodes/${idInSite}`
+    : '';
 
   const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
 
@@ -123,17 +118,18 @@ function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
+    logError('Request queue is missing');
+    return;
   }
 
   try {
     // Extracting request and body from context
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`Processing URL: ${request.url}`);
 
     let jsonData: any = null; // Consider defining a more specific type based on the expected structure of your JSON data
 
@@ -154,7 +150,7 @@ router.addHandler(Label.listing, async (context) => {
     });
 
     if (!jsonData) {
-      console.log(
+      logError(
         `No matching script tag found or JSON parsing failed: ${request.url}`
       );
       return;
@@ -164,6 +160,7 @@ router.addHandler(Label.listing, async (context) => {
     let merchantName: string;
     let domain: string | null;
     let noNode = false;
+
     if (jsonData.data.offers && jsonData.data.offers.length > 0) {
       offers = jsonData.data.offers as OfferItem[];
       merchantName = offers[0].node.partnerShoppingShop.title;
@@ -178,36 +175,69 @@ router.addHandler(Label.listing, async (context) => {
         jsonData.data.vouchers[0].partnerShoppingShop.shoppingShop.domainUrl
       );
     } else {
-      console.log(`No offers found: ${request.url}`);
+      log.warning(`No offers found: ${request.url}`);
       return;
     }
-    console.log(`Found ${offers.length} offers`);
+    log.info(`Found ${offers.length} offers`);
 
     if (!merchantName) {
-      console.log(`Merchant name not found: ${request.url}`);
+      log.info(`Merchant name not found: ${request.url}`);
       return;
     }
 
-    const hasAnomaly = await checkExistingCouponsAnomaly(
-      request.url,
-      offers.length
-    );
-
-    if (hasAnomaly) {
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: offers,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
-    let result: CouponItemResult;
+    let result: CouponItemResult | undefined;
+
     for (const item of offers) {
       const offerNode: OfferNode = noNode ? item : item.node;
+
+      const title = offerNode?.title;
+
+      if (!title) {
+        logError('idInSite not found');
+        continue;
+      }
+
+      if (!offerNode.voucher.id.split(':')[3]) {
+        logError('idInSite not found in item');
+        continue;
+      }
+
       result = processCouponItem(merchantName, domain, offerNode, request.url);
-      if (!result.hasCode) {
-        await processAndStoreData(result.validator, context);
-      } else {
+
+      if (result.hasCode) {
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
+        continue;
+      }
+
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        logError(`Post-Processing Error : ${error.message}`);
+        return;
       }
     }
 
@@ -219,7 +249,7 @@ router.addHandler(Label.listing, async (context) => {
       for (const id of nonExistingIds) {
         currentResult = couponsWithCode[id];
         // Add the coupon URL to the request queue
-        await crawler.requestQueue.addRequest(
+        await crawler?.requestQueue?.addRequest(
           {
             url: currentResult.couponUrl,
             userData: {
@@ -240,7 +270,7 @@ router.addHandler(Label.listing, async (context) => {
 
 router.addHandler(Label.getCode, async (context) => {
   // context includes request, body, etc.
-  const { request, body } = context;
+  const { request, body, log } = context;
 
   if (request.userData.label !== Label.getCode) return;
 
@@ -268,11 +298,12 @@ router.addHandler(Label.getCode, async (context) => {
     }
     // Validate the necessary data is present
     if (!jsonCodeData || !jsonCodeData.voucher_code) {
-      throw new Error('Code data is missing in the parsed JSON');
+      log.warning('Code data is missing in the parsed JSON');
+      return;
     }
 
     const code = jsonCodeData.voucher_code;
-    console.log(`Found code: ${code}\n    at: ${request.url}`);
+    log.info(`Found code: ${code}\n    at: ${request.url}`);
 
     // Assuming the code should be added to the validator's data
     validator.addValue('code', code);

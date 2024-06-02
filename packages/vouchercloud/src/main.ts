@@ -6,9 +6,7 @@ import { router } from './routes';
 async function main() {
   await Actor.init();
 
-  const crawler = await prepareCheerioScraper(router, {
-    maxRequestRetries: 10,
-  });
+  const crawler = await prepareCheerioScraper(router);
 
   await crawler.run();
   await Actor.exit();

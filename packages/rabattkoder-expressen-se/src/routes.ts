@@ -1,90 +1,53 @@
-import { createCheerioRouter } from 'crawlee';
+import { createCheerioRouter, log } from 'crawlee';
 import cheerio from 'cheerio';
-import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
 import {
-  checkExistingCouponsAnomaly,
-  processAndStoreData,
+  checkCouponIds,
+  CouponHashMap,
+  CouponItemResult,
+  generateHash,
+  logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
 
 export const router = createCheerioRouter();
 
-function cleanContent(element) {
-  const formatElement = he
-    .decode(element.text())
-    .trim()
-    .split('\n')
-    .map((line) => line.trim())
-    .join('\n')
-    .replace('\n\n', '\n');
-  return formatElement;
-}
+async function processCouponItem(couponItem: any, $cheerio: cheerio.Root) {
+  const elementClass = $cheerio('*').first().attr('class');
 
-async function processCouponItem(
-  context: any,
-  merchantName: string,
-  couponElement: cheerio.Element,
-  sourceUrl: string
-) {
-  const $coupon = cheerio.load(couponElement);
-
-  let hasCode = false;
-
-  let isExpired = false;
-
-  const elementClass = $coupon('*').first().attr('class');
-
-  if (!elementClass) {
-    console.log('Coupon HTML:', $coupon.html());
-    throw new Error('Element class is missing');
-  }
-
-  isExpired = elementClass.includes('expired');
-
-  let voucherTitle;
-  const titleElement = $coupon('h3.voucher__heading').first();
-
-  if (titleElement) {
-    voucherTitle = cleanContent(titleElement);
-  }
-  const elemCode = $coupon('.voucher__btn').first();
-
-  if (elemCode.length > 0) {
-    hasCode = true;
-  }
-
-  const idInSite = $coupon('.voucher__btn ').first().attr('data-id');
-
-  if (!idInSite) {
-    console.log('Coupon HTML:', $coupon.html());
-    throw new Error('Element data-promotion-id attr is missing');
-  }
+  const isExpired = elementClass?.includes('expired');
 
   // Description
   let description;
-  const descElement = $coupon('.text-expand__text').first();
+  const descElement = $cheerio('.text-expand__text').first();
+
   if (descElement) {
     description = descElement.attr('data-load');
   }
 
   const validator = new DataValidator();
   // Add required and optional values to the validator
-  validator.addValue('sourceUrl', sourceUrl);
-  validator.addValue('merchantName', merchantName);
-  validator.addValue('title', voucherTitle);
-  validator.addValue('idInSite', idInSite);
+  validator.addValue('sourceUrl', couponItem.sourceUrl);
+  validator.addValue('merchantName', couponItem.merchantName);
+  validator.addValue('domain', couponItem.merchantDomain);
+  validator.addValue('title', couponItem.title);
+  validator.addValue('idInSite', couponItem.idInSite);
   validator.addValue('description', description);
   validator.addValue('isExpired', isExpired);
   validator.addValue('isShown', true);
 
-  let code;
-  if (hasCode) {
-    const voucherCodeElement = $coupon('.voucher-button__code');
-    code = voucherCodeElement.text();
-    validator.addValue('code', code);
-  }
-  await processAndStoreData(validator, context);
+  const code = $cheerio('.voucher-button__code')?.text();
+
+  code ? validator.addValue('code', code) : null;
+
+  const generatedHash = generateHash(
+    couponItem.merchantName,
+    couponItem.title,
+    couponItem.sourceUrl
+  );
+
+  return { generatedHash, validator, hasCode: !!code, couponUrl: '' };
 }
 
 router.addHandler(Label.listing, async (context) => {
@@ -93,7 +56,8 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
+    logError('Request queue is missing');
+    return;
   }
 
   function getMerchantName() {
@@ -115,29 +79,109 @@ router.addHandler(Label.listing, async (context) => {
   try {
     // Extracting request and body from context
 
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`Processing URL: ${request.url}`);
 
     const merchantName = getMerchantName();
 
     if (!merchantName) {
-      throw new Error('Unable to find merchant name element');
-    }
-
-    const validCoupons = $('.voucher__list > div.voucher');
-
-    const hasAnomaly = await checkExistingCouponsAnomaly(
-      request.url,
-      validCoupons.length
-    );
-
-    if (hasAnomaly) {
+      logError(`Unable to find merchant name element ${request.url}`);
       return;
     }
 
+    const merchantEmailTag = $('p:contains("info@")');
+
+    if (!merchantEmailTag) {
+      log.warning(`merchantDomain not found ${request.url}`);
+    }
+
+    const merchantDomain = merchantEmailTag
+      ?.text()
+      ?.match(/([a-zA-Z0-9]+)\.([a-z]+)/)?.[0];
+
+    const validCoupons = $('.voucher__list > div.voucher');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: validCoupons,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
+    const couponsWithCode: CouponHashMap = {};
+    const idsToCheck: string[] = [];
+    let result: CouponItemResult;
     // Extract valid coupons
-    for (let index = 0; index < validCoupons.length; index++) {
-      const element = validCoupons[index];
-      await processCouponItem(context, merchantName, element, request.url);
+    for (const item of validCoupons) {
+      const $coupon = cheerio.load(item);
+
+      const title = $coupon('h3.voucher__heading').first()?.text()?.trim();
+
+      if (!title) {
+        logError(`titleElement not found in item`);
+        continue;
+      }
+
+      const idInSite = $coupon('.voucher__btn ').first().attr('data-id');
+
+      if (!idInSite) {
+        logError('idInSite not found in item');
+        continue;
+      }
+
+      const couponItem = {
+        title,
+        merchantName,
+        idInSite,
+        merchantDomain,
+        sourceUrl: request.url,
+      };
+
+      result = await processCouponItem(couponItem, $coupon);
+
+      if (result.hasCode) {
+        couponsWithCode[result.generatedHash] = result;
+        idsToCheck.push(result.generatedHash);
+        continue;
+      }
+
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        logError(`Post-Processing Error : ${error.message}`);
+        return;
+      }
+    }
+    // Call the API to check if the coupon exists
+    const nonExistingIds = await checkCouponIds(idsToCheck);
+
+    if (nonExistingIds.length == 0) return;
+
+    let currentResult: CouponItemResult;
+
+    for (const id of nonExistingIds) {
+      currentResult = couponsWithCode[id];
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: currentResult.validator,
+          },
+        },
+        context
+      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

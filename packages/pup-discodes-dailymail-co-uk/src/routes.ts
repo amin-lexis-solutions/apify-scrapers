@@ -1,16 +1,16 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
-  processAndStoreData,
   getMerchantDomainFromUrl,
   generateCouponId,
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
   formatDateTime,
-  checkExistingCouponsAnomaly,
+  logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
 
 declare global {
   interface Window {
@@ -67,7 +67,8 @@ function processCouponItem(
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
-  const idInSite = voucher.idVoucher.toString();
+  const idInSite =
+    voucher?.idVoucher?.toString() || voucher?.idPool?.replace('uk_', '');
 
   // Add required values to the validator
   validator.addValue('sourceUrl', sourceUrl);
@@ -110,11 +111,12 @@ function processCouponItem(
 const router = Router.create<PuppeteerCrawlingContext>();
 
 router.addHandler(Label.listing, async (context) => {
-  const { page, request, enqueueLinks } = context;
+  const { page, request, enqueueLinks, log } = context;
+
   if (request.userData.label !== Label.listing) return;
 
   try {
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.warning(`Processing URL: ${request.url}`);
 
     await page.waitForFunction(() => {
       return !!window.__NEXT_DATA__;
@@ -125,28 +127,38 @@ router.addHandler(Label.listing, async (context) => {
     const match = htmlContent.match(jsonPattern);
 
     let jsonData;
-    let retailerId;
-    if (match && match[1]) {
-      jsonData = JSON.parse(match[1]);
-      retailerId = jsonData.query.clientId;
-      jsonData = jsonData.props.pageProps;
-    } else {
-      throw new Error(
-        'No matching script tag found or no JSON content present'
-      );
+
+    if (!match || !match?.[1]) {
+      logError(`'JSON data not found ${request.url}`);
+      return;
     }
+
+    jsonData = JSON.parse(match[1]);
+
+    const retailerId = jsonData.query.clientId;
+    jsonData = jsonData.props.pageProps;
 
     if (!jsonData.retailer) {
-      throw new Error('Retailer data is missing in the parsed JSON');
+      logError('Retailer data is missing in the parsed JSON');
+      return;
     }
 
-    console.log(
+    log.info(
       `\n\nFound ${jsonData.vouchers.length} active vouchers and ${jsonData.expiredVouchers.length} expired vouchers\n    at: ${request.url}\n`
     );
 
     const merchantName = jsonData.retailer.name;
+
+    if (!merchantName) {
+      logError(`not merchantName found ${request.url}`);
+      return;
+    }
     const merchantUrl = jsonData.retailer.merchant_url;
     const domain = getMerchantDomainFromUrl(merchantUrl);
+
+    if (!domain) {
+      log.warning(`not merchantDomain found`);
+    }
 
     const activeVouchers = jsonData.vouchers.map((voucher) => ({
       ...voucher,
@@ -156,14 +168,20 @@ router.addHandler(Label.listing, async (context) => {
       ...voucher,
       is_expired: true,
     }));
+
     const vouchers = [...activeVouchers, ...expiredVouchers];
 
-    const hasAnomaly = await checkExistingCouponsAnomaly(
-      request.url,
-      vouchers.length
-    );
-
-    if (hasAnomaly) {
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: vouchers,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 
@@ -179,33 +197,47 @@ router.addHandler(Label.listing, async (context) => {
         voucher,
         request.url
       );
-      if (!result.hasCode) {
-        await processAndStoreData(result.validator, context);
-      } else {
+
+      if (result.hasCode) {
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
+        continue;
+      }
+
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        logError(`Post-Processing Error : ${error.message}`);
+        return;
       }
     }
 
     // Call the API to check if the coupon exists
     const nonExistingIds = await checkCouponIds(idsToCheck);
 
-    if (nonExistingIds.length > 0) {
-      let currentResult: CouponItemResult;
-      let validatorData;
-      for (const id of nonExistingIds) {
-        currentResult = couponsWithCode[id];
-        validatorData = currentResult.validator.getData();
+    if (nonExistingIds.length == 0) return;
 
-        await enqueueLinks({
-          urls: [currentResult.couponUrl],
-          userData: {
-            label: Label.getCode,
-            validatorData,
-          },
-          forefront: true,
-        });
-      }
+    let currentResult: CouponItemResult;
+    let validatorData;
+    for (const id of nonExistingIds) {
+      currentResult = couponsWithCode[id];
+      validatorData = currentResult.validator.getData();
+
+      await enqueueLinks({
+        urls: [currentResult.couponUrl],
+        userData: {
+          label: Label.getCode,
+          validatorData,
+        },
+        forefront: true,
+      });
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
@@ -214,27 +246,42 @@ router.addHandler(Label.listing, async (context) => {
 });
 
 router.addHandler(Label.getCode, async (context) => {
-  const { page, request } = context;
+  const { page, request, log } = context;
+
   if (request.userData.label !== Label.getCode) return;
 
   try {
     const validatorData = request.userData.validatorData;
+
     const validator = new DataValidator();
+
     validator.loadData(validatorData);
 
     const htmlContent = await page.content();
     const jsonPattern = /<pre[^>]*>(.*?)<\/pre>/s;
     const match = htmlContent.match(jsonPattern);
 
-    if (match && match[1]) {
-      const jsonCodeData = JSON.parse(match[1]);
-      const code = jsonCodeData.code;
-      console.log(`Found code: ${code}\n    at: ${request.url}`);
-      validator.addValue('code', code);
-      await processAndStoreData(validator, context);
-    } else {
-      throw new Error('No matching pre tag found or no JSON content present');
+    if (!match || !match[1]) {
+      log.warning('No matching pre tag found or no JSON content present');
+
+      return;
     }
+
+    const jsonCodeData = JSON.parse(match[1]);
+    const code = jsonCodeData?.code;
+
+    log.info(`Found code: ${code}\n    at: ${request.url}`);
+
+    validator.addValue('code', code);
+
+    await preProcess(
+      {
+        AnomalyCheckHandler: {
+          coupons: validator,
+        },
+      },
+      context
+    );
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

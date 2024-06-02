@@ -3,110 +3,105 @@ import cheerio from 'cheerio';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
-  processAndStoreData,
   generateCouponId,
   checkCouponIds,
   CouponItemResult,
   CouponHashMap,
   getMerchantDomainFromUrl,
-  checkExistingCouponsAnomaly,
+  logError,
 } from 'shared/helpers';
+import { postProcess, preProcess } from 'shared/hooks';
 
 export const router = createCheerioRouter();
 
 // Function to process a single coupon item from the webpage
 function processCouponItem(
-  merchantName: string,
-  domain: string | null,
-  couponElement: cheerio.Element,
-  couponUrl: string
+  couponItem: any,
+  couponElement: cheerio.Root
 ): CouponItemResult {
-  // Load the coupon element using Cheerio
-  const $coupon = cheerio.load(couponElement);
-  // Function to extract the title of the coupon
-  function extractTitle() {
-    const titleElement = $coupon('.card-text h3');
-    if (titleElement) {
-      return titleElement.text();
-    }
-    return;
-  }
   // Function to extract the description of the coupon
   function extractDescription() {
-    return $coupon('p.show-txt')?.text();
+    return couponElement('p.show-txt')?.text();
   }
   // Function to extract the coupon code (if available)
   function extractCode() {
-    const codeElement = $coupon('.item-code .hiddenCode');
-    const code = codeElement.text();
+    const codeElement = couponElement('.item-code .hiddenCode');
+    const code = codeElement?.text();
+
     return code.length == 0 || code.includes('no code need') ? null : code;
   }
   // Function to check if the coupon is expired
   function extractExpired() {
-    const expireElement = $coupon('.expires span').first();
-    return expireElement?.text()?.includes('expired');
+    const expireElement = couponElement('.expires span').first();
+    return expireElement?.text()?.toLocaleLowerCase()?.includes('expired');
   }
-  // Initialize variables
 
-  let hasCode = false;
-  const title = extractTitle();
   const description = extractDescription();
   const code = extractCode();
   const isExpired = extractExpired();
 
-  const idInSite = $coupon('*')?.attr('data-cid');
-  // Throw an error if ID is not found
-  if (!idInSite) {
-    throw new Error('idInSite not found');
-  }
   // Create a data validator instance
   const validator = new DataValidator();
 
   // Add required and optional values to the validator
-  validator.addValue('sourceUrl', couponUrl);
-  validator.addValue('merchantName', merchantName);
-  validator.addValue('domain', domain);
-  validator.addValue('title', title);
-  validator.addValue('idInSite', idInSite);
+  validator.addValue('sourceUrl', couponItem.sourceUrl);
+  validator.addValue('merchantName', couponItem.merchantName);
+  validator.addValue('domain', couponItem.merchantDomain);
+  validator.addValue('title', couponItem.title);
+  validator.addValue('idInSite', couponItem.idInSite);
   validator.addValue('description', description);
   validator.addValue('isExpired', isExpired);
   validator.addValue('isShown', true);
-  // If coupon code exists, set hasCode to true and add code to validator
-  if (code) {
-    hasCode = true;
-    validator.addValue('code', code);
-  }
+  validator.addValue('code', code);
+
+  const hasCode = !!code;
+
   // Generate a hash for the coupon
-  const generatedHash = generateCouponId(merchantName, idInSite, couponUrl);
+  const generatedHash = generateCouponId(
+    couponItem.merchantName,
+    couponItem.idInSite,
+    couponItem.sourceUrl
+  );
+
   // Return the coupon item result
-  return { generatedHash, hasCode, couponUrl, validator };
+  return { generatedHash, hasCode, couponUrl: '', validator };
 }
 // Handler function for processing coupon listings
 router.addHandler(Label.listing, async (context) => {
   const { request, $, log } = context;
   try {
-    console.log(`Listing ${request.url}`);
+    log.info(`Listing ${request.url}`);
     // Extract the merchant name
-    const merchantName = $('img.merchant-logo')?.attr('title');
+    const merchantName = $('img.merchant-logo')?.attr('title') || '';
     // Throw an error if merchant name is not found
     if (!merchantName) {
-      throw new Error('merchantName not found');
+      logError(`merchantName not found ${request.url}`);
+      return;
     }
     // Extract coupon list elements from the webpage
-    const domain = getMerchantDomainFromUrl(request.url);
+    const merchantDomain = getMerchantDomainFromUrl(request.url);
 
-    if (!domain) {
+    if (!merchantDomain) {
       log.warning('Domain is missing!');
     }
 
-    const couponList = $('.promo-container.code');
+    const items = [
+      ...$('.promo-container.code'),
+      ...$('.promo-container.deal'),
+    ];
 
-    const hasAnomaly = await checkExistingCouponsAnomaly(
-      request.url,
-      couponList.length
-    );
-
-    if (hasAnomaly) {
+    // pre-pressing hooks  here to avoid unnecessary requests
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: items,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 
@@ -114,16 +109,55 @@ router.addHandler(Label.listing, async (context) => {
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
+
     // Loop through each coupon element and process it
-    for (const element of couponList) {
-      result = processCouponItem(merchantName, domain, element, request.url);
-      // If coupon has no code, process and store its data
-      if (!result?.hasCode) {
-        await processAndStoreData(result.validator, context);
-      } else {
+    for (const item of items) {
+      const $item = cheerio.load(item);
+
+      const title = $item('.card-text h3').text();
+
+      // Logs if ID is not found
+      if (!title) {
+        logError('Title not found in item');
+        continue;
+      }
+
+      const idInSite = $item('*')?.attr('data-cid');
+      // Throw an error if ID is not found
+      if (!idInSite) {
+        logError('idInSite not found in item');
+        continue;
+      }
+
+      const couponItem = {
+        idInSite,
+        title,
+        merchantName,
+        merchantDomain,
+        sourceUrl: request.url,
+      };
+
+      result = processCouponItem(couponItem, $item);
+
+      if (result.hasCode) {
         // If coupon has a code, store it in a hashmap and add its ID for checking
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
+        continue;
+      }
+
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        logError(`Post-Processing Error : ${error.message}`);
+        return;
       }
     }
 
@@ -137,7 +171,19 @@ router.addHandler(Label.listing, async (context) => {
     for (const id of nonExistingIds) {
       currentResult = couponsWithCode[id];
       // Add the coupon URL to the request queue
-      await processAndStoreData(currentResult?.validator, context);
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: currentResult.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        logError(`Post-Processing Error : ${error.message}`);
+        return;
+      }
     }
   } finally {
     // Use finally to ensure the actor ends successfully

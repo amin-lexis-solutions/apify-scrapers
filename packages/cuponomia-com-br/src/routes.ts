@@ -1,54 +1,27 @@
 import * as cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import {
-  checkExistingCouponsAnomaly,
-  processAndStoreData,
-} from 'shared/helpers';
+import { CouponHashMap, CouponItemResult, logError } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
+import { generateHash } from 'shared/helpers';
 
-async function processCouponItem(
-  context: any,
-  merchantName: string,
-  isExpired: boolean,
-  couponElement: cheerio.Element,
-  sourceUrl: string
-) {
-  const $coupon = cheerio.load(couponElement);
-
-  // Retrieve 'data-id' attribute
-  const dataId = $coupon.root().children().first().attr('data-id');
-
-  // Check if 'data-id' is set and not empty
-  if (!dataId || dataId.trim() === '') {
-    console.log('Coupon HTML:', $coupon.html());
-    throw new Error('Missing or empty data-id attribute');
-  }
-
-  // Extract the voucher title
-  const titleElement = $coupon('div.coupon-info > div.item-title > h3');
-  if (titleElement.length === 0) {
-    console.log('Coupon HTML:', $coupon.html());
-    throw new Error('Voucher title is missing');
-  }
-  const voucherTitle = titleElement.text().trim();
-
+async function processCouponItem(couponItem: any, $coupon: cheerio.Root) {
   // Extract the description
-  const descElement = $coupon(
-    'div.coupon-info > div.coupon-info-complement > div.item-desc-wrapper > div.item-desc'
-  );
-  const description = descElement.length > 0 ? descElement.text().trim() : '';
+  const description = $coupon('div.item-desc-wrapper div.item-desc')
+    .text()
+    .trim();
 
+  const isExpired = $coupon('*').attr('class')?.includes('expired-item');
   // Extract the code
-  let code = '';
+
   const codeElement = isExpired
     ? $coupon('div.coupon-info > div.item-title > span.coupon-code > span.code')
     : $coupon('button.item-code > span.item-promo-block > span.item-code-link');
 
-  if (codeElement.length > 0) {
-    code = codeElement.text().trim();
-  }
+  const code = codeElement.length > 0 ? codeElement.text().trim() : null;
 
+  const hasCode = !!code;
   // Determine if the coupon isExclusive
   const exclusiveElement = $coupon(
     'div.coupon-info > div.coupon-info-complement > div.couponStatus > span.couponStatus-item'
@@ -60,72 +33,120 @@ async function processCouponItem(
   const validator = new DataValidator();
 
   // Add required and optional values to the validator
-  validator.addValue('sourceUrl', sourceUrl);
-  validator.addValue('merchantName', merchantName);
-  validator.addValue('title', voucherTitle);
-  validator.addValue('idInSite', dataId);
+  validator.addValue('sourceUrl', couponItem.sourceUrl);
+  validator.addValue('merchantName', couponItem.merchantName);
+  validator.addValue('title', couponItem.title);
+  validator.addValue('idInSite', couponItem.idInSite);
   validator.addValue('description', description);
   validator.addValue('isExclusive', isExclusive);
   validator.addValue('isExpired', isExpired);
   validator.addValue('isShown', true);
-  if (code) {
-    validator.addValue('code', code);
-  }
 
-  await processAndStoreData(validator, context);
+  code ? validator.addValue('code', code) : null;
+
+  const generatedHash = generateHash(
+    couponItem.merchantName,
+    couponItem.title,
+    couponItem.sourceUrl
+  );
+
+  return { generatedHash, validator, couponUrl: '', hasCode };
 }
 
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, body } = context;
+  const { request, body, log } = context;
   if (request.userData.label !== Label.listing) return;
 
   try {
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`Processing URL: ${request.url}`);
+
     const htmlContent = body instanceof Buffer ? body.toString() : body;
     const $ = cheerio.load(htmlContent);
 
-    const merchantName = $('div.storeHeader').attr('data-store-name');
+    const merchantName = (
+      $('div.storeHeader').attr('data-store-name') ||
+      $('.item-title h3').attr('data-label')
+    )?.toLowerCase();
+
     if (!merchantName) {
-      throw new Error('Unable to find merchant name');
+      logError('Unable to find merchant name');
+      return;
     }
 
     // Refactor to use a loop for valid coupons
     const validCoupons = $('ul.coupon-list.valid-coupons > li[data-id]');
+    const expiredCoupons = $('ul.coupon-list.expired-coupons > li[data-id]');
+    const items = [...validCoupons, ...expiredCoupons];
 
-    const hasAnomaly = await checkExistingCouponsAnomaly(
-      request.url,
-      validCoupons.length
-    );
-
-    if (hasAnomaly) {
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: items,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 
-    for (let i = 0; i < validCoupons.length; i++) {
-      const element = validCoupons[i];
-      await processCouponItem(
-        context,
-        merchantName,
-        false,
-        element,
-        request.url
-      );
-    }
+    const couponsWithCode: CouponHashMap = {};
+    const idsToCheck: string[] = [];
+    let result: CouponItemResult;
 
-    // Refactor to use a loop for expired coupons
-    const expiredCoupons = $('ul.coupon-list.expired-coupons > li[data-id]');
-    for (let i = 0; i < expiredCoupons.length; i++) {
-      const element = expiredCoupons[i];
-      await processCouponItem(
-        context,
+    for (const item of items) {
+      const $coupon = cheerio.load(item);
+
+      // Retrieve 'data-id' attribute
+      const idInSite = $coupon('*').attr('data-id') || $coupon('*').attr('id');
+
+      if (!idInSite) {
+        logError('idInSite not found in item');
+        continue;
+      }
+
+      const title = $coupon('div.coupon-info > div.item-title > h3')
+        ?.text()
+        .trim();
+
+      if (!title) {
+        logError('title not found in item');
+        continue;
+      }
+
+      const couponItem = {
+        title,
+        idInSite,
         merchantName,
-        true,
-        element,
-        request.url
-      );
+        sourceUrl: request.url,
+      };
+
+      result = await processCouponItem(couponItem, $coupon);
+
+      if (result.hasCode) {
+        couponsWithCode[result.generatedHash] = result;
+        idsToCheck.push(result.generatedHash);
+        continue;
+      }
+
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        logError(`Post-Processing Error : ${error.message}`);
+        return;
+      }
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

@@ -6,7 +6,7 @@ import {
   PuppeteerCrawlingContext,
   RouterHandler,
 } from 'crawlee';
-import { PuppeteerCrawler } from 'crawlee';
+import { PuppeteerCrawler, log } from 'crawlee';
 
 type Input = {
   startUrls: Array<{ url: string; metadata?: any }>;
@@ -57,7 +57,7 @@ export async function prepareCheerioScraper(
     ? getStartUrlsArray(input.startUrls)
     : [];
 
-  console.log(`Found ${startUrls.length} start URLs`);
+  log.info(`Found ${startUrls.length} start URLs`);
 
   const requestQueue = await RequestQueue.open();
 
@@ -84,16 +84,12 @@ export async function prepareCheerioScraper(
     customHeaders = { ...customHeaders, ...args.customHeaders };
   }
 
-  if (!crawler.requestQueue) {
-    throw new Error('Request queue is not available');
-  }
-
   // Manually add each URL to the request queue
 
   const userData = { label: Label.listing };
 
   for (const { url, metadata } of startUrls) {
-    await crawler.requestQueue.addRequest({
+    await crawler?.requestQueue?.addRequest({
       url,
       userData: { ...userData, ...metadata },
       headers: customHeaders,
@@ -115,7 +111,7 @@ export async function preparePuppeteerScraper(
     ? getStartUrlsArray(input.startUrls)
     : [];
 
-  console.log(`Found ${startUrls.length} start URLs`);
+  log.info(`Found ${startUrls.length} start URLs`);
 
   const requestQueue = await RequestQueue.open();
 
@@ -149,13 +145,9 @@ export async function preparePuppeteerScraper(
     customHeaders = { ...customHeaders, ...args.customHeaders };
   }
 
-  if (!crawler.requestQueue) {
-    throw new Error('Request queue is not available');
-  }
-
   // Manually add each URL to the request queue
   for (const { url, metadata } of startUrls) {
-    await crawler.requestQueue.addRequest({
+    await crawler?.requestQueue?.addRequest({
       url,
       userData: {
         ...metadata,

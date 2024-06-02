@@ -8,6 +8,7 @@ import {
   CouponItemResult,
   CouponHashMap,
   formatDateTime,
+  logError,
 } from './helpers';
 import { preProcess, postProcess } from './hooks';
 import { Label, CUSTOM_HEADERS } from './actor-utils';
@@ -53,7 +54,7 @@ function checkVoucherCode(code: string | null | undefined) {
 
 function processCouponItem(
   merchantName: string,
-  domain: string | null,
+  merchantDomain: string | null,
   item: any,
   sourceUrl: string,
   nextData: any
@@ -74,7 +75,7 @@ function processCouponItem(
   validator.addValue('idInSite', idInSite);
 
   // Add optional values to the validator
-  validator.addValue('domain', domain);
+  validator.addValue('domain', merchantDomain);
   validator.addValue('description', item.description);
   validator.addValue('termsAndConditions', item.termsAndConditions);
   validator.addValue('expiryDateAt', formatDateTime(item.endTime));
@@ -115,13 +116,14 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
+    logError('Request queue is missing');
+    return;
   }
 
   try {
     // Extracting request and body from context
 
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`Processing URL: ${request.url}`);
 
     // Convert body to string if it's a Buffer
     const htmlContent = body instanceof Buffer ? body.toString() : body;
@@ -133,53 +135,61 @@ router.addHandler(Label.listing, async (context) => {
     const match = htmlContent.match(jsonPattern);
 
     if (!match || !match?.[1]) {
+      logError(`'JSON data not found ${request.url}`);
       return;
     }
 
     const nextData = JSON.parse(match?.[1]);
-
     const pageProps = nextData.props.pageProps;
 
     if (!pageProps || !pageProps.retailer) {
-      throw new Error('Retailer data is missing in the parsed JSON');
+      logError('pageProps data is missing in the parsed JSON');
+      return;
     }
 
-    console.log(
-      `\n\nFound ${pageProps.vouchers.length} active vouchers and ${pageProps.expiredVouchers.length} expired vouchers\n    at: ${request.url}\n`
+    log.info(
+      `Found ${pageProps.vouchers.length} active vouchers and ${pageProps.expiredVouchers.length} expired vouchers\n    at: ${request.url}\n`
     );
 
     // Declarations outside the loop
     const merchantName = pageProps.retailer.name;
-    const merchantUrl = pageProps.retailer.merchant_url;
-    const domain = getMerchantDomainFromUrl(merchantUrl);
 
-    if (!domain) {
-      log.info('Domain is missing!');
+    if (!merchantName) {
+      logError(`merchantName not found ${request.url}`);
+      return;
+    }
+
+    const merchantUrl = pageProps.retailer.merchant_url;
+    const merchantDomain = getMerchantDomainFromUrl(merchantUrl);
+
+    if (!merchantDomain) {
+      log.warning(`merchantDomain not found ${request.url}`);
     }
 
     // Combine active and expired vouchers
-    const activeVouchers = pageProps.vouchers.map((voucher) => ({
+    const activetItem = pageProps.vouchers.map((voucher) => ({
       ...voucher,
       is_expired: false,
     }));
-    const expiredVouchers = pageProps.expiredVouchers.map((voucher) => ({
+    const expiredItem = pageProps.expiredVouchers.map((voucher) => ({
       ...voucher,
       is_expired: true,
     }));
-    const vouchers = [...activeVouchers, ...expiredVouchers];
+
+    const items = [...activetItem, ...expiredItem];
 
     // pre-pressing hooks  here to avoid unnecessary requests
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: vouchers,
+            coupons: items,
           },
         },
         context
       );
     } catch (error: any) {
-      log.info(`Pre-Processing Error : ${error.message}`);
+      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 
@@ -187,12 +197,22 @@ router.addHandler(Label.listing, async (context) => {
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
 
-    for (const item of vouchers) {
+    for (const item of items) {
       await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings
+
+      if (!item?.idPool && !item?.idVoucher && !item?.idInSite) {
+        logError(`idInSite not found in item`);
+        continue;
+      }
+
+      if (!item.title) {
+        logError(`title not found in item`);
+        continue;
+      }
 
       result = processCouponItem(
         merchantName,
-        domain,
+        merchantDomain,
         item,
         request.url,
         nextData
@@ -228,7 +248,7 @@ router.addHandler(Label.listing, async (context) => {
     for (const id of nonExistingIds) {
       currentResult = couponsWithCode[id];
       // Add the coupon URL to the request queue
-      await crawler.requestQueue.addRequest(
+      await crawler?.requestQueue?.addRequest(
         {
           url: currentResult.couponUrl,
           userData: {
@@ -249,7 +269,7 @@ router.addHandler(Label.listing, async (context) => {
 
 router.addHandler(Label.getCode, async (context) => {
   // context includes request, body, etc.
-  const { request, body } = context;
+  const { request, body, log } = context;
 
   if (request.userData.label !== Label.getCode) return;
 
@@ -267,16 +287,22 @@ router.addHandler(Label.getCode, async (context) => {
     // Convert body to string if it's a Buffer
     const htmlContent = body instanceof Buffer ? body.toString() : body;
 
+    if (!htmlContent.startsWith('{')) {
+      log.warning(`Invalid JSON string`);
+      return;
+    }
     // Safely parse the JSON string
     const jsonCodeData = JSON.parse(htmlContent);
 
     // Validate the necessary data is present
     if (!jsonCodeData || !jsonCodeData.code) {
-      throw new Error('Code data is missing in the parsed JSON');
+      log.warning(`Coupon code not found ${request.url}`);
+      return;
     }
 
     const code = jsonCodeData.code;
-    console.log(`Found code: ${code}\n    at: ${request.url}`);
+
+    log.info(`Found code: ${code}\n    at: ${request.url}`);
 
     // Assuming the code should be added to the validator's data
     validator.addValue('code', code);
