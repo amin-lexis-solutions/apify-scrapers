@@ -6,10 +6,7 @@ import { router } from './routes';
 async function main() {
   await Actor.init();
 
-  const crawler = await preparePuppeteerScraper(router as any, {
-    domain: 'coupons.businessinsider.com',
-    countryCode: 'us',
-  });
+  const crawler = await preparePuppeteerScraper(router as any, {});
 
   await crawler.run();
   await Actor.exit();

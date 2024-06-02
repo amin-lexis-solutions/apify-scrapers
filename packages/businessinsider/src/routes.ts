@@ -5,7 +5,9 @@ import {
   formatDateTime,
   generateCouponId,
   getMerchantDomainFromUrl,
-  processAndStoreData,
+  CouponItemResult,
+  CouponHashMap,
+  checkCouponIds,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -49,7 +51,7 @@ function processCouponItem(
     sourceUrl
   );
 
-  const hasCode = voucher?.type.includes('code');
+  const hasCode = voucher?.type === 'code';
 
   const couponUrl = `https://coupons.businessinsider.com/api/voucher/country/${countryCode}/client/${clientId}/id/${voucher.idPool}`;
 
@@ -99,8 +101,10 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
+    const couponsWithCode: CouponHashMap = {};
+    const idsToCheck: string[] = [];
     for (const voucher of allVouchers) {
-      const result = processCouponItem(
+      const result: CouponItemResult = processCouponItem(
         merchantName,
         countryCode,
         clientId,
@@ -109,19 +113,39 @@ router.addHandler(Label.listing, async (context) => {
         request.url
       );
 
-      if (result.hasCode) {
+      if (!result.hasCode) {
+        try {
+          await postProcess(
+            {
+              SaveDataHandler: {
+                validator: result.validator,
+              },
+            },
+            context
+          );
+        } catch (error) {
+          log.error(`Postprocess Error: ${error}`);
+        }
+        continue;
+      }
+      couponsWithCode[result.generatedHash] = result;
+      idsToCheck.push(result.generatedHash);
+    }
+
+    const nonExistingIds = await checkCouponIds(idsToCheck);
+
+    if (nonExistingIds.length > 0) {
+      for (const id of nonExistingIds) {
+        const result: CouponItemResult = couponsWithCode[id];
         await enqueueLinks({
           urls: [result.couponUrl],
           userData: {
+            ...request.userData,
             label: Label.getCode,
-            metadata: request.userData.metadata,
             validatorData: result.validator.getData(),
           },
         });
-        continue;
       }
-
-      await processAndStoreData(result.validator, context);
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
