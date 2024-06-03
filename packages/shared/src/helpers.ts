@@ -57,15 +57,16 @@ export async function checkCouponIds(ids: any[]): Promise<any[]> {
 }
 
 export function generateCouponId(
-  merchantName: string,
-  idInSite: string,
-  sourceUrl: string
+  merchantName?: string | null,
+  idInSite?: string | null,
+  sourceUrl?: string
 ): string {
-  const normalizedMerchant = normalizeString(merchantName);
-  const normalizedVoucher = normalizeString(idInSite);
+  const normalizedMerchant = merchantName ? normalizeString(merchantName) : '';
+  const normalizedVoucher = idInSite ? normalizeString(idInSite) : '';
 
-  const domain = getMerchantDomainFromUrl(sourceUrl);
-  const normalizedUrl = domain ? normalizeString(domain) : '';
+  const normalizedUrl = sourceUrl
+    ? normalizeString(getMerchantDomainFromUrl(sourceUrl))
+    : '';
 
   const combinedString = `${normalizedMerchant}|${normalizedVoucher}|${normalizedUrl}`;
 
@@ -202,4 +203,9 @@ export async function checkExistingCouponsAnomaly(
   } catch (e) {
     log.error(`Error fetching coupons anomaly`, { e });
   }
+}
+
+export function logError(exception: string) {
+  log.error(exception);
+  Sentry.captureException(exception);
 }

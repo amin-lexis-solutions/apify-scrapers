@@ -7,10 +7,7 @@ import { router } from 'shared/next-routes';
 async function main() {
   await Actor.init();
 
-  const crawler = await prepareCheerioScraper(router, {
-    domain: 'discountcode.dailymail.co.uk',
-    countryCode: 'uk',
-  });
+  const crawler = await prepareCheerioScraper(router);
 
   await crawler.run();
   await Actor.exit();

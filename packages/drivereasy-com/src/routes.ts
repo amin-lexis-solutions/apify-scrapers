@@ -1,21 +1,22 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
-  processAndStoreData,
   generateCouponId,
   CouponHashMap,
   checkCouponIds,
   CouponItemResult,
   getMerchantDomainFromUrl,
-  checkExistingCouponsAnomaly,
+  logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
 
 // Export the router function that determines which handler to use based on the request label
 const router = Router.create<PuppeteerCrawlingContext>();
 
 router.addHandler(Label.listing, async (context) => {
-  const { page, request, enqueueLinks } = context;
+  const { page, request, enqueueLinks, log } = context;
+
   if (request.userData.label !== Label.listing) return;
 
   async function getCouponTitle(element) {
@@ -64,11 +65,13 @@ router.addHandler(Label.listing, async (context) => {
       }
     });
   }
+
   async function getCouponUrl(domain, id) {
     return `https://www.drivereasy.com/coupons/${domain}?promoid=${id}`;
   }
 
   try {
+    log.info(`Listing ${request.url}`);
     await page.waitForSelector('.list_coupons li');
 
     const domain = getMerchantDomainFromUrl(request.url);
@@ -78,17 +81,23 @@ router.addHandler(Label.listing, async (context) => {
     );
 
     if (!merchantName) {
-      throw new Error('merchan name not found');
+      logError('merchan name not found');
+      return;
     }
 
     const validCoupons = await page.$$('.list_coupons li .offer_card');
 
-    const hasAnomaly = await checkExistingCouponsAnomaly(
-      request.url,
-      validCoupons.length
-    );
-
-    if (hasAnomaly) {
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: validCoupons,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 
@@ -102,10 +111,17 @@ router.addHandler(Label.listing, async (context) => {
       const hasCode = true;
 
       const title = await getCouponTitle(element);
+
+      if (!title) {
+        logError('idInSite not found in item');
+        continue;
+      }
+
       const idInSite = await extractIdInSite(element);
 
       if (!idInSite) {
-        throw new Error('idInSite not found');
+        logError('idInSite not found in item');
+        continue;
       }
 
       const couponUrl = await getCouponUrl(domain, idInSite);
@@ -132,11 +148,24 @@ router.addHandler(Label.listing, async (context) => {
 
       result = { generatedHash, hasCode, couponUrl, validator };
 
-      if (!result.hasCode) {
-        await processAndStoreData(result.validator, context);
-      } else {
+      if (result.hasCode) {
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
+        continue;
+      }
+
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        logError(`Post-Processing Error : ${error.message}`);
+        return;
       }
     }
     // Call the API to check if the coupon exists
@@ -165,12 +194,15 @@ router.addHandler(Label.listing, async (context) => {
   }
 });
 
-router.addHandler(Label.getCode, async ({ page, request }) => {
+router.addHandler(Label.getCode, async (context) => {
+  const { request, page, log } = context;
+
   if (request.userData.label !== Label.getCode) return;
 
   await page.waitForSelector('.coupon_detail_pop');
 
   try {
+    log.info(`GetCode ${request.url}`);
     // 1. Extract validator data and create a new validator object
     const validatorData = request.userData.validatorData;
     const validator = new DataValidator();
@@ -185,7 +217,15 @@ router.addHandler(Label.getCode, async ({ page, request }) => {
       validator.addValue('code', code);
     }
 
-    await processAndStoreData(validator, context);
+    // Process and store the data
+    await postProcess(
+      {
+        SaveDataHandler: {
+          validator,
+        },
+      },
+      context
+    );
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

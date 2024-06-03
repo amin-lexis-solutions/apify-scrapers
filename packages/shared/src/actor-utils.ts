@@ -6,7 +6,7 @@ import {
   PuppeteerCrawlingContext,
   RouterHandler,
 } from 'crawlee';
-import { PuppeteerCrawler } from 'crawlee';
+import { PuppeteerCrawler, log } from 'crawlee';
 
 type Input = {
   startUrls: Array<{ url: string; metadata?: any }>;
@@ -47,7 +47,7 @@ export enum Label {
 
 export async function prepareCheerioScraper(
   router: RouterHandler<CheerioCrawlingContext<Input>>,
-  args: MainFunctionArgs
+  args?: MainFunctionArgs
 ) {
   const input = await Actor.getInput<Input>();
   const proxyConfiguration = await Actor.createProxyConfiguration(
@@ -57,7 +57,7 @@ export async function prepareCheerioScraper(
     ? getStartUrlsArray(input.startUrls)
     : [];
 
-  console.log(`Found ${startUrls.length} start URLs`);
+  log.info(`Found ${startUrls.length} start URLs`);
 
   const requestQueue = await RequestQueue.open();
 
@@ -65,7 +65,7 @@ export async function prepareCheerioScraper(
     proxyConfiguration,
     requestHandler: router,
     requestQueue,
-    maxRequestRetries: args.maxRequestRetries || 3,
+    maxRequestRetries: args?.maxRequestRetries || 3,
     failedRequestHandler: async ({ request, error }) => {
       // Log the error to Sentry
       Sentry.captureException(error, {
@@ -80,39 +80,16 @@ export async function prepareCheerioScraper(
 
   let customHeaders = CUSTOM_HEADERS;
   // If custom headers are provided, merge them with the default headers
-  if (args.customHeaders) {
+  if (args?.customHeaders) {
     customHeaders = { ...customHeaders, ...args.customHeaders };
   }
 
-  if (!crawler.requestQueue) {
-    throw new Error('Request queue is not available');
-  }
-
   // Manually add each URL to the request queue
-  let userData;
 
-  userData = { label: Label.listing };
+  const userData = { label: Label.listing };
 
-  if (args.domain && args.countryCode) {
-    userData.domain = args.domain;
-    userData.countryCode = args.countryCode;
-  }
-
-  let domain;
-  let countryCode;
   for (const { url, metadata } of startUrls) {
-    if (args.extractDomainAndCountryCode) {
-      domain = new URL(url).hostname;
-      // Get the country code as the last part of the domain
-      countryCode = domain.split('.').slice(-1)[0]; // Equivalent to Python's [-1]
-      userData = {
-        label: Label.listing,
-        domain,
-        countryCode,
-      };
-    }
-
-    await crawler.requestQueue.addRequest({
+    await crawler?.requestQueue?.addRequest({
       url,
       userData: { ...userData, ...metadata },
       headers: customHeaders,
@@ -134,7 +111,7 @@ export async function preparePuppeteerScraper(
     ? getStartUrlsArray(input.startUrls)
     : [];
 
-  console.log(`Found ${startUrls.length} start URLs`);
+  log.info(`Found ${startUrls.length} start URLs`);
 
   const requestQueue = await RequestQueue.open();
 
@@ -168,13 +145,9 @@ export async function preparePuppeteerScraper(
     customHeaders = { ...customHeaders, ...args.customHeaders };
   }
 
-  if (!crawler.requestQueue) {
-    throw new Error('Request queue is not available');
-  }
-
   // Manually add each URL to the request queue
   for (const { url, metadata } of startUrls) {
-    await crawler.requestQueue.addRequest({
+    await crawler?.requestQueue?.addRequest({
       url,
       userData: {
         ...metadata,

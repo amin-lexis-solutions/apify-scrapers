@@ -5,6 +5,7 @@ import {
   processAndStoreData,
   generateHash,
   checkExistingCouponsAnomaly,
+  logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 
@@ -21,8 +22,10 @@ const getMerchantName = ($, pageType) => {
       : '.rh-cat-list-title a:last-child';
   const merchantNameElement = $(selector);
 
-  if (merchantNameElement.length === 0)
-    throw new Error('Merchant name is missing');
+  if (merchantNameElement.length === 0) {
+    logError('Merchant name is missing');
+    return;
+  }
 
   return decodeHtml(
     (pageType === 'listing'
@@ -65,17 +68,24 @@ const processCoupon = async (context) => {
   const { request, $, crawler } = context;
 
   if (!crawler.requestQueue) {
-    log.error('Request queue is missing');
+    logError('Request queue is missing');
+    return;
   }
 
   const label = request.userData.label;
+
   if (!label) return;
 
   const pageType = $('.rh-mini-sidebar').length ? 'listing' : 'detail';
 
-  console.log(`\nProcessing URL: ${request.url}`);
+  log.info(`Processing URL: ${request.url}`);
 
   const merchantName = getMerchantName($, pageType);
+
+  if (!merchantName) {
+    logError('merchantName not found');
+    return;
+  }
 
   const validCoupons = $('article.offer_grid').toArray();
 
@@ -93,6 +103,12 @@ const processCoupon = async (context) => {
       const element = $(elem);
       const { hasCode, elemCode } = getCouponCode(element);
       const voucherTitle = getVoucherTitle(element, pageType);
+
+      if (!voucherTitle) {
+        logError('Title not found');
+        return;
+      }
+
       const idInSite = generateHash(merchantName, voucherTitle, request.url);
 
       const validator = new DataValidator();

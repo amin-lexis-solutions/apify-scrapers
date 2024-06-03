@@ -7,6 +7,7 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  IsIn,
   Max,
   Min,
   MinLength,
@@ -75,6 +76,11 @@ export class ListRequestBody {
   @IsOptional()
   @Length(5)
   locale?: string;
+
+  @IsString()
+  @IsOptional()
+  @IsIn(['code', 'offer', 'all'])
+  type?: string;
 }
 
 export class CouponMatchRequestBody {

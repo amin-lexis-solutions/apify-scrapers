@@ -3,144 +3,174 @@ import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import {
   getMerchantDomainFromUrl,
-  processAndStoreData,
   generateHash,
-  checkExistingCouponsAnomaly,
+  logError,
+  checkCouponIds,
+  CouponItemResult,
+  CouponHashMap,
 } from 'shared/helpers';
 import { DataValidator } from 'shared/data-validator';
 import { Label } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
 
-async function processCouponItem(
-  context: any,
-  merchantName: string,
-  domain: string | null,
-  isExpired: boolean,
-  couponElement: cheerio.Element,
-  sourceUrl: string
-) {
-  const $coupon = cheerio.load(couponElement);
-
-  let titleCss = '';
-  let codeCss = '';
-  let codeAttr = '';
-  if (!isExpired) {
-    titleCss = 'h3';
-    codeCss = 'span[data-masked]';
-    codeAttr = 'data-masked';
-  } else {
-    titleCss = 'p';
-    codeCss = 'button[title]';
-    codeAttr = 'title';
-  }
-
-  // Extract the voucher title
-  const titleElement = $coupon(titleCss).first();
-  if (titleElement.length === 0) {
-    console.log('Coupon HTML:', $coupon.html());
-    throw new Error('Voucher title is missing');
-  }
-  const voucherTitle = he.decode(
-    titleElement
-      .text()
-      .trim()
-      .replace(/[\s\t\r\n]+/g, ' ')
-  );
-
-  const idInSite = generateHash(merchantName, voucherTitle, sourceUrl);
-
+async function processCouponItem(couponItem: any, $cheerio: cheerio.Root) {
   // Extract the voucher code
-  const codeElement = $coupon(codeCss).first();
-  let code = '';
-  if (codeElement.length !== 0) {
-    code = codeElement.attr(codeAttr) || '';
-    if (!code) {
-      console.log('Coupon HTML:', $coupon.html());
-      throw new Error('Voucher code is missing');
-    }
-  }
+  const codeElement =
+    $cheerio('span[data-masked]').first() || $cheerio('button[title]').first();
+
+  const code = codeElement.attr('data-masked') || codeElement?.attr('title');
 
   const validator = new DataValidator();
 
   // Add required and optional values to the validator
-  validator.addValue('sourceUrl', sourceUrl);
-  validator.addValue('merchantName', merchantName);
-  validator.addValue('domain', domain);
-  validator.addValue('title', voucherTitle);
-  validator.addValue('idInSite', idInSite);
-  validator.addValue('isExpired', isExpired);
+  validator.addValue('sourceUrl', couponItem.sourceUrl);
+  validator.addValue('merchantName', couponItem.merchantName);
+  validator.addValue('domain', couponItem.domain);
+  validator.addValue('title', couponItem.title);
+  validator.addValue('idInSite', couponItem.idInSite);
+  validator.addValue('isExpired', couponItem.isExpired);
   validator.addValue('isShown', true);
 
-  if (code) {
-    validator.addValue('code', code);
-  }
+  code ? validator.addValue('code', code) : null;
 
-  await processAndStoreData(validator, context);
+  const generatedHash = generateHash(
+    couponItem.merchantName,
+    couponItem.title,
+    couponItem.sourceUrl
+  );
+
+  return { generatedHash, validator, hasCode: !!code, couponUrl: '' };
 }
 
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
+    logError('Request queue is missing');
+    return;
   }
 
   try {
     // Extracting request and body from context
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`Processing URL: ${request.url}`);
 
     // Extract JSON data from the script tag
     const scriptContent = $('#schema-data-store').html();
+
     if (!scriptContent) {
-      console.log('Not a valid merchant page - schema data missing');
-    } else {
-      // Parse the JSON data
-      const jsonData = JSON.parse(scriptContent);
-      const merchantName = jsonData.name;
-      const domain = getMerchantDomainFromUrl(request.url);
-      // Check if valid page
-      if (!merchantName) {
-        console.log(`Not Merchant URL: ${request.url}`);
-      } else {
-        // Extract valid coupons
-        const validCoupons = $('ul.sc-a8fe2b69-0 > li > div');
+      logError('Not a valid merchant page - schema data missing');
+      return;
+    }
 
-        const hasAnomaly = await checkExistingCouponsAnomaly(
-          request.url,
-          validCoupons.length
-        );
+    // Parse the JSON data
+    const jsonData = JSON.parse(scriptContent);
+    const merchantName = jsonData.name;
+    const domain = getMerchantDomainFromUrl(request.url);
+    // Check if valid page
+    if (!merchantName) {
+      logError(`merchantName not found ${request.url}`);
+      return;
+    }
 
-        if (hasAnomaly) {
-          return;
-        }
+    // Extract valid coupons
+    const validCoupons = $('ul.sc-a8fe2b69-0 > li > div');
+    const expiredCoupons = $('div.sc-e58a3b10-5 > div');
 
-        for (let i = 0; i < validCoupons.length; i++) {
-          const element = validCoupons[i];
-          await processCouponItem(
-            context,
-            merchantName,
-            domain,
-            false,
-            element,
-            request.url
-          );
-        }
-        const expiredCoupons = $('div.sc-e58a3b10-5 > div');
-        for (let i = 0; i < expiredCoupons.length; i++) {
-          const element = expiredCoupons[i];
-          await processCouponItem(
-            context,
-            merchantName,
-            domain,
-            true,
-            element,
-            request.url
-          );
-        }
+    const items = [...validCoupons, ...expiredCoupons];
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: validCoupons,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
+    // Extract valid coupons
+    const couponsWithCode: CouponHashMap = {};
+    const idsToCheck: string[] = [];
+    let result: CouponItemResult;
+
+    for (const item of items) {
+      const $coupon = cheerio.load(item);
+
+      // Extract the voucher title
+      const titleElement =
+        $coupon('h3').length == 0
+          ? $coupon('p').first()
+          : $coupon('h3').first();
+
+      if (!titleElement) {
+        logError('title not found in item');
+        continue;
       }
+
+      const title = he.decode(
+        titleElement
+          .text()
+          .trim()
+          .replace(/[\s\t\r\n]+/g, ' ')
+      );
+
+      const idInSite = generateHash(merchantName, title, request.url);
+
+      const couponItem = {
+        title,
+        merchantName,
+        domain,
+        idInSite,
+        sourceUrl: request.url,
+      };
+
+      result = await processCouponItem(couponItem, $coupon);
+
+      if (result.hasCode) {
+        couponsWithCode[result.generatedHash] = result;
+        idsToCheck.push(result.generatedHash);
+        continue;
+      }
+
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        logError(`Post-Processing Error : ${error.message}`);
+        return;
+      }
+    }
+    // Call the API to check if the coupon exists
+    const nonExistingIds = await checkCouponIds(idsToCheck);
+
+    if (nonExistingIds.length == 0) return;
+
+    let currentResult: CouponItemResult;
+
+    for (const id of nonExistingIds) {
+      currentResult = couponsWithCode[id];
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: currentResult.validator,
+          },
+        },
+        context
+      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

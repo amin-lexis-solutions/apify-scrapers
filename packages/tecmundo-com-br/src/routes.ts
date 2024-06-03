@@ -10,47 +10,30 @@ import {
   CouponItemResult,
   CouponHashMap,
   getMerchantDomainFromUrl,
-  checkExistingCouponsAnomaly,
+  logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
 
 function processCouponItem(
-  merchantName: string,
-  couponElement: cheerio.Element,
-  domain: string | null,
-  sourceUrl: string
+  couponItem: any,
+  $cheerio: cheerio.Root
 ): CouponItemResult {
-  const $coupon = cheerio.load(couponElement);
-
   let hasCode = false;
 
   const isExpired = false;
 
-  const elementType = $coupon('*').first().attr('data-coupon-type');
+  const elementType = $cheerio('*').first().attr('data-coupon-type');
+
   if (!elementType) {
-    console.log('Coupon HTML:', $coupon.html());
-    throw new Error('Element class is missing');
+    log.error('Element class is missing');
+  } else {
+    hasCode = elementType.includes('coupon');
   }
-
-  hasCode = elementType.includes('coupon');
-
-  const idInSite = $coupon('*').first().attr('data-coupon-id');
-  if (!idInSite) {
-    console.log('Coupon HTML:', $coupon.html());
-    throw new Error('Element data-promotion-id attr is missing');
-  }
-
-  // Extract the voucher title
-  const titleElement = $coupon('h3').first();
-  if (titleElement.length === 0) {
-    console.log('Coupon HTML:', $coupon.html());
-    throw new Error('Voucher title is missing');
-  }
-  const voucherTitle = he.decode(titleElement.text().trim());
 
   // Extract the description
   let description = '';
-  const descElement = $coupon('div.coupon__description').first();
+  const descElement = $cheerio('div.coupon__description').first();
   if (descElement.length > 0) {
     description = he
       .decode(descElement.text())
@@ -64,21 +47,24 @@ function processCouponItem(
   const validator = new DataValidator();
 
   // Add required and optional values to the validator
-  validator.addValue('sourceUrl', sourceUrl);
-  validator.addValue('merchantName', merchantName);
-  validator.addValue('domain', domain);
-  validator.addValue('title', voucherTitle);
-  validator.addValue('idInSite', idInSite);
+  validator.addValue('sourceUrl', couponItem.sourceUrl);
+  validator.addValue('merchantName', couponItem.merchantName);
+  validator.addValue('domain', couponItem.domain);
+  validator.addValue('title', couponItem.title);
+  validator.addValue('idInSite', couponItem.idInSite);
   validator.addValue('description', description);
   validator.addValue('isExpired', isExpired);
   validator.addValue('isShown', true);
 
-  let couponUrl = '';
-  if (hasCode) {
-    couponUrl = `https://www.tecmundo.com.br/cupons/modals/coupon_clickout?id=${idInSite}`;
-  }
+  const couponUrl = hasCode
+    ? `https://www.tecmundo.com.br/cupons/modals/coupon_clickout?id=${couponItem.idInSite}`
+    : ``;
 
-  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+  const generatedHash = generateCouponId(
+    couponItem.merchantName,
+    couponItem.idInSite,
+    couponItem.sourceUrl
+  );
 
   return { generatedHash, hasCode, couponUrl, validator };
 }
@@ -91,24 +77,26 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
+    logError('Request queue is missing');
+    return;
   }
 
   try {
     // Extracting request and body from context
 
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`Processing URL: ${request.url}`);
 
     const merchantLink = $('div.card-shop-header a[data-shop]');
 
     if (merchantLink.length === 0) {
-      throw new Error('Merchant link is missing');
+      log.warning('Merchant link is missing');
     }
 
     const merchantName = merchantLink.attr('data-shop');
 
     if (!merchantName) {
-      throw new Error('Merchant name is missing');
+      logError('Merchant name is missing');
+      return;
     }
 
     const domain = getMerchantDomainFromUrl(request.url);
@@ -123,46 +111,88 @@ router.addHandler(Label.listing, async (context) => {
 
     const validCoupons = $('div.coupons__list > div.coupons__item');
 
-    const hasAnomaly = await checkExistingCouponsAnomaly(
-      request.url,
-      validCoupons.length
-    );
-
-    if (hasAnomaly) {
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: validCoupons,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 
-    for (let i = 0; i < validCoupons.length; i++) {
-      const element = validCoupons[i];
-      result = processCouponItem(merchantName, element, domain, request.url);
-      if (!result.hasCode) {
-        await processAndStoreData(result.validator, context);
-      } else {
+    for (const item of validCoupons) {
+      const $coupon = cheerio.load(item);
+
+      const idInSite = $coupon('*').first().attr('data-coupon-id');
+
+      if (!idInSite) {
+        logError('Element data-promotion-id attr is missing');
+        continue;
+      }
+
+      // Extract the voucher title
+      const title = $coupon('h3').first()?.text()?.trim();
+
+      if (!title) {
+        logError('title not found in item');
+        continue;
+      }
+
+      const couponItem = {
+        title,
+        domain,
+        merchantName,
+        sourceUrl: request.url,
+      };
+
+      result = processCouponItem(couponItem, $coupon);
+
+      if (result.hasCode) {
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
+        continue;
+      }
+
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        log.warning(`Post-Processing Error : ${error.message}`);
+        return;
       }
     }
 
     // Call the API to check if the coupon exists
     const nonExistingIds = await checkCouponIds(idsToCheck);
 
-    if (nonExistingIds.length > 0) {
-      let currentResult: CouponItemResult;
-      for (const id of nonExistingIds) {
-        currentResult = couponsWithCode[id];
-        // Add the coupon URL to the request queue
-        await crawler.requestQueue.addRequest(
-          {
-            url: currentResult.couponUrl,
-            userData: {
-              label: Label.getCode,
-              validatorData: currentResult.validator.getData(),
-            },
-            headers: CUSTOM_HEADERS,
+    if (nonExistingIds.length == 0) return;
+
+    let currentResult: CouponItemResult;
+    for (const id of nonExistingIds) {
+      currentResult = couponsWithCode[id];
+      // Add the coupon URL to the request queue
+      await crawler.requestQueue.addRequest(
+        {
+          url: currentResult.couponUrl,
+          userData: {
+            label: Label.getCode,
+            validatorData: currentResult.validator.getData(),
           },
-          { forefront: true }
-        );
-      }
+          headers: CUSTOM_HEADERS,
+        },
+        { forefront: true }
+      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
@@ -189,20 +219,19 @@ router.addHandler(Label.getCode, async (context) => {
 
     // Extract the coupon code
     const codeSpan = $('span[data-coupon-code]');
+
     if (codeSpan.length === 0) {
-      console.log('Coupon HTML:', $.html());
-      throw new Error('Coupon code span is missing');
+      log.warning('Coupon code span is missing');
     }
 
     const code = codeSpan.text().trim();
 
     // Check if the code is found
     if (!code) {
-      console.log('Coupon HTML:', $.html());
-      throw new Error('Coupon code not found in the HTML content');
+      log.warning('Coupon code not found in the HTML content');
     }
 
-    console.log(`Found code: ${code}\n    at: ${request.url}`);
+    log.info(`Found code: ${code}\n    at: ${request.url}`);
 
     // Add the decoded code to the validator's data
     validator.addValue('code', code);

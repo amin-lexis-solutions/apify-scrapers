@@ -8,15 +8,10 @@ import {
   CouponItemResult,
   CouponHashMap,
   formatDateTime,
+  logError,
 } from './helpers';
 import { preProcess, postProcess } from './hooks';
 import { Label, CUSTOM_HEADERS } from './actor-utils';
-
-interface NextUserData {
-  label: string;
-  domain: string;
-  countryCode: string;
-}
 
 function checkVoucherCode(code: string | null | undefined) {
   // Trim the code to remove any leading/trailing whitespace
@@ -59,42 +54,40 @@ function checkVoucherCode(code: string | null | undefined) {
 
 function processCouponItem(
   merchantName: string,
-  domain: string | null,
-  retailerId: string,
-  voucher: any,
+  merchantDomain: string | null,
+  item: any,
   sourceUrl: string,
-  sourceDomain: string,
-  sourceCountryCode: string
+  nextData: any
 ): CouponItemResult {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
   const idInSite = (
-    voucher?.idPool?.split('_')?.[1] ||
-    voucher?.idVoucher ||
-    voucher?.idInSite
+    item?.idPool?.split('_')?.[1] ||
+    item?.idVoucher ||
+    item?.idInSite
   )?.toString();
 
   // Add required values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
-  validator.addValue('title', voucher.title);
+  validator.addValue('title', item.title);
   validator.addValue('idInSite', idInSite);
 
   // Add optional values to the validator
-  validator.addValue('domain', domain);
-  validator.addValue('description', voucher.description);
-  validator.addValue('termsAndConditions', voucher.termsAndConditions);
-  validator.addValue('expiryDateAt', formatDateTime(voucher.endTime));
-  validator.addValue('startDateAt', formatDateTime(voucher.startTime));
-  validator.addValue('isExclusive', voucher.exclusiveVoucher);
-  validator.addValue('isExpired', voucher.isExpired);
+  validator.addValue('domain', merchantDomain);
+  validator.addValue('description', item.description);
+  validator.addValue('termsAndConditions', item.termsAndConditions);
+  validator.addValue('expiryDateAt', formatDateTime(item.endTime));
+  validator.addValue('startDateAt', formatDateTime(item.startTime));
+  validator.addValue('isExclusive', item.exclusiveVoucher);
+  validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
   const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
 
   // code must be checked to decide the next step
-  const codeType = checkVoucherCode(voucher.code);
+  const codeType = checkVoucherCode(item.code);
 
   if (codeType.isEmpty) {
     return { generatedHash, hasCode: false, couponUrl: '', validator };
@@ -105,8 +98,13 @@ function processCouponItem(
     return { generatedHash, hasCode: false, couponUrl: '', validator };
   }
 
-  const idPool = voucher.idPool;
-  const couponUrl = `https://${sourceDomain}/api/voucher/country/${sourceCountryCode}/client/${retailerId}/id/${idPool}`;
+  const retailerId = nextData.query.clientId;
+  const retailerCountry = nextData.props.pageProps.retailer.country;
+  const idPool = item.idPool;
+  const assetsBaseUrl = nextData.props.pageProps.assetsBaseUrl;
+
+  const couponUrl = `${assetsBaseUrl}/api/voucher/country/${retailerCountry}/client/${retailerId}/id/${idPool}`;
+
   return { generatedHash, hasCode: true, couponUrl, validator };
 }
 
@@ -118,15 +116,14 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    throw new Error('Request queue is missing');
+    logError('Request queue is missing');
+    return;
   }
-
-  const userData = request.userData as NextUserData;
 
   try {
     // Extracting request and body from context
 
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`Processing URL: ${request.url}`);
 
     // Convert body to string if it's a Buffer
     const htmlContent = body instanceof Buffer ? body.toString() : body;
@@ -137,115 +134,132 @@ router.addHandler(Label.listing, async (context) => {
     // Use the regex pattern to extract the JSON string
     const match = htmlContent.match(jsonPattern);
 
-    let jsonData;
-    let retailerId;
-    if (match && match[1]) {
-      jsonData = JSON.parse(match[1]);
-      retailerId = jsonData.query.clientId;
-      jsonData = jsonData.props.pageProps;
-    } else {
-      throw new Error(
-        'No matching script tag found or no JSON content present'
-      );
+    if (!match || !match?.[1]) {
+      logError(`'JSON data not found ${request.url}`);
+      return;
     }
 
-    if (!jsonData || !jsonData.retailer) {
-      throw new Error('Retailer data is missing in the parsed JSON');
+    const nextData = JSON.parse(match?.[1]);
+    const pageProps = nextData.props.pageProps;
+
+    if (!pageProps || !pageProps.retailer) {
+      logError('pageProps data is missing in the parsed JSON');
+      return;
     }
 
-    console.log(
-      `\n\nFound ${jsonData.vouchers.length} active vouchers and ${jsonData.expiredVouchers.length} expired vouchers\n    at: ${request.url}\n`
+    log.info(
+      `Found ${pageProps.vouchers.length} active vouchers and ${pageProps.expiredVouchers.length} expired vouchers\n    at: ${request.url}\n`
     );
 
     // Declarations outside the loop
-    const merchantName = jsonData.retailer.name;
-    const merchantUrl = jsonData.retailer.merchant_url;
-    const domain = getMerchantDomainFromUrl(merchantUrl);
+    const merchantName = pageProps.retailer.name;
 
-    if (!domain) {
-      log.info('Domain is missing!');
+    if (!merchantName) {
+      logError(`merchantName not found ${request.url}`);
+      return;
+    }
+
+    const merchantUrl = pageProps.retailer.merchant_url;
+    const merchantDomain = getMerchantDomainFromUrl(merchantUrl);
+
+    if (!merchantDomain) {
+      log.warning(`merchantDomain not found ${request.url}`);
     }
 
     // Combine active and expired vouchers
-    const activeVouchers = jsonData.vouchers.map((voucher) => ({
+    const activetItem = pageProps.vouchers.map((voucher) => ({
       ...voucher,
       is_expired: false,
     }));
-    const expiredVouchers = jsonData.expiredVouchers.map((voucher) => ({
+    const expiredItem = pageProps.expiredVouchers.map((voucher) => ({
       ...voucher,
       is_expired: true,
     }));
-    const vouchers = [...activeVouchers, ...expiredVouchers];
+
+    const items = [...activetItem, ...expiredItem];
 
     // pre-pressing hooks  here to avoid unnecessary requests
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: vouchers,
+            coupons: items,
           },
         },
         context
       );
     } catch (error: any) {
-      log.info(`Pre-Processing Error : ${error.message}`);
+      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
-    for (const voucher of vouchers) {
+
+    for (const item of items) {
       await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings
+
+      if (!item?.idPool && !item?.idVoucher && !item?.idInSite) {
+        logError(`idInSite not found in item`);
+        continue;
+      }
+
+      if (!item.title) {
+        logError(`title not found in item`);
+        continue;
+      }
+
       result = processCouponItem(
         merchantName,
-        domain,
-        retailerId,
-        voucher,
+        merchantDomain,
+        item,
         request.url,
-        userData.domain,
-        userData.countryCode
+        nextData
       );
-      if (!result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
-            },
-            context
-          );
-        } catch (error: any) {
-          log.info(`Post-Processing Error : ${error.message}`);
-          return;
-        }
-      } else {
+
+      if (result.hasCode) {
         couponsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
+        continue;
+      }
+
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error: any) {
+        log.info(`Post-Processing Error : ${error.message}`);
+        return;
       }
     }
     // Call the API to check if the coupon exists
     const nonExistingIds = await checkCouponIds(idsToCheck);
 
-    if (nonExistingIds.length > 0) {
-      let currentResult: CouponItemResult;
-      for (const id of nonExistingIds) {
-        currentResult = couponsWithCode[id];
-        // Add the coupon URL to the request queue
-        await crawler.requestQueue.addRequest(
-          {
-            url: currentResult.couponUrl,
-            userData: {
-              ...request.userData,
-              label: Label.getCode,
-              validatorData: currentResult.validator.getData(),
-            },
-            headers: CUSTOM_HEADERS,
+    if (nonExistingIds.length == 0) return;
+
+    let currentResult: CouponItemResult;
+
+    for (const id of nonExistingIds) {
+      currentResult = couponsWithCode[id];
+      // Add the coupon URL to the request queue
+      await crawler?.requestQueue?.addRequest(
+        {
+          url: currentResult.couponUrl,
+          userData: {
+            ...request.userData,
+            label: Label.getCode,
+            validatorData: currentResult.validator.getData(),
           },
-          { forefront: true }
-        );
-      }
+          headers: CUSTOM_HEADERS,
+        },
+        { forefront: true }
+      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
@@ -255,7 +269,7 @@ router.addHandler(Label.listing, async (context) => {
 
 router.addHandler(Label.getCode, async (context) => {
   // context includes request, body, etc.
-  const { request, body } = context;
+  const { request, body, log } = context;
 
   if (request.userData.label !== Label.getCode) return;
 
@@ -273,16 +287,22 @@ router.addHandler(Label.getCode, async (context) => {
     // Convert body to string if it's a Buffer
     const htmlContent = body instanceof Buffer ? body.toString() : body;
 
+    if (!htmlContent.startsWith('{')) {
+      log.warning(`Invalid JSON string`);
+      return;
+    }
     // Safely parse the JSON string
     const jsonCodeData = JSON.parse(htmlContent);
 
     // Validate the necessary data is present
     if (!jsonCodeData || !jsonCodeData.code) {
-      throw new Error('Code data is missing in the parsed JSON');
+      log.warning(`Coupon code not found ${request.url}`);
+      return;
     }
 
     const code = jsonCodeData.code;
-    console.log(`Found code: ${code}\n    at: ${request.url}`);
+
+    log.info(`Found code: ${code}\n    at: ${request.url}`);
 
     // Assuming the code should be added to the validator's data
     validator.addValue('code', code);

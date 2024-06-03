@@ -6,10 +6,7 @@ import { router } from 'shared/next-routes';
 async function main() {
   await Actor.init();
 
-  const crawler = await prepareCheerioScraper(router, {
-    domain: 'gutscheine.blick.ch',
-    countryCode: 'ch',
-  });
+  const crawler = await prepareCheerioScraper(router);
 
   await crawler.run();
   await Actor.exit();

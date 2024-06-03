@@ -1,4 +1,5 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
+import { ElementHandle } from 'puppeteer';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
@@ -6,22 +7,19 @@ import {
   CouponItemResult,
   checkCouponIds,
   generateHash,
+  logError,
 } from 'shared/helpers';
 import { preProcess, postProcess } from 'shared/hooks';
 
 export const router = Router.create<PuppeteerCrawlingContext>();
 
 async function process(
-  coupon,
-  couponUrl,
-  merchantName,
-  domain
+  couponItem: any,
+  element: ElementHandle<HTMLElement>
 ): Promise<CouponItemResult> {
-  const idInSite = await coupon.evaluate((node) => node.getAttribute(`id`));
-  const title = await coupon.$eval(`.offer h2`, (node) => node.textContent);
-  const desc = await coupon.$eval(`.offer p`, (node) => node.textContent);
+  const desc = await element.$eval(`.offer p`, (node) => node.textContent);
 
-  const codeElement = await coupon.$('strong');
+  const codeElement = await element.$('strong');
 
   const code = codeElement
     ? await codeElement.evaluate((node) => node.textContent)
@@ -31,19 +29,23 @@ async function process(
 
   const validator = new DataValidator();
 
-  validator.addValue('sourceUrl', couponUrl);
-  validator.addValue('merchantName', merchantName);
-  validator.addValue('title', title);
-  validator.addValue('idInSite', idInSite);
-  validator.addValue('domain', domain);
+  validator.addValue('sourceUrl', couponItem.sourceUrl);
+  validator.addValue('merchantName', couponItem.merchantName);
+  validator.addValue('title', couponItem.title);
+  validator.addValue('idInSite', couponItem.idInSite);
+  validator.addValue('domain', couponItem.merchantDomain);
   validator.addValue('code', code);
   validator.addValue('description', desc);
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateHash(merchantName, title, couponUrl);
+  const generatedHash = generateHash(
+    couponItem.merchantName,
+    couponItem.title,
+    couponItem.sourceUrl
+  );
 
-  return { generatedHash, validator, hasCode, couponUrl };
+  return { generatedHash, validator, hasCode, couponUrl: '' };
 }
 router.addHandler(Label.listing, async (context) => {
   const { request, page, log } = context;
@@ -63,15 +65,16 @@ router.addHandler(Label.listing, async (context) => {
   );
 
   if (!merchantName) {
-    log.info('merchantName not found');
+    logError('merchantName not found');
+    return;
   }
 
-  const domain = await merchantElement?.evaluate((img) =>
+  const merchantDomain = await merchantElement?.evaluate((img) =>
     img.getAttribute('alt')?.toLowerCase()
   );
 
-  if (!domain) {
-    log.info('Domain not found');
+  if (!merchantDomain) {
+    log.info(`Domain not found ${request.url}`);
   }
   // pre-pressing hooks here to avoid unnecessary requests
   try {
@@ -95,7 +98,28 @@ router.addHandler(Label.listing, async (context) => {
 
   // Loop through each coupon element and process it
   for (const coupon of couponList) {
-    processedData = await process(coupon, request.url, merchantName, domain);
+    const idInSite = await coupon.evaluate((node) => node.getAttribute(`id`));
+
+    if (!idInSite) {
+      logError(`idInSite not found in item`);
+      continue;
+    }
+    const title = await coupon.$eval(`.offer h2`, (node) => node.textContent);
+
+    if (!title) {
+      logError(`Domtitleain not found in item`);
+      continue;
+    }
+
+    const couponItem = {
+      title,
+      idInSite,
+      merchantName,
+      merchantDomain,
+      sourceUrl: request.url,
+    };
+    processedData = await process(couponItem, coupon);
+
     // If coupon has no code, process and store its data
     if (processedData.hasCode) {
       couponsWithCode[processedData.generatedHash] = processedData;

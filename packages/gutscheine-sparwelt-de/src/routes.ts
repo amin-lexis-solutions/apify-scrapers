@@ -1,13 +1,9 @@
 import { createCheerioRouter } from 'crawlee';
 import { parse } from 'node-html-parser';
 import { DataValidator } from 'shared/data-validator';
-import {
-  checkExistingCouponsAnomaly,
-  getMerchantDomainFromUrl,
-  processAndStoreData,
-  sleep,
-} from 'shared/helpers';
+import { getMerchantDomainFromUrl, logError, sleep } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
 
 async function fetchVoucherCode(
   voucherCodeURL: string
@@ -38,11 +34,13 @@ async function fetchVoucherCode(
 const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, body, enqueueLinks } = context;
+  const { request, log, body, enqueueLinks } = context;
+
   if (request.userData.label !== Label.listing) return;
 
   try {
-    console.log(`Request URL: ${request.url}`);
+    log.info(`Listing ${request.url}`);
+
     const content = typeof body === 'string' ? body : body.toString();
 
     const sectionWithCoupons = parse(content).querySelector(
@@ -50,42 +48,55 @@ router.addHandler(Label.listing, async (context) => {
     );
 
     if (!sectionWithCoupons) {
-      console.log('No section found with div#gutscheine');
+      logError('No coupons found');
       return;
     }
+
     const selCoupons = sectionWithCoupons.querySelectorAll(
       'div.voucher-teaser-list > div'
     );
+
     if (selCoupons.length < 1) {
-      console.log('No coupons found in the specified section');
-      return;
-    }
-    console.log(`Found ${selCoupons.length} coupons`);
-
-    const hasAnomaly = await checkExistingCouponsAnomaly(
-      request.url,
-      selCoupons.length
-    );
-
-    if (hasAnomaly) {
+      logError('No coupons found in the specified section');
       return;
     }
 
-    for (const couponDiv of selCoupons) {
-      const voucherId = couponDiv.getAttribute('data-ssr-vouchers-item');
+    log.info(`Coupons count ${selCoupons.length}`);
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: selCoupons,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
+    for (const couponElement of selCoupons) {
+      const voucherId = couponElement.getAttribute('data-ssr-vouchers-item');
+
       if (!voucherId) {
-        console.warn('Voucher ID is missing in a coupon div.');
+        logError('Voucher ID is missing in a coupon div.');
         continue;
       }
-      console.log(`Found voucher ID: ${voucherId}`);
-      const hasCode = !couponDiv.querySelector('button.ui-btn--ci-blue-600');
-      console.log(`Voucher ID ${voucherId} has code: ${hasCode}`);
+
+      const hasCode = !couponElement.querySelector(
+        'button.ui-btn--ci-blue-600'
+      );
+
+      log.info(`Voucher ID ${voucherId} has code: ${hasCode}`);
 
       const detailsUrl = `https://www.sparwelt.de/hinge/graphql?query=%0A++query+VoucherById($id:+ID!)+%7B%0A++++voucher(id:+$id)+%7B%0A++++++id%0A++++++title%0A++++++provider+%7B%0A++++++++id%0A++++++++title%0A++++++++slug%0A++++++++domainUrl%0A++++++++image%0A++++++++affiliateDeeplink+%7B%0A++++++++++url%0A++++++++++id%0A++++++++%7D%0A++++++++minOrderValueWording%0A++++++%7D%0A++++++affiliateDeeplink+%7B%0A++++++++id%0A++++++++url%0A++++++%7D%0A++++++teaserDescription%0A++++++savingValue%0A++++++savingType%0A++++++minOrderValue%0A++++++limitProduct%0A++++++limitCustomer%0A++++++dateEnd%0A++++%7D%0A++%7D%0A&variables=%7B%22id%22:%22%2Fhinge%2Fvouchers%2F${voucherId}%22%7D`;
+
       const validator = new DataValidator();
+
       validator.addValue('sourceUrl', request.url);
       validator.addValue('idInSite', voucherId);
-      const validatorData = validator.getData();
 
       if (hasCode) {
         const voucherCodeURL = `https://www.sparwelt.de/hinge/vouchercodes/${voucherId}`;
@@ -100,7 +111,7 @@ router.addHandler(Label.listing, async (context) => {
         urls: [detailsUrl],
         userData: {
           label: Label.details,
-          validatorData: validatorData,
+          validatorData: validator.getData(),
         },
         forefront: true,
       });
@@ -112,7 +123,7 @@ router.addHandler(Label.listing, async (context) => {
 });
 
 router.addHandler(Label.details, async (context) => {
-  const { request, body } = context;
+  const { request, body, log } = context;
 
   if (request.userData.label !== Label.details) return;
 
@@ -135,8 +146,7 @@ router.addHandler(Label.details, async (context) => {
 
     // Validate the necessary data is present
     if (!voucherJson || !voucherJson.data || !voucherJson.data.voucher) {
-      console.log(voucherJson);
-      throw new Error('Voucher data is missing in the parsed JSON');
+      log.warning('Voucher data is missing in the parsed JSON');
     }
 
     // Extract voucher data from JSON
@@ -161,7 +171,14 @@ router.addHandler(Label.details, async (context) => {
     validator.addValue('isShown', true);
 
     // Process and store the data
-    await processAndStoreData(validator, context);
+    await postProcess(
+      {
+        SaveDataHandler: {
+          validator: validator,
+        },
+      },
+      context
+    );
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

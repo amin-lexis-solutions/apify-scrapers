@@ -6,10 +6,7 @@ import { router } from 'shared/next-routes';
 async function main() {
   await Actor.init();
 
-  const crawler = await prepareCheerioScraper(router, {
-    domain: 'www.kortingscode.nl',
-    countryCode: 'nl',
-  });
+  const crawler = await prepareCheerioScraper(router);
 
   await crawler.run();
   await Actor.exit();

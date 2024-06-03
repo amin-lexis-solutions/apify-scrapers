@@ -1,7 +1,8 @@
 import { RequestQueue } from 'apify'; // Import types from Apify SDK
 import { DataValidator } from 'shared/data-validator';
-import { processAndStoreData } from 'shared/helpers';
+import { logError } from 'shared/helpers';
 import { sleep } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
 
 export enum Label {
   'sitemap' = 'SitemapPage',
@@ -19,7 +20,7 @@ type Voucher = {
 
 export async function sitemapHandler(requestQueue: RequestQueue, context) {
   // context includes request, body, etc.
-  const { request, page } = context;
+  const { request, page, log } = context;
 
   if (request.userData.label !== Label.sitemap) return;
 
@@ -30,7 +31,7 @@ export async function sitemapHandler(requestQueue: RequestQueue, context) {
     return links.map((link) => (link as HTMLAnchorElement).href);
   });
 
-  console.log(`Found ${sitemapUrls.length} URLs in the sitemap`);
+  log.info(`Found ${sitemapUrls.length} URLs in the sitemap`);
 
   let limit = sitemapUrls.length; // Use the full length for production
   if (request.userData.testLimit) {
@@ -39,8 +40,9 @@ export async function sitemapHandler(requestQueue: RequestQueue, context) {
   }
 
   const testUrls = sitemapUrls.slice(0, limit);
+
   if (limit < sitemapUrls.length) {
-    console.log(`Using ${testUrls.length} URLs for testing`);
+    log.info(`Using ${testUrls.length} URLs for testing`);
   }
 
   // Manually add each URL to the request queue
@@ -55,12 +57,12 @@ export async function sitemapHandler(requestQueue: RequestQueue, context) {
 }
 
 export async function listingHandler(requestQueue: RequestQueue, context) {
-  const { request, page } = context;
+  const { request, page, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
   try {
-    console.log(`\nProcessing URL: ${request.url}`);
+    log.info(`Processing URL: ${request.url}`);
 
     // Extract merchant name and domain using Puppeteer
     const merchantName = await page.evaluate(() => {
@@ -71,12 +73,14 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
     });
 
     if (!merchantName) {
-      throw new Error('Merchant name not found');
+      logError('Merchant name not found');
+      return;
     }
 
     const domain = new URL(request.url).pathname.replace(/^\//, '');
+
     if (!domain) {
-      throw new Error('Domain information not found');
+      log.warning('Domain information not found');
     }
 
     // Extract coupons and offers using Puppeteer
@@ -88,11 +92,6 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
       );
 
       return voucherElements.map((el) => {
-        // const logoImg: HTMLImageElement = el.querySelector(
-        //   'div.card-body  div.shop-offer-logo-ctnr img'
-        // ) as HTMLImageElement;
-        // const currMerchantName = logoImg ? logoImg.alt.trim() : '';
-
         const elementClass = el.className || '';
         const isExpired = elementClass.includes('offer-exp');
         const isExclusive = !!el.querySelector(
@@ -100,10 +99,19 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
         );
 
         const idInSite = el.id.trim().replace('c-', '');
-        let title = el.querySelector('div.card-body h2 > span')?.textContent;
 
-        if (title) {
-          title = title.trim();
+        if (!idInSite) {
+          logError(`1idInSite not found`);
+          return;
+        }
+
+        const title = el
+          ?.querySelector('div.card-body h2 > span')
+          ?.textContent?.trim();
+
+        if (!title) {
+          logError(`title not found`);
+          return;
         }
 
         const descrRaw =
@@ -116,6 +124,20 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
         return { isExpired, isExclusive, idInSite, title, description };
       });
     });
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: vouchers,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
 
     // Process each voucher
     for (const voucher of vouchers) {
@@ -154,18 +176,28 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
       );
     }
   } catch (error) {
-    console.error(
-      `An error occurred while processing the URL ${request.url}:`,
-      error
-    );
+    logError(`An error occurred while processing the URL ${request.url}:`);
+    return;
   }
 }
 
 export async function codeHandler(requestQueue: RequestQueue, context) {
   // context includes request, body, etc.
-  const { request, page } = context;
+  const { request, page, log } = context;
+
+  log.info(`\nProcessing URL: ${request.url}`);
 
   if (request.userData.label !== Label.getCode) return;
+
+  // wait for the page to fully load
+  await page.waitForSelector('#modalDiscount');
+
+  const showOfferElement = await page.$('.show-the-code button');
+  if (showOfferElement) {
+    await showOfferElement.click();
+    await page.reload({ waitUntil: 'load' });
+    await page.waitForSelector('#modalDiscount');
+  }
 
   try {
     // Sleep for x seconds between requests to avoid rate limitings
@@ -179,14 +211,9 @@ export async function codeHandler(requestQueue: RequestQueue, context) {
     validator.loadData(validatorData);
 
     // Check for the presence of the modal body
-    const modalBodyExists =
-      (await page.$('div#modalDiscount div.modal-body')) !== null;
-    if (!modalBodyExists) {
-      throw new Error('Modal body not found');
-    }
 
     // Extract the code if present
-    const code = await page.evaluate(() => {
+    let code = await page.evaluate(() => {
       const codeInput: HTMLInputElement = document.querySelector(
         'input#code'
       ) as HTMLInputElement;
@@ -198,19 +225,27 @@ export async function codeHandler(requestQueue: RequestQueue, context) {
 
     if (code) {
       if (/^[*]+$/.test(code)) {
-        throw new Error('Code is hidden');
+        log.info('Code is only asterisks, ignoring it.');
+        code = null;
       }
-      console.log(`Found code: ${code}\n    at: ${request.url}`);
-      validator.addValue('code', code);
+      if (code) validator.addValue('code', code);
+      log.info(`Found code: ${code}\n    at: ${request.url}`);
     } else {
-      console.log(`No visible code found at: ${request.url}`);
+      log.warning(`No visible code found at: ${request.url}`);
     }
 
     // Process and store the data
-    await processAndStoreData(validator, context);
+    await postProcess(
+      {
+        SaveDataHandler: {
+          validator,
+        },
+      },
+      context
+    );
   } catch (error) {
     // Handle any errors that occurred during the handler execution
-    console.error(
+    log.error(
       `An error occurred while processing the URL ${request.url}:`,
       error
     );

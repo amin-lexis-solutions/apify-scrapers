@@ -7,7 +7,7 @@ async function main() {
   await Actor.init();
 
   const crawler = await prepareCheerioScraper(router, {
-    customHeaders: { Origin: 'https://www.picodi.com' },
+    // customHeaders: { Origin: 'https://www.picodi.com' },
   });
 
   await crawler.run();
