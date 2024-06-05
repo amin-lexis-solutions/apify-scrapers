@@ -36,7 +36,7 @@ export class StandardResponse {
   }
 }
 
-const MAX_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = 10000;
 
 export class ListRequestBody {
   @IsPositive()
@@ -46,11 +46,23 @@ export class ListRequestBody {
   @Min(1)
   @Max(MAX_PAGE_SIZE)
   @IsOptional()
-  pageSize = 10;
+  pageSize = 100;
 
   @IsBoolean()
   @IsOptional()
   archived?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isExclusive?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isExpired?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  isShown?: boolean;
 
   @IsString()
   @IsOptional()
