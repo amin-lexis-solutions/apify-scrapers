@@ -332,31 +332,35 @@ const SOURCES_DATA = [
     domains: ['cuponomia.com.br'],
     name: 'cuponomia-com-br',
   },
-  // {
-  //   apifyActorId: null,
-  //   domains: [
-  //     'bravosconto.it',
-  //     'bravopromo.fr',
-  //     'bravogutschein.de',
-  //     'bravovoucher.co.uk',
-  //     'bravodeal.com',
-  //     'bravodescuento.es',
-  //     'bravokupony.pl',
-  //     'bravogutschein.at',
-  //     'bravopromo.be',
-  //     'bravokorting.nl',
-  //     'bravodescuento.com.mx',
-  //     'bravocoupons.ca',
-  //     'bravogutschein.ch',
-  //     'bravovoucher.com',
-  //     'bravosleva.cz',
-  //   ],
-  //   name: 'bravo',
-  // },
+  {
+    apifyActorId: null,
+    domains: [
+      'bravosconto.it',
+      'bravopromo.fr',
+      'bravogutschein.de',
+      'bravovoucher.co.uk',
+      'bravodeal.com',
+      'bravodescuento.es',
+      'bravokupony.pl',
+      'bravogutschein.at',
+      'bravopromo.be',
+      'bravokorting.nl',
+      'bravodescuento.com.mx',
+      'bravocoupons.ca',
+      'bravogutschein.ch',
+      'bravovoucher.com',
+      'bravosleva.cz',
+    ],
+    name: 'bravo',
+  },
 ];
 
 async function seedSources() {
-  for (const { apifyActorId, domains, name } of SOURCES_DATA) {
+  const activeSources = SOURCES_DATA.filter(
+    (source) => source.apifyActorId !== null
+  ) as SOURCES_DATA[];
+
+  for (const { apifyActorId, domains, name } of activeSources) {
     const existingSource = await prisma.source.findUnique({
       where: { apifyActorId: apifyActorId },
       include: { domains: true },
