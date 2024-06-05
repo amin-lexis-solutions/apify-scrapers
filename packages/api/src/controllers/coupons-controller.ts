@@ -43,12 +43,27 @@ export class CouponsController {
       sourceDomain,
       locale,
       type,
+      isShown,
+      isExclusive,
+      isExpired,
     } = params;
 
     const where: Prisma.CouponWhereInput = {};
 
     if (merchantName) {
       where.merchantName = merchantName;
+    }
+
+    if (isShown !== undefined) {
+      where.isShown = isShown;
+    }
+
+    if (isExclusive !== undefined) {
+      where.isExclusive = isExclusive;
+    }
+
+    if (isExpired !== undefined) {
+      where.isExpired = isExpired;
     }
 
     if (sourceName) {
