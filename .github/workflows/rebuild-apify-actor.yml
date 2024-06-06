@@ -16,17 +16,15 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2 # Fetches the last two commits for comparison
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Install Apify CLI
-        run: npm install -g apify-cli
+          run: npm install -g apify-cli
 
       - name: Authenticate with Apify using API token
         env:
