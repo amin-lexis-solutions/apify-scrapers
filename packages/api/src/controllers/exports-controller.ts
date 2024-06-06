@@ -9,7 +9,7 @@ import { getMetadataArgsStorage } from 'routing-controllers';
 const storage = getMetadataArgsStorage();
 
 @JsonController('/export')
-export class ExportController {
+export class ExportsController {
   @Get('/open-api.json')
   @OpenAPI({
     summary: 'Export API spec',
