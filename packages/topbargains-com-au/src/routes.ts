@@ -243,10 +243,9 @@ router.addHandler(Label.getCode, async (context) => {
 
     if (!match) {
       log.warning(`Coupon code span is missing: ${request.url}`);
-      return;
     }
 
-    const code = match[1];
+    const code = match?.[1];
 
     // Check if the code is found
     if (!code) {

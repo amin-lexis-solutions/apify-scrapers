@@ -15,49 +15,43 @@ import { postProcess, preProcess } from 'shared/hooks';
 // Export the router function that determines which handler to use based on the request label
 export const router = createPuppeteerRouter();
 
-function processCouponItem(
-  merchantName: string,
-  merchantDomain: string,
-  retailerId: string,
-  voucher: any,
-  sourceUrl: string
-): CouponItemResult {
+function processCouponItem(couponItem): CouponItemResult {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
-  const idInSite = voucher?.idPool?.replace('in_', '');
+  const idInSite = couponItem?.idPool?.replace('in_', '');
 
   // Add required values to the validator
-  validator.addValue('sourceUrl', sourceUrl);
-  validator.addValue('merchantName', merchantName);
-  validator.addValue('title', voucher.title);
+  validator.addValue('sourceUrl', couponItem.sourceUrl);
+  validator.addValue('merchantName', couponItem.merchantName);
+  validator.addValue('title', couponItem.title);
   validator.addValue('idInSite', idInSite);
 
   // Add optional values to the validator
-  validator.addValue('domain', merchantDomain);
-  validator.addValue('description', voucher.description);
-  validator.addValue('termsAndConditions', voucher.termsAndConditions);
-  validator.addValue('expiryDateAt', formatDateTime(voucher.endTime));
-  validator.addValue('startDateAt', formatDateTime(voucher.startTime));
-  validator.addValue('isExclusive', voucher.exclusiveVoucher);
-  validator.addValue('isExpired', voucher.isExpired);
+  validator.addValue('domain', couponItem?.merchantDomain);
+  validator.addValue('description', couponItem?.description);
+  validator.addValue('termsAndConditions', couponItem?.termsAndConditions);
+  validator.addValue('expiryDateAt', formatDateTime(couponItem?.endTime));
+  validator.addValue('startDateAt', formatDateTime(couponItem?.startTime));
+  validator.addValue('isExclusive', couponItem?.exclusiveVoucher);
+  validator.addValue('isExpired', couponItem?.isExpired);
   validator.addValue('isShown', true);
 
   const generatedHash = generateCouponId(
-    merchantName,
-    voucher.idPool,
-    sourceUrl
+    couponItem.merchantName,
+    idInSite,
+    couponItem.sourceUrl
   );
 
-  const hasCode = voucher?.type.includes('code');
+  const hasCode = couponItem?.type.includes('code');
 
-  const couponUrl = `https://coupons.oneindia.com/api/voucher/country/in/client/${retailerId}/id/${voucher?.idPool}`;
+  const couponUrl = `https://coupons.oneindia.com/api/voucher/country/in/client/${couponItem?.retailerId}/id/${couponItem?.idPool}`;
 
   return { generatedHash, hasCode, couponUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, page, enqueueLinks } = context;
+  const { request, page, enqueueLinks, log } = context;
   if (request.userData.label !== Label.listing) return;
 
   try {
@@ -73,24 +67,31 @@ router.addHandler(Label.listing, async (context) => {
 
     const nextData = JSON.parse(nextDataElement);
 
-    if (!nextData || !nextData.props) {
+    if (!nextData || !nextData?.props) {
       logError(`nextData props no found in ${request.url}`);
       return;
     }
 
-    const retailerId = nextData.query.clientId;
-    const pageProps = nextData.props.pageProps;
+    const retailerId = nextData?.query?.clientId;
+    const pageProps = nextData?.props?.pageProps;
 
     // Declarations outside the loop
-    const merchantName = pageProps.retailer.name;
+    const merchantName = pageProps?.retailer?.name;
 
     if (!merchantName) {
-      logError(`merchantName not found`);
+      logError(`merchantName not found JSON nextData - ${request.url}`);
       return;
     }
 
-    const merchantUrl = pageProps.retailer.merchant_url;
-    const domain = getMerchantDomainFromUrl(merchantUrl);
+    const merchantUrl = pageProps?.retailer?.merchant_url;
+
+    if (!merchantUrl) {
+      log.warning(`merchantDomainUrl not found ${request.url}`);
+    }
+
+    const merchantDomain = merchantUrl
+      ? getMerchantDomainFromUrl(merchantUrl)
+      : null;
     // Combine active and expired vouchers
     const activeItems = pageProps.vouchers.map((voucher) => ({
       ...voucher,
@@ -133,13 +134,15 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
-      result = processCouponItem(
+      const couponItem = {
         merchantName,
-        domain,
+        merchantDomain,
         retailerId,
-        item,
-        request.url
-      );
+        sourceUrl: request.url,
+        ...item,
+      };
+
+      result = processCouponItem(couponItem);
 
       if (result.hasCode) {
         couponsWithCode[result.generatedHash] = result;
