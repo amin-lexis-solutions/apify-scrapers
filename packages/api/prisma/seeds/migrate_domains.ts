@@ -333,7 +333,7 @@ const SOURCES_DATA = [
     name: 'cuponomia-com-br',
   },
   {
-    apifyActorId: null,
+    apifyActorId: 'HouOLEugfPTadv50v',
     domains: [
       'bravosconto.it',
       'bravopromo.fr',
@@ -352,6 +352,91 @@ const SOURCES_DATA = [
       'bravosleva.cz',
     ],
     name: 'bravo',
+  },
+  {
+    apifyActorId: 'eUGRqyWajLssu7Kcp',
+    domains: ['retailmenot.com'],
+    name: 'retailmenot-com',
+  },
+  {
+    apifyActorId: 'GI92rsylyu0OaooNl',
+    domains: ['alennuskoodit.suomi24.fi'],
+    name: 'alennuskoodit-suomi24-fi',
+  },
+  {
+    apifyActorId: 'f4UgcbL0WF2TgRJhe',
+    domains: ['couponbind.com'],
+    name: 'couponbind-com',
+  },
+  {
+    apifyActorId: 'VEed5ySZN1WPPrzDs',
+    domains: ['couponzguru.sg'],
+    name: 'couponzguru-sg',
+  },
+  {
+    apifyActorId: 'HkvtS5g9gpO9pfqoO',
+    domains: ['kodvpalto.ru', 'codepoche.fr', 'ilovebargain.com'],
+    name: 'ilovebargain',
+  },
+  {
+    apifyActorId: 'OAVL1D4SrgfoHULig',
+    domains: ['descuentos.elmundo.es'],
+    name: 'descuentos-elmundo-es',
+  },
+  {
+    apifyActorId: '7ymjYOi4Y7gcccfPM',
+    domains: ['dontpayfull.com'],
+    name: 'dontpayfull-com',
+  },
+  {
+    apifyActorId: 'jW21dASnQlaoFhC84',
+    domains: ['drivereasy.com'],
+    name: 'drivereasy-com',
+  },
+  {
+    apifyActorId: 'uR6FH4MBVqz27c9MJ',
+    domains: ['iltalehti.fi'],
+    name: 'iltalehti-fi',
+  },
+  {
+    apifyActorId: '8tnfZ0cUcaKJG5cFV',
+    domains: ['rabattkoder.expressen.se'],
+    name: 'rabattkoder-expressen-se',
+  },
+  {
+    apifyActorId: 'qP7ELPdriEUmHC8kX',
+    domains: ['rabattsok.se'],
+    name: 'rabattsok-se',
+  },
+  {
+    apifyActorId: 'EX9Gdu1ToGra8sbMP',
+    domains: ['tecmundo.com.br'],
+    name: 'tecmundo-com-br',
+  },
+  {
+    apifyActorId: '1RdCR0WPHU6GKRv9B',
+    domains: ['shopper.com'],
+    name: 'shopper',
+  },
+  {
+    apifyActorId: '38tWc5oqr3W9W7NJQ',
+    domains: ['sparpedia.dk', 'sparpedia.no'],
+    name: 'sparpedia',
+  },
+  {
+    apifyActorId: 'osZWVXZmuSbFaUjEB',
+    domains: ['poulpeo.com'],
+    name: 'poulpeo-com',
+  },
+  {
+    apifyActorId: 'osZWVXZmuSbFaUjEB',
+    domains: ['cp.sg'],
+    name: 'cp-sg',
+  },
+  {
+    apifyActorId: '8pEZLVo1t8WCIIoQg',
+    domains: ['singacoupons.net'],
+    name: 'singacoupons-net',
   },
 ];
 
