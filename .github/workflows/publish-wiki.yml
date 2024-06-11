@@ -26,3 +26,6 @@ jobs:
       - name: Generate wiki
         run: cd packages/api && yarn scripts:generate-wiki
       - uses: Andrew-Chen-Wang/github-wiki-action@v4
+        with:
+          strategy: init
+          path: ./packages/api/wiki

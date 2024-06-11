@@ -51,7 +51,7 @@ async function main() {
 
   // Write markdown to file
   fs.writeFileSync(
-    './wiki/State-of-project-%E2%80%90-locales%2C-domains-%26-actors.md',
+    './wiki/State of project ‐ locales, domains & actors.md',
     markdownContent
   );
 
