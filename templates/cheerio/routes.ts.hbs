@@ -8,6 +8,7 @@ import {
   CouponItemResult,
   CouponHashMap,
   checkCouponIds,
+  logError,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -15,7 +16,7 @@ import { preProcess, postProcess } from 'shared/hooks';
 // Export the router function that determines which handler to use based on the request label
 export const router = createCheerioRouter();
 
-function processCouponItem(merchantName, domain, voucher, sourceUrl) {
+function processCouponItem(merchantName, merchantDomain, voucher, sourceUrl) {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
@@ -28,7 +29,7 @@ function processCouponItem(merchantName, domain, voucher, sourceUrl) {
   validator.addValue('idInSite', idInSite);
 
   // Add optional values to the validator
-  validator.addValue('domain', domain);
+  validator.addValue('domain', merchantDomain);
   validator.addValue('description', voucher.description);
   validator.addValue('termsAndConditions', voucher.termsAndConditions);
   validator.addValue('expiryDateAt', formatDateTime(voucher.endTime));
@@ -59,10 +60,20 @@ router.addHandler(Label.listing, async (context) => {
     // TODO: Implement the logic to extract the merchant name, domain, clientId, countryCode, and vouchers from the pag
 
     const merchantName = ''; // TODO: Extract the merchant name from the page
-    const merchantUrl = ''; // TODO: Extract the merchant URL from the page
-    const domain = getMerchantDomainFromUrl(merchantUrl);
 
-    log.info(`Merchant Name: ${merchantName} - Domain: ${domain}`);
+    if (!merchantName) {
+      logError(`MerchantName not found ${request.url}`);
+      return;
+    }
+
+    const merchantUrl = ''; // TODO: Extract the merchant URL from the page
+    const merchantDomain = getMerchantDomainFromUrl(merchantUrl);
+
+    merchantDomain
+      ? log.info(
+          `Merchant Name: ${merchantName} - merchantDomain: ${merchantDomain}`
+        )
+      : log.warning('merchantDomain not found');
 
     const vouchers = []; // TODO: Extract the vouchers from the page
     const expiredVouchers = []; // TODO: Extract the expired vouchers from the page (if any)
@@ -79,16 +90,24 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error) {
-      log.error(`Preprocess Error: ${error}`);
+      logError(`Preprocess Error: ${error}`);
       return;
     }
 
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     for (const voucher of allVouchers) {
+      if (!voucher?.title) {
+        logError('Coupon title not found in item');
+        continue;
+      }
+      if (!voucher?.idPool) {
+        logError('idInSite not found in item');
+        continue;
+      }
       const result: CouponItemResult = processCouponItem(
         merchantName,
-        domain,
+        merchantDomain,
         voucher,
         request.url
       );
@@ -155,8 +174,7 @@ router.addHandler(Label.getCode, async (context) => {
     const code = null; // TODO: Extract the code from the response
 
     if (!code) {
-      log.error('No code found');
-      return;
+      log.warning('No code found');
     }
 
     // Add the code value to the validator
