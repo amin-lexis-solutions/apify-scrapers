@@ -1,5 +1,9 @@
 import * as Sentry from '@sentry/node';
-import { checkExistingCouponsAnomaly, processAndStoreData } from './helpers';
+import {
+  checkExistingCouponsAnomaly,
+  checkIndexPageSelectors,
+  processAndStoreData,
+} from './helpers';
 
 /**
  * Type definition for the AnomalyCheckHandler object.
@@ -10,6 +14,15 @@ import { checkExistingCouponsAnomaly, processAndStoreData } from './helpers';
 type AnomalyCheckHandler = {
   coupons: any[];
   url?: string;
+};
+
+/**
+ * Type definition for the IndexPageHandler object.
+ * @typedef {Object} IndexPageHandler
+ * @property {Object} selectors - Non index selectors.
+ */
+type IndexPageHandler = {
+  indexPageSelectors: any;
 };
 
 /**
@@ -33,11 +46,20 @@ export const preProcess = async (load: any, context: any): Promise<boolean> => {
   try {
     const {
       AnomalyCheckHandler,
+      IndexPageHandler,
     }: {
       AnomalyCheckHandler: AnomalyCheckHandler;
+      IndexPageHandler: IndexPageHandler;
     } = load;
 
     if (!context) throw new Error('Context is missing');
+
+    if (IndexPageHandler) {
+      await checkIndexPageSelectors(
+        IndexPageHandler.indexPageSelectors,
+        context
+      );
+    }
 
     if (AnomalyCheckHandler) {
       if (

@@ -209,3 +209,54 @@ export function logError(exception: string) {
   log.error(exception);
   Sentry.captureException(exception);
 }
+
+export async function checkIndexPageSelectors(pageSelectors, context) {
+  const { page, $ } = context;
+  const { indexSelector, nonIndexSelector } = pageSelectors;
+
+  log.info(`checkIndexPageSelectors ${context.request.url}`);
+
+  // Function to check selectors in Puppeteer
+  const puppeteerCheck = async (selectors) => {
+    for (const selector of selectors) {
+      const element = await page.$(selector);
+      if (element) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // Function to check selectors in Cheerio
+  const cheerioCheck = (selectors) => {
+    return selectors.some((selector) => $(selector).length > 0);
+  };
+
+  let isIndexPage, isNonIndexPage;
+
+  if (page) {
+    // Puppeteer context
+    isIndexPage = await puppeteerCheck(indexSelector);
+    isNonIndexPage = nonIndexSelector
+      ? await puppeteerCheck(nonIndexSelector)
+      : false;
+  } else if ($) {
+    // Cheerio context
+    isIndexPage = cheerioCheck(indexSelector);
+    isNonIndexPage = nonIndexSelector ? cheerioCheck(nonIndexSelector) : false;
+  } else {
+    throw new Error(
+      'Error checkIndexPageSelectors - Puppeteer Page Browser nor Cheerio Object not found in context'
+    );
+  }
+
+  if (isNonIndexPage) {
+    await Dataset.pushData({
+      __isNotIndexPage: true,
+      __url: context.request.url,
+    });
+    throw new Error(`${context.request.url} - Not an index page`);
+  }
+
+  return isIndexPage && !isNonIndexPage;
+}

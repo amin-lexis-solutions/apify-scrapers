@@ -111,6 +111,9 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             coupons: items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );

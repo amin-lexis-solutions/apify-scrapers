@@ -7,8 +7,8 @@ async function main() {
   await Actor.init();
 
   const crawler = await preparePuppeteerScraper(router as any, {
-    domain: 'coupons.oneindia.com',
-    countryCode: 'in',
+    indexPageSelectors: ['div[data-testid=active-vouchers-widget]'],
+    nonIndexPageSelectors: ['._1anmgjd1'],
   });
 
   await crawler.run();

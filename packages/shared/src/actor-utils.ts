@@ -17,9 +17,9 @@ type MainFunctionArgs = {
   // custom headers in a format of key-value pairs
   customHeaders?: Record<string, string>;
   domain?: string;
-  countryCode?: string;
-  extractDomainAndCountryCode?: boolean;
   maxRequestRetries?: number;
+  indexPageSelectors?: string[];
+  nonIndexPageSelectors?: string[];
 };
 
 const getStartUrlsArray = (startUrls) => {
@@ -86,7 +86,13 @@ export async function prepareCheerioScraper(
 
   // Manually add each URL to the request queue
 
-  const userData = { label: Label.listing };
+  const userData = {
+    label: Label.listing,
+    pageSelectors: {
+      indexSelector: args?.indexPageSelectors,
+      nonIndexSelector: args?.nonIndexPageSelectors,
+    },
+  };
 
   for (const { url, metadata } of startUrls) {
     await crawler?.requestQueue?.addRequest({
@@ -150,8 +156,12 @@ export async function preparePuppeteerScraper(
     await crawler?.requestQueue?.addRequest({
       url,
       userData: {
-        ...metadata,
         label: Label.listing,
+        pageSelectors: {
+          indexSelector: args?.indexPageSelectors,
+          nonIndexSelector: args?.nonIndexPageSelectors,
+        },
+        ...metadata,
       },
       headers: customHeaders,
     });
