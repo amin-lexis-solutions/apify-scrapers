@@ -66,14 +66,36 @@ function generateMarkdown(
 ): string {
   let markdown = '';
 
+  const getColorAndMarkup = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return { color: 'green', markup: '**' };
+      case 'rejected':
+        return { color: 'red', markup: '~~' };
+      default:
+        return { color: 'gray', markup: '' };
+    }
+  };
+
   // Process primary locales
   markdown += '# Primary locales : \n\n';
   for (const locale of localesToImport) {
     markdown += `## ${locale.locale}\n\n`;
     for (const domain of results[locale.locale] || []) {
       const actorLink = `https://console.apify.com/organization/NYbzvbpuDAm66FRbY/actors/${domain.apifyActorId}/source`;
-      markdown += `- [${domain.domain}](https://${domain.domain}) - [Actor](${actorLink})\n`;
+      markdown += `- \`${domain.domain}\` - [Actor](${actorLink})\n`;
     }
+    markdown += '\n';
+    const domains = candidateDomains[locale.locale] || null;
+    if (domains?.length > 0) {
+      markdown += `### Candidate Domains\n\n`;
+      for (const domain of domains) {
+        const { color, markup } = getColorAndMarkup(domain.status);
+        const formattedStatus = `<span style="color:${color}">${domain.status}</span>`;
+        markdown += `- ${markup}\` ${domain.domain} \`${markup}  - ${formattedStatus}\n`;
+      }
+    }
+    markdown += '\n\n\n';
     markdown += '\n\n\n';
   }
 
@@ -86,22 +108,20 @@ function generateMarkdown(
     markdown += `## ${locale}\n\n`;
     for (const domain of results[locale] || []) {
       const actorLink = `https://console.apify.com/organization/NYbzvbpuDAm66FRbY/actors/${domain.apifyActorId}/source`;
-      markdown += `- [${domain.domain}](https://${domain.domain}) - [Actor](${actorLink})\n`;
+      markdown += `- \`${domain.domain}\` - [Actor](${actorLink})\n`;
+    }
+
+    markdown += '\n';
+    const domains = candidateDomains[locale] || null;
+    if (domains?.length > 0) {
+      markdown += `### Candidate Domains\n\n`;
+      for (const domain of domains) {
+        const { color, markup } = getColorAndMarkup(domain.status);
+        const formattedStatus = `<span style="color:${color}">${domain.status}</span>`;
+        markdown += `- ${markup}\` ${domain.domain} \`${markup}  - ${formattedStatus}\n`;
+      }
     }
     markdown += '\n\n\n';
-  }
-
-  // Add candidate domains
-  markdown += '# Candidate Domains\n\n';
-  for (const [locale, domains] of Object.entries(candidateDomains)) {
-    markdown += `### ${locale}\n\n`;
-    for (const domain of domains) {
-      // eslint-disable-next-line prettier/prettier
-      const color = domain.status === 'accepted' ? 'green' : ( domain.status === 'rejected' ? 'red' : 'gray' );
-      const status = `<span style="color:${color}">${domain.status}</span>`;
-      markdown += `- [${domain.domain}](https://${domain.domain}) - ${status}\n`;
-    }
-    markdown += '\n';
   }
 
   return markdown;

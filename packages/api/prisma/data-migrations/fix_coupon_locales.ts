@@ -1,10 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import ProgressBar from 'progress';
-import {
-  getCountryCodeFromDomain,
-  detectLanguage,
-  getAccurateLocale,
-} from './utils';
+import { getCountryCodeFromDomain } from './utils';
+import { getLocaleFromUrl } from '@api/utils/utils';
 import fs from 'fs';
 
 const prisma = new PrismaClient();
@@ -16,6 +13,7 @@ const DEBUG = false;
 
 async function main() {
   console.log('Loading data...');
+
   const stats = {
     couponsNotMatchTargetPageUrl: [] as string[],
     couponsNotMatchTargetPageLocale: [] as string[],
@@ -23,10 +21,12 @@ async function main() {
     couponsWithCorrectLocale: [] as string[],
     couponsToBeUpdated: [] as string[],
     correctTargetPageCount: 0,
+    updatedCount: 0,
+    constraintsCollisions: 0,
+    undefinedLocale: 0,
   };
 
   const coupons = await prisma.coupon.findMany({
-    // take: 100,
     select: {
       id: true,
       title: true,
@@ -45,20 +45,11 @@ async function main() {
     },
   });
 
-  const locales = await prisma.targetLocale.findMany({
-    select: {
-      locale: true,
-      countryCode: true,
-      languageCode: true,
-    },
+  const targetPageUrlToLocale: Record<string, string> = {};
+
+  targetPages.forEach((page) => {
+    targetPageUrlToLocale[page.url] = page.locale.locale;
   });
-
-  const targetPageUrlToLocale: any = {};
-
-  for (let i = 0; i < targetPages.length; i++) {
-    const url: string = targetPages[i].url;
-    targetPageUrlToLocale[url] = targetPages[i].locale.locale;
-  }
 
   const batchSize = 1000;
   const bar = new ProgressBar('Processing [:bar] :percent :etas', {
@@ -69,80 +60,75 @@ async function main() {
   for (let i = 0; i < coupons.length; i += batchSize) {
     const batch = coupons.slice(i, i + batchSize);
 
-    const langCodes = await Promise.all(
-      batch.map(
-        async (coupon) =>
-          await detectLanguage(`${coupon.title}  ${coupon.description}`)
-      )
-    );
+    for (const coupon of batch) {
+      const url = coupon.sourceUrl;
+      const locale = targetPageUrlToLocale[url];
 
-    await prisma.$transaction(
-      batch.map((coupon, index) => {
-        const url = coupon.sourceUrl;
-        const locale: any = targetPageUrlToLocale[url];
+      let countryCode = getCountryCodeFromDomain(coupon.sourceUrl || '');
 
-        let countryCode = getCountryCodeFromDomain(coupon.sourceUrl || '');
+      if (!countryCode) {
+        countryCode = getCountryCodeFromDomain(coupon.domain || '');
+      }
 
-        // If the country code could not be determined from the domain, try to extract it from the source URL.
-        if (!countryCode) {
-          countryCode = getCountryCodeFromDomain(coupon.domain || '');
-        }
+      const accurateLocale =
+        getLocaleFromUrl(coupon.sourceUrl || '') || coupon.locale;
 
-        const langCode = langCodes[index] || '';
+      if (locale !== coupon.locale && url !== coupon.sourceUrl) {
+        stats.couponsNotMatchTargetPageAndLocale.push(coupon.id);
+      } else if (locale !== coupon.locale) {
+        stats.couponsNotMatchTargetPageLocale.push(coupon.id);
+      } else if (url !== coupon.sourceUrl) {
+        stats.couponsNotMatchTargetPageUrl.push(coupon.id);
+      } else {
+        stats.correctTargetPageCount++;
+      }
 
-        const accurateLocale = getAccurateLocale(
-          locale || '',
-          countryCode || '',
-          langCode || '',
-          coupon.locale || '',
-          locales
+      if (coupon.locale === accurateLocale) {
+        stats.couponsWithCorrectLocale.push(coupon.id);
+      } else {
+        stats.couponsToBeUpdated.push(coupon.id);
+      }
+
+      if (DEBUG) {
+        console.log(`\n`);
+        console.log(
+          `Coupon Match Base URL [TP locale]: ${locale} : [COUPON locale]: ${coupon.locale}`
         );
+        console.log(
+          `Coupon Match Domain Country Code ${countryCode} [Domain]: ${coupon.domain} : [COUPON locale]: ${coupon.locale}`
+        );
+        console.log(coupon.title + ' ' + coupon.description);
+        console.log(
+          `Coupon Match Most Common Locale [Final locale]: ${accurateLocale} : [COUPON Locale]: ${coupon.locale}`
+        );
+      }
 
-        if (locale !== coupon.locale && url !== coupon.sourceUrl) {
-          stats.couponsNotMatchTargetPageAndLocale.push(coupon.id);
-        } else if (locale !== coupon.locale) {
-          stats.couponsNotMatchTargetPageLocale.push(coupon.id);
-        } else if (url !== coupon.sourceUrl) {
-          stats.couponsNotMatchTargetPageUrl.push(coupon.id);
-        } else {
-          stats.correctTargetPageCount++;
+      try {
+        if (UPDATE) {
+          await prisma.coupon.update({
+            where: { id: coupon.id },
+            data: {
+              locale: accurateLocale,
+            },
+          });
+          stats.updatedCount++;
         }
-
-        if (coupon.locale === accurateLocale) {
-          stats.couponsWithCorrectLocale.push(coupon.id);
-        } else {
-          stats.couponsToBeUpdated.push(coupon.id);
-        }
-
+      } catch (e) {
         if (DEBUG) {
-          console.log(`\n`);
-          console.log(
-            `Coupon Match Base URL [TP locale]: ${locale} : [COUPON locale]: ${coupon.locale}`
-          );
-
-          console.log(
-            `Coupon Match Domain Country Code ${countryCode} [Domain]: ${coupon.domain} : [COUPON locale]: ${coupon.locale}`
-          );
-
-          console.log(
-            `Coupon Match Language Detection ${langCode} : [COUPON Locale]: ${coupon.locale}`
-          );
-
-          console.log(coupon.title + ' ' + coupon.description);
-
-          console.log(
-            `Coupon Match Most Common Locale [Final locale]: ${accurateLocale} : [COUPON Locale]: ${coupon.locale}`
+          console.error(
+            `Error updating coupon ${coupon.sourceUrl} locale "${coupon.locale}"  with locale ${accurateLocale}`
           );
         }
 
-        return prisma.coupon.update({
-          where: { id: coupon.id },
-          data: {
-            locale: UPDATE ? accurateLocale : coupon.locale,
-          },
-        } as any);
-      })
-    );
+        if (coupon.locale && accurateLocale) {
+          stats.constraintsCollisions++;
+        }
+        if (!accurateLocale) {
+          stats.undefinedLocale++;
+        }
+      }
+    }
+
     bar.tick();
   }
 
@@ -159,6 +145,9 @@ async function main() {
     'Coupons with Correct Locale (No Changes Made)':
       stats.couponsWithCorrectLocale.length,
     'Coupons Affected by This Update': stats.couponsToBeUpdated.length,
+    'Coupons Updated': stats.updatedCount,
+    'Constraints Collisions': stats.constraintsCollisions,
+    'Undefined Locale': stats.undefinedLocale,
   });
 
   fs.writeFileSync('coupon_locale_stats.json', JSON.stringify(stats, null, 2));

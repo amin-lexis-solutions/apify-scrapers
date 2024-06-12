@@ -61,6 +61,7 @@ import sparpedia from './sparpedia';
 import poulpeoCom from './poulpeo-com';
 import cpSg from './cp-sg';
 import singacouponsNet from './singacoupons-net';
+import radinsCom from './radins-com';
 // Add other imports here
 
 export interface SOURCES_DATA {
@@ -135,5 +136,6 @@ export const SOURCES_DATA = [
   ...poulpeoCom,
   ...cpSg,
   ...singacouponsNet,
+  ...radinsCom,
   // Add other imported sources here
 ] as SOURCES_DATA[];

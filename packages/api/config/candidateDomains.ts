@@ -5,7 +5,7 @@ enum status {
   pending = 'pending',
 }
 
-export const candidateDomains = {
+export const candidateDomains: any = {
   [Locale.en_US]: [
     {
       domain: 'joinhoney.com',
@@ -19,7 +19,7 @@ export const candidateDomains = {
     },
     {
       domain: 'radarcupon.com.ar',
-      status: status.pending,
+      status: status.rejected,
     },
   ],
   [Locale.es_CL]: [
@@ -47,7 +47,7 @@ export const candidateDomains = {
   [Locale.es_CO]: [
     {
       domain: 'radarcupon.com.co',
-      status: status.pending,
+      status: status.rejected,
     },
     {
       domain: 'cupon.com.co',

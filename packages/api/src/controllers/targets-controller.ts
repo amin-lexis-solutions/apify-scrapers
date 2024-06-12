@@ -259,14 +259,12 @@ export class TargetsController {
           `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.name}.`
         );
 
-        // const startUrls = pagesChunk.map((page) => ({ url: page.url }));
         const startUrls = pagesChunk.map((page) => ({
           url: page.url,
           metadata: {
             targetPageId: page.id,
             targetPageUrl: page.url,
-            localeId: page.localeId, // temporary fail-back for the actor
-            locale: page.locale.locale, // e.g. en_US or en_GB
+            verifyLocale: page.verified_locale,
           },
         }));
 
@@ -366,8 +364,9 @@ export class TargetsController {
 
     // Generate queries for each brand and URL
     const queries = brands.flatMap((brand) => {
+      // TODO: #233 remove {{website}}  add {{brand}} from searchTemplate
       return urls.map((url) => {
-        return `site:${url} ${brand.name}`;
+        return `site:${url} ${brand.name} `;
       });
     });
 

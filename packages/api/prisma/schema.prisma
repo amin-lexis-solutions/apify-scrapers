@@ -35,15 +35,14 @@ model Coupon {
   firstSeenAt        DateTime       @default(now())
   lastSeenAt         DateTime       @default(now())
   archivedAt         DateTime?
-  localeId           String
-  locale             String?
+  locale             String
   archivedReason     ArchiveReason?
 
   source Source       @relation(fields: [sourceId], references: [id])
-  locale_relation TargetLocale @relation(fields: [localeId], references: [id], onDelete: Cascade)
+  locale_relation TargetLocale @relation(fields: [locale], references: [locale], onDelete: Cascade)
 
   @@index([sourceId])
-  @@index([localeId])
+  @@index([locale])
   @@index([archivedAt])
   @@index([domain])
   @@index([code])
@@ -122,9 +121,9 @@ model TargetPage {
   localeId           String
   markedAsNonIndexAt DateTime?
   disabledAt         DateTime?
+  verified_locale    String? // e.g. en_US
 
   locale TargetLocale @relation(fields: [localeId], references: [id])
-
   @@index([localeId])
   @@index([url])
 }

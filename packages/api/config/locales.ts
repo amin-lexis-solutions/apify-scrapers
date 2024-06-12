@@ -71,4 +71,7 @@ export enum Locale {
   fr_LU = 'fr_LU',
   en_KE = 'en_KE',
   ru_RU = 'ru_RU',
+  el_GR = 'el_GR',
+  en_SA = 'en_SA',
+  en_PK = 'en_PK',
 }

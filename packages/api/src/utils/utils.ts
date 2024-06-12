@@ -1,5 +1,6 @@
 import crypto from 'crypto';
-
+import * as Sentry from '@sentry/node';
+import { SOURCES_DATA } from '../../config/actors';
 import { getMerchantDomainFromUrl } from 'shared/helpers';
 
 export function normalizeString(s: string): string {
@@ -89,4 +90,31 @@ export function getGoogleActorPriceInUsdMicroCents(
   const PRICE_PER_1000_RESULTS_IN_USD = 3.5;
 
   return PRICE_PER_1000_RESULTS_IN_USD * (totalResults / 1000) * 1000000;
+}
+
+// Function to get locale from url
+export function getLocaleFromUrl(url: string): string | null {
+  // find if url is present in any domain of SOURCES_DATA
+  const source = SOURCES_DATA.find((source: any) =>
+    source.domains.some((d: any) => url.includes(d.domain))
+  );
+
+  if (source) {
+    const domain = source.domains.find((d: any) => url.includes(d.domain));
+    if (domain) {
+      if (domain.routes && Object.keys(domain.routes).length > 0) {
+        const route = Object.keys(domain.routes).find((key) =>
+          url.includes(`${domain.domain}${key}`)
+        );
+        if (route) {
+          return domain.routes[route];
+        }
+        Sentry.captureMessage(`Route not found for url: ${url}`);
+        return null;
+      }
+      return domain.locales[0];
+    }
+  }
+  Sentry.captureMessage(`Domain not found for url: ${url}`);
+  return null;
 }

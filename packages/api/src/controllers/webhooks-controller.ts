@@ -12,6 +12,7 @@ import {
   getToleranceMultiplier,
   removeDuplicateCoupons,
   getGoogleActorPriceInUsdMicroCents,
+  getLocaleFromUrl,
 } from '../utils/utils';
 import {
   SerpWebhookRequestBody,
@@ -48,7 +49,7 @@ export class WebhooksController {
   ): Promise<StandardResponse> {
     const { defaultDatasetId, status, usageTotalUsd } = webhookData.resource;
     const actorRunId = webhookData.eventData.actorRunId;
-    const { sourceId, localeId } = webhookData;
+    const { sourceId } = webhookData;
 
     if (!sourceId) {
       return new StandardResponse('sourceId is a required field', true);
@@ -77,13 +78,20 @@ export class WebhooksController {
       // Process coupons
       const { couponStats, errors } = await this.processCoupons(
         coupons,
-        sourceId,
-        localeId
+        sourceId
       );
 
       // Update coupon stats
       await this.updateCouponStats(scrapedData, sourceId);
 
+      if (errors.length > 0) {
+        Sentry.captureException(
+          `Errors occurred during processing run ${run.id} from source ${sourceId}`,
+          {
+            extra: { errors },
+          }
+        );
+      }
       // Update processed run
       await prisma.processedRun.update({
         where: { id: run.id },
@@ -136,11 +144,7 @@ export class WebhooksController {
   }
 
   // Process and store the coupons
-  private async processCoupons(
-    scrapedData: any,
-    sourceId: string,
-    localeId: string
-  ) {
+  private async processCoupons(scrapedData: any, sourceId: string) {
     const now = new Date();
     const couponStats = {
       createdCount: 0,
@@ -169,7 +173,6 @@ export class WebhooksController {
           create: this.prepareCreateData(
             item,
             sourceId,
-            localeId,
             id,
             now,
             archivedAt,
@@ -244,6 +247,16 @@ export class WebhooksController {
           archivedReason = 'unexpired';
         }
 
+        const locale = item.metadata.verifyLocale
+          ? item.metadata.verifyLocale
+          : getLocaleFromUrl(item.sourceUrl);
+
+        if (locale) {
+          updateData.locale_relation = {
+            connect: { locale },
+          };
+        }
+
         updateData.archivedAt = archivedAt;
         updateData.archivedReason = archivedReason;
         (updateData as any)[key] =
@@ -256,7 +269,6 @@ export class WebhooksController {
       updateData,
       archivedAt,
       archivedReason,
-      locale: item.metadata.locale || null, // temp Fallback to the webhook locale required for now
     };
   }
 
@@ -264,28 +276,38 @@ export class WebhooksController {
   private prepareCreateData(
     item: any,
     sourceId: string,
-    localeId: string,
     id: string,
     now: Date,
     archivedAt: Date | null,
     archivedReason: $Enums.ArchiveReason | null
   ) {
     let sourceUrl = item.sourceUrl || null;
+
     if (
       sourceUrl !== item.metadata.targetPageUrl &&
       item.metadata.targetPageUrl !== null
     ) {
       sourceUrl = item.metadata.targetPageUrl;
       Sentry.captureMessage(
-        `sourceUrl mismatch for coupon ${id}. Expected: ${sourceUrl}, got: ${item.sourceUrl}`
+        `sourceUrl mismatch for coupon ${id}. Expected: ${item.metadata.targetPageUrl}, got: ${item.sourceUrl}`
+      );
+    }
+
+    const locale = item.metadata.verifyLocale
+      ? item.metadata.verifyLocale
+      : getLocaleFromUrl(item.sourceUrl);
+
+    if (!locale) {
+      Sentry.captureException(
+        `Locale not found for coupon ${id}. Source URL: ${sourceUrl}`,
+        { extra: { item } }
       );
     }
 
     return {
       id,
       sourceId,
-      localeId: item.metadata.localeId || localeId, // temp Fallback to the webhook localeId required for now , will be removed once all sources are updated
-      locale: item.metadata.locale || null, // temp Fallback to the webhook locale required for now , will be removed once all sources are updated
+      locale,
       idInSite: item.idInSite,
       domain: item.domain || null,
       merchantName: item.merchantName,
@@ -523,6 +545,8 @@ export class WebhooksController {
       : data;
     const validData = this.prepareSerpData(filteredData, actorRunId, localeId); // Prepare the data for storage
 
+    // TODO CHECK IF IT'S TARGET SEARCH verified_locale from hock #233
+    // TODO: Add a check for verified_locale to ensure the locale is valid #233
     // Store the SERP data using upsert change localeId value
     for (const item of validData) {
       try {
