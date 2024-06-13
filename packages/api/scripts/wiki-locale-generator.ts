@@ -82,8 +82,7 @@ function generateMarkdown(
   for (const locale of localesToImport) {
     markdown += `## ${locale.locale}\n\n`;
     for (const domain of results[locale.locale] || []) {
-      const actorLink = `https://console.apify.com/organization/NYbzvbpuDAm66FRbY/actors/${domain.apifyActorId}/source`;
-      markdown += `- \`${domain.domain}\` - [Actor](${actorLink})\n`;
+      markdown += `- \`${domain.domain}\`\n`;
     }
     markdown += '\n';
     const domains = candidateDomains[locale.locale] || null;
@@ -107,8 +106,7 @@ function generateMarkdown(
   for (const locale of localesNotToImport) {
     markdown += `## ${locale}\n\n`;
     for (const domain of results[locale] || []) {
-      const actorLink = `https://console.apify.com/organization/NYbzvbpuDAm66FRbY/actors/${domain.apifyActorId}/source`;
-      markdown += `- \`${domain.domain}\` - [Actor](${actorLink})\n`;
+      markdown += `- \`${domain.domain}\`\n`;
     }
 
     markdown += '\n';
