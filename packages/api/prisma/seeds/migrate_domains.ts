@@ -1,6 +1,6 @@
 import { prisma } from '../../src/lib/prisma';
-
 import { SOURCES_DATA } from '../../config/actors';
+import { Reliability } from '@prisma/client';
 
 async function seedSources() {
   const activeSources = SOURCES_DATA.filter(
@@ -34,7 +34,10 @@ async function seedSources() {
         name,
         apifyActorId,
         domains: {
-          create: domains.map((d: any) => ({ domain: d.domain })),
+          create: domains.map((d: any) => ({
+            domain: d.domain,
+            reliability: Reliability.reliable,
+          })),
         },
       },
     });

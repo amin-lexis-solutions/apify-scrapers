@@ -118,3 +118,10 @@ export function getLocaleFromUrl(url: string): string | null {
   Sentry.captureMessage(`Domain not found for url: ${url}`);
   return null;
 }
+
+// Function to get country code from domain
+export function isValidSourceDomain(domain: string): boolean {
+  return SOURCES_DATA.some((source) =>
+    source.domains.some((d) => domain === d.domain)
+  );
+}

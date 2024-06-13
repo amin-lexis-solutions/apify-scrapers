@@ -1,4 +1,5 @@
-import { Prisma } from '@prisma/client';
+import * as Sentry from '@sentry/node';
+import { Prisma, Reliability } from '@prisma/client';
 import {
   Authorized,
   BadRequestError,
@@ -10,7 +11,7 @@ import {
   QueryParams,
 } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
-
+import { isValidSourceDomain } from '../utils/utils';
 import { couponMatchCache } from '../lib/cache';
 import { prisma } from '../lib/prisma';
 import {
@@ -18,6 +19,7 @@ import {
   ListRequestBody,
   StandardResponse,
   AnomalyRequestBody,
+  ReliabilityRequestBody,
 } from '../utils/validators';
 
 @JsonController('/items')
@@ -264,8 +266,56 @@ export class CouponsController {
         }
       );
     } catch (error: any) {
-      console.error('An error occurred in anomaly detection', error);
+      Sentry.captureException('An error occurred in anomaly detection', {
+        extra: { error },
+      });
       return new StandardResponse('An error occurred ', true);
+    }
+  }
+
+  @Post('/domains/set-reliability')
+  @OpenAPI({
+    summary: 'Set reliability of domains',
+    description: 'Set the reliability of domains in the database',
+  })
+  @Authorized()
+  @ResponseSchema(StandardResponse)
+  async setDomainReliability(@Body() body: ReliabilityRequestBody) {
+    const { domains, isReliable } = body;
+
+    try {
+      if (!domains || isReliable === undefined) {
+        return new StandardResponse(
+          'domains and reliability must be provided',
+          true
+        );
+      }
+
+      if (!domains.every(isValidSourceDomain)) {
+        return new StandardResponse('Invalid domain(s) provided', true);
+      }
+
+      await prisma.sourceDomain.updateMany({
+        where: { domain: { in: domains } },
+        data: {
+          reliability: isReliable
+            ? Reliability.reliable
+            : Reliability.unreliable,
+        },
+      });
+
+      return new StandardResponse(
+        'Domain reliability updated successfully',
+        false
+      );
+    } catch (error: any) {
+      Sentry.captureException(
+        'An error occurred in setting domain reliability',
+        {
+          extra: { error },
+        }
+      );
+      return new StandardResponse('An error occurred  ', true);
     }
   }
 }

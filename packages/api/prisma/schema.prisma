@@ -16,6 +16,11 @@ enum ArchiveReason {
   manual
 }
 
+enum Reliability {
+  reliable
+  unreliable
+}
+
 model Coupon {
   id                 String         @id
   sourceId           String
@@ -38,7 +43,9 @@ model Coupon {
   locale             String
   archivedReason     ArchiveReason?
 
+
   source Source       @relation(fields: [sourceId], references: [id])
+
   locale_relation TargetLocale @relation(fields: [locale], references: [locale], onDelete: Cascade)
 
   @@index([sourceId])
@@ -61,10 +68,11 @@ model Source {
 }
 
 model SourceDomain {
-  id       String @id @default(uuid())
-  domain   String
-  source   Source @relation(fields: [sourceId], references: [id])
-  sourceId String
+  id          String      @id @default(uuid())
+  domain      String      
+  reliability Reliability @default(reliable)
+  source      Source      @relation(fields: [sourceId], references: [id])
+  sourceId    String
 }
 
 // Maps to a single Apify actor run
@@ -130,17 +138,18 @@ model TargetPage {
 
 // Tracking for coupon counts over time to detect anomalies in target pages
 model CouponStats {
-  id              String     @id @default(uuid())
+  id              String   @id @default(uuid())
   sourceUrl       String
   couponsCount    Int // Number of coupons on the page     
   surgeThreshold  Int // Number of standard deviations above the mean
   plungeThreshold Int // Number of standard deviations below the mean
-  createdAt       DateTime   @default(now())
+  createdAt       DateTime @default(now())
 }
+
 model Test {
-  id                  String      @id @default(uuid())
-  apifyTestRunId      String
-  apifyActorId        String      @unique
-  status              String
-  lastRunAt           DateTime    @default(now())
+  id             String   @id @default(uuid())
+  apifyTestRunId String
+  apifyActorId   String   @unique
+  status         String
+  lastRunAt      DateTime @default(now())
 }

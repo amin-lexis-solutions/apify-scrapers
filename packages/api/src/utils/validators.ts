@@ -14,6 +14,7 @@ import {
   Length,
   ValidateNested,
   IsUrl,
+  IsFQDN,
 } from 'class-validator';
 
 export class StandardResponse {
@@ -217,4 +218,12 @@ export class TestWebhookRequestBody {
   @IsString()
   @IsOptional()
   actorId: string;
+}
+
+export class ReliabilityRequestBody {
+  @IsArray()
+  @IsFQDN({ require_tld: true }, { each: true })
+  domains: string[];
+  @IsBoolean()
+  isReliable: boolean;
 }
