@@ -11,6 +11,50 @@ export const candidateDomains: any = {
       domain: 'joinhoney.com',
       status: status.accepted,
     },
+    {
+      domain: 'offers.com',
+      status: status.pending,
+    },
+    {
+      domain: 'couponchief.com',
+      status: status.pending,
+    },
+    {
+      domain: 'couponbirds.com',
+      status: status.pending,
+    },
+    {
+      domain: 'coupons.com',
+      status: status.pending,
+    },
+    {
+      domain: 'savings.com',
+      status: status.pending,
+    },
+    {
+      domain: 'couponcabin.com',
+      status: status.pending,
+    },
+    {
+      domain: 'hotdeals.com',
+      status: status.pending,
+    },
+    {
+      domain: 'sociablelabs.com',
+      status: status.pending,
+    },
+    {
+      domain: 'dealdrop.com',
+      status: status.pending,
+    },
+    {
+      domain: 'www.tenereteam.com/coupons',
+      status: status.pending,
+    },
+    {
+      domain: 'worthepenny.com',
+      status: status.pending,
+    },
   ],
   [Locale.es_AR]: [
     {
@@ -55,6 +99,88 @@ export const candidateDomains: any = {
     },
     {
       domain: '1001cuponesdedescuento.com.co',
+      status: status.pending,
+    },
+  ],
+  [Locale.fi_FI]: [
+    {
+      domain: 'alehinta.fi',
+      status: status.pending,
+    },
+    {
+      domain: 'promo-codes.fi',
+      status: status.pending,
+    },
+    {
+      domain: 'cuponation.fi',
+      status: status.pending,
+    },
+    {
+      domain: 'fi.coupert.com',
+      status: status.pending,
+    },
+    {
+      domain: 'fi.promocodie.com',
+      status: status.pending,
+    },
+    {
+      domain: 'promocodius.com/fi/',
+      status: status.pending,
+    },
+    {
+      domain: 'www.mmodm.com/gigantti.fi-coupon-codes/', // coupons community site
+      status: status.pending,
+    },
+    {
+      domain: 'alennuskoodini.fi',
+      status: status.pending,
+    },
+  ],
+  [Locale.en_IE]: [
+    {
+      domain: 'lovevouchers.ie',
+      status: status.pending,
+    },
+    {
+      domain: 'discountcodes.irishtimes.com',
+      status: status.pending,
+    },
+    {
+      domain: 'voucher-code.ie',
+      status: status.pending,
+    },
+    {
+      domain: 'everysaving.ie',
+      status: status.pending,
+    },
+    {
+      domain: 'promotionalcodes.ie',
+      status: status.pending,
+    },
+    {
+      domain: 'savvyspender.ie',
+      status: status.pending,
+    },
+  ],
+  [Locale.en_KE]: [
+    {
+      domain: 'kenyancoupons.net',
+      status: status.pending,
+    },
+  ],
+  [Locale.es_PE]: [
+    {
+      domain: '1001cuponesdedescuento.com.pe',
+      status: status.pending,
+    },
+  ],
+  [Locale.en_SG]: [
+    {
+      domain: 'deala.com', // this coupons site  have coupons for multiple brands worldwide
+      status: status.pending,
+    },
+    {
+      domain: 'collectoffers.com/sg/', // this coupons site available in 22 countries
       status: status.pending,
     },
   ],
