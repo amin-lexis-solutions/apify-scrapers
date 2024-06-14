@@ -184,4 +184,40 @@ export const candidateDomains: any = {
       status: status.pending,
     },
   ],
+  [Locale.sk_SK]: [
+    {
+      domain: 'promokupon.sk',
+      status: status.pending,
+    },
+  ],
+  [Locale.en_PH]: [
+    {
+      domain: 'rezeem.ph',
+      status: status.pending,
+    },
+  ],
+  [Locale.en_IN]: [
+    {
+      domain: 'coupondunia.in',
+      status: status.pending,
+    },
+    {
+      domain: 'savee.in',
+      status: status.pending,
+    },
+    {
+      domain: 'bankofbaroda.in',
+      status: status.pending,
+    },
+  ],
+  [Locale.hu_HU]: [
+    {
+      domain: 'legjobbkuponok.hu',
+      status: status.pending,
+    },
+    {
+      domain: 'kuponkodok.hu',
+      status: status.pending,
+    },
+  ],
 };
