@@ -87,7 +87,6 @@ function generateMarkdown(
     markdown += '\n';
     const domains = candidateDomains[locale.locale] || null;
     if (domains?.length > 0) {
-      markdown += `### Candidate Domains\n\n`;
       for (const domain of domains) {
         const { color, markup } = getColorAndMarkup(domain.status);
         const formattedStatus = `<span style="color:${color}">${domain.status}</span>`;
@@ -112,7 +111,6 @@ function generateMarkdown(
     markdown += '\n';
     const domains = candidateDomains[locale] || null;
     if (domains?.length > 0) {
-      markdown += `### Candidate Domains\n\n`;
       for (const domain of domains) {
         const { color, markup } = getColorAndMarkup(domain.status);
         const formattedStatus = `<span style="color:${color}">${domain.status}</span>`;
