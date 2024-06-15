@@ -13,6 +13,11 @@ export type CouponItemResult = {
   validator: DataValidator;
 };
 
+type IndexPageSelectors = {
+  indexSelector: string[];
+  nonIndexSelector: string[];
+};
+
 export type CouponHashMap = { [key: string]: CouponItemResult };
 
 // Normalizes strings by trimming, converting to lowercase, and replacing multiple spaces with a single space.
@@ -210,14 +215,23 @@ export function logError(exception: string) {
   Sentry.captureException(exception);
 }
 
-export async function checkIndexPageSelectors(pageSelectors, context) {
+/**
+ * CheckIndexPageSelectors function
+ * Verifies index and non index page.
+ * @param {IndexPageSelectors} pageSelectors - Selectors.
+ * @param {any} context - The context in which the pre-processing is happening.
+ */
+export async function checkIndexPageSelectors(
+  pageSelectors: IndexPageSelectors,
+  context: any
+): Promise<boolean> {
   const { page, $ } = context;
   const { indexSelector, nonIndexSelector } = pageSelectors;
 
   log.info(`checkIndexPageSelectors ${context.request.url}`);
 
   // Function to check selectors in Puppeteer
-  const puppeteerCheck = async (selectors) => {
+  const puppeteerCheck = async (selectors: string[]) => {
     for (const selector of selectors) {
       const element = await page.$(selector);
       if (element) {
@@ -228,7 +242,7 @@ export async function checkIndexPageSelectors(pageSelectors, context) {
   };
 
   // Function to check selectors in Cheerio
-  const cheerioCheck = (selectors) => {
+  const cheerioCheck = (selectors: string[]) => {
     return selectors.some((selector) => $(selector).length > 0);
   };
 
