@@ -99,33 +99,25 @@ router.addHandler(Label.listing, async (context) => {
   try {
     // Extracting request and body from context
 
-    log.info(`rocessing URL: ${request.url}`);
-
-    const merchantLI = $('ul.c-breadcrumbs > li:last-child');
-
-    const merchantName = he.decode(merchantLI ? merchantLI.text().trim() : '');
-
-    if (!merchantName) {
-      logError('Merchant name is missing');
-      return;
-    }
+    log.info(`processing URL: ${request.url}`);
 
     const domainSpan = $('p.BrandUrl > span');
 
-    const domainUrl = he.decode(domainSpan ? domainSpan.text().trim() : '');
+    const merchantDomain =
+      domainSpan.length <= 0
+        ? null
+        : getMerchantDomainFromUrl(domainSpan.text().trim());
 
-    if (!domainUrl) {
-      log.warning('Merchant domain is missing');
-    }
-
-    const merchantDomain = getMerchantDomainFromUrl(domainUrl);
+    merchantDomain
+      ? log.info(`Processing MerchantDomain ${merchantDomain}`)
+      : log.warning(`MerchantDomain not found in ${request.url}`);
 
     // Extract valid coupons
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
 
-    const validCoupons = $('div.BrandOffers > article');
+    const validCoupons = $('article.Offer');
 
     try {
       await preProcess(
@@ -143,6 +135,17 @@ router.addHandler(Label.listing, async (context) => {
 
     for (const item of validCoupons) {
       const $coupon = cheerio.load(item);
+
+      const merchantElement = $coupon('*').find('.Outlink img');
+
+      const merchantName = merchantElement
+        ? merchantElement?.attr('alt')?.replace(' logo', '')
+        : null;
+
+      if (!merchantName) {
+        logError('Merchant name not found in item');
+        continue;
+      }
 
       const idInSite = $coupon('*').first().attr('data-id')?.trim();
 
