@@ -20,6 +20,7 @@ import {
   StandardResponse,
   AnomalyRequestBody,
   ReliabilityRequestBody,
+  FakeCouponsRequestBody,
 } from '../utils/validators';
 
 @JsonController('/items')
@@ -48,6 +49,7 @@ export class CouponsController {
       isShown,
       isExclusive,
       isExpired,
+      shouldBeFake,
     } = params;
 
     const where: Prisma.CouponWhereInput = {};
@@ -62,6 +64,10 @@ export class CouponsController {
 
     if (isExclusive !== undefined) {
       where.isExclusive = isExclusive;
+    }
+
+    if (shouldBeFake !== undefined) {
+      where.shouldBeFake = shouldBeFake;
     }
 
     if (isExpired !== undefined) {
@@ -104,7 +110,9 @@ export class CouponsController {
         take: pageSize,
         where: where,
         include: {
-          source: true,
+          source: {
+            select: { name: true, isActive: true, apifyActorId: true },
+          },
         },
       }),
     ]);
@@ -202,6 +210,43 @@ export class CouponsController {
     return new StandardResponse('Record archived successfully', false, {
       updatedRecord: updatedRecord,
     });
+  }
+
+  @Post('/flag-coupons')
+  @OpenAPI({
+    summary: 'Flag coupon codes',
+    description: 'Flag coupon codes in the database',
+  })
+  @Authorized()
+  @ResponseSchema(StandardResponse)
+  async flagFakeCouponCodes(
+    @Body() body: FakeCouponsRequestBody
+  ): Promise<StandardResponse> {
+    try {
+      const { ids, isFake } = body;
+
+      if (!ids || isFake === undefined)
+        return new StandardResponse('ids and isFake must be provided', true);
+
+      const updated = await prisma.coupon.updateMany({
+        where: { id: { in: ids }, code: { not: null } },
+        data: { shouldBeFake: isFake },
+      });
+
+      if (updated.count !== ids.length)
+        return new StandardResponse(
+          'One or more coupons have no code and were not updated.',
+          true
+        );
+
+      return new StandardResponse('Coupon codes flagged successfully', false);
+    } catch (error: any) {
+      const message = 'An error occurred in flagging fake coupon codes';
+      Sentry.captureException(message, {
+        extra: { error },
+      });
+      return new StandardResponse(message, true);
+    }
   }
 
   @Post('/anomaly-detector')

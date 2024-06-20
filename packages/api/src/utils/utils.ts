@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import * as Sentry from '@sentry/node';
 import { SOURCES_DATA } from '../../config/actors';
+import { localesToImport } from '../../config/primary-locales';
 import { getMerchantDomainFromUrl } from 'shared/helpers';
 
 export function normalizeString(s: string): string {
@@ -96,11 +97,13 @@ export function getGoogleActorPriceInUsdMicroCents(
 export function getLocaleFromUrl(url: string): string | null {
   // find if url is present in any domain of SOURCES_DATA
   const source = SOURCES_DATA.find((source: any) =>
-    source.domains.some((d: any) => url.includes(d.domain))
+    source.domains.some((d: any) => url.includes(`${d.domain}/`))
   );
 
   if (source) {
-    const domain = source.domains.find((d: any) => url.includes(d.domain));
+    const domain = source.domains.find((d: any) =>
+      url.includes(`${d.domain}/`)
+    );
     if (domain) {
       if (domain.routes && Object.keys(domain.routes).length > 0) {
         const route = Object.keys(domain.routes).find((key) =>
@@ -124,4 +127,116 @@ export function isValidSourceDomain(domain: string): boolean {
   return SOURCES_DATA.some((source) =>
     source.domains.some((d) => domain === d.domain)
   );
+}
+
+// Function to check if locale is valid from primary locales
+export function isValidLocale(locale: string): boolean {
+  for (const l of localesToImport) {
+    if (l.locale === locale) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export function isValidCouponCode(code: string): boolean {
+  // Check if the code has more than one space without separators
+  if (
+    code.split(' ').length > 1 &&
+    !code.includes('|') &&
+    !code.includes(',') &&
+    !code.includes(' or ')
+  ) {
+    return false;
+  }
+
+  // Check if the code length is less than 2 or more than 32
+  if (code.length < 2 || code.length > 32) {
+    return false;
+  }
+
+  // Check if the code has more than one asterisk
+  if (code.split('').filter((char) => char === '*').length > 1) {
+    return false;
+  }
+
+  // Check if the code starts with "https://" or "http://"
+  if (code.startsWith('https://') || code.startsWith('http://')) {
+    return false;
+  }
+
+  // Check if the code contains any invalid words from the dictionary and has more than one space
+  const invalidWords = [
+    'zur',
+    'nach',
+    'kein',
+    'sign',
+    'signup',
+    'sign-up',
+    'via',
+    'singing',
+    'redeem',
+    'inbox',
+    'wird',
+    'mehr',
+    'customers',
+    'direkt',
+    'abgezogen',
+    'newsletter',
+    'details',
+    'nieuwsbrief',
+    'will',
+    'claim',
+    'code',
+    'registro',
+    'nyhedsbrevet',
+    'tilmeld',
+    'anmeldung',
+    'siehe',
+    'activated',
+    'no',
+    'coupon',
+    'linkkiä',
+    'link',
+    'e-mail',
+    'email',
+    'per',
+    'direkt abgezogen',
+    'directamente',
+    'automatico',
+    'automatically',
+    'aktionsprodukte entdecken',
+    'als',
+    'directo',
+    'app ',
+    'auf',
+    'automatisch',
+    'bei',
+    'für',
+    'bliv medlem',
+    'downloaden',
+    'genius discount',
+    'genius rabatt',
+    'geschäftskunden',
+    'geschenkkarten',
+    'geschenkkarte',
+    'tilaa',
+    'zie',
+    'zum',
+    'mit',
+    'im',
+    'register',
+    'member',
+    'liity',
+    'membership',
+  ];
+
+  for (const word of invalidWords) {
+    if (code.toLowerCase().includes(word) && code.split(' ').length > 1) {
+      return false;
+    }
+  }
+
+  // If none of the invalid criteria match, the code is valid
+  return true;
 }

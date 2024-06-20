@@ -65,6 +65,10 @@ export class ListRequestBody {
   @IsOptional()
   isShown?: boolean;
 
+  @IsBoolean()
+  @IsOptional()
+  shouldBeFake?: boolean;
+
   @IsString()
   @IsOptional()
   @MinLength(1)
@@ -99,6 +103,14 @@ export class ListRequestBody {
 export class CouponMatchRequestBody {
   @IsArray()
   ids: string[];
+}
+
+export class FakeCouponsRequestBody {
+  @IsArray()
+  ids: string[];
+
+  @IsBoolean()
+  isFake: boolean;
 }
 
 export class EventData {
@@ -191,7 +203,15 @@ export class TargetLocaleBody {
 
   @IsNumber()
   @IsOptional()
-  limit?: number;
+  resultsPerPage?: number;
+
+  @IsNumber()
+  @IsOptional()
+  maxPagesPerQuery?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  customDomains?: boolean;
 }
 
 export class AnomalyRequestBody {

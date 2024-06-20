@@ -24,6 +24,7 @@ enum Reliability {
 model Coupon {
   id                 String         @id
   sourceId           String
+  apifyActorId       String?
   idInSite           String
   domain             String?
   merchantName       String
@@ -40,6 +41,7 @@ model Coupon {
   firstSeenAt        DateTime       @default(now())
   lastSeenAt         DateTime       @default(now())
   archivedAt         DateTime?
+  shouldBeFake       Boolean?       
   locale             String
   archivedReason     ArchiveReason?
 
@@ -68,17 +70,19 @@ model Source {
 }
 
 model SourceDomain {
-  id          String      @id @default(uuid())
-  domain      String      
-  reliability Reliability @default(reliable)
-  source      Source      @relation(fields: [sourceId], references: [id])
-  sourceId    String
+  id           String      @id @default(uuid())
+  domain       String
+  reliability  Reliability @default(reliable)
+  source       Source      @relation(fields: [sourceId], references: [id])
+  sourceId     String
+  apifyActorId String?
 }
 
 // Maps to a single Apify actor run
 model ProcessedRun {
   id                  String    @id @default(uuid())
   sourceId            String?
+  apifyActorId        String?   
   localeId            String?
   actorRunId          String    @unique
   finishedAt          DateTime  @default(now())

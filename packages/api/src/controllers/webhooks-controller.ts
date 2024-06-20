@@ -13,6 +13,8 @@ import {
   removeDuplicateCoupons,
   getGoogleActorPriceInUsdMicroCents,
   getLocaleFromUrl,
+  isValidLocale,
+  isValidCouponCode,
 } from '../utils/utils';
 import {
   SerpWebhookRequestBody,
@@ -48,16 +50,18 @@ export class WebhooksController {
     @Body() webhookData: WebhookRequestBody
   ): Promise<StandardResponse> {
     const { defaultDatasetId, status, usageTotalUsd } = webhookData.resource;
-    const actorRunId = webhookData.eventData.actorRunId;
+    const { actorRunId, actorId: apifyActorId } = webhookData.eventData;
     const { sourceId } = webhookData;
 
+    // TODO: Remove this field once the sourceId is removed from the coupon table
     if (!sourceId) {
       return new StandardResponse('sourceId is a required field', true);
     }
 
     const run = await prisma.processedRun.create({
       data: {
-        sourceId,
+        sourceId, // TODO: Remove this field once the sourceId is removed from the coupon table
+        apifyActorId,
         actorRunId,
         status,
       },
@@ -65,11 +69,7 @@ export class WebhooksController {
 
     // Process data asynchronously to not block the response
     setTimeout(async () => {
-      const scrapedData = await this.fetchScrapedData(
-        defaultDatasetId,
-        run.id,
-        sourceId
-      );
+      const scrapedData = await this.fetchScrapedData(defaultDatasetId, run.id);
       if (!scrapedData) return;
 
       // Handle non-index pages
@@ -78,15 +78,16 @@ export class WebhooksController {
       // Process coupons
       const { couponStats, errors } = await this.processCoupons(
         coupons,
-        sourceId
+        sourceId, // TODO: Remove this field once the sourceId is removed from the coupon table
+        apifyActorId
       );
 
       // Update coupon stats
-      await this.updateCouponStats(scrapedData, sourceId);
+      await this.updateCouponStats(scrapedData, apifyActorId);
 
       if (errors.length > 0) {
         Sentry.captureException(
-          `Errors occurred during processing run ${run.id} from source ${sourceId}`,
+          `Errors occurred during processing run ${run.id} from source ${apifyActorId}`,
           {
             extra: { errors },
           }
@@ -114,7 +115,7 @@ export class WebhooksController {
         couponStats,
         errors,
         run.id,
-        sourceId
+        apifyActorId
       );
     }, 0);
 
@@ -122,11 +123,7 @@ export class WebhooksController {
   }
 
   // Fetch data from Apify
-  private async fetchScrapedData(
-    datasetId: string,
-    runId: string,
-    sourceId: string
-  ) {
+  private async fetchScrapedData(datasetId: string, runId: string) {
     try {
       const response = await fetch(
         `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&token=${process.env.API_KEY_APIFY}`
@@ -137,14 +134,18 @@ export class WebhooksController {
       return removeDuplicateCoupons(data);
     } catch (error) {
       Sentry.captureMessage(
-        `Error fetching data from Apify for run ${runId} from source ${sourceId}: ${error}`
+        `Error fetching data from Apify for run ${runId}: ${error}`
       );
       return null;
     }
   }
 
   // Process and store the coupons
-  private async processCoupons(scrapedData: any, sourceId: string) {
+  private async processCoupons(
+    scrapedData: any,
+    sourceId: string, // TODO: Remove this field once the sourceId is removed from the coupon table
+    apifyActorId: string
+  ) {
     const now = new Date();
     const couponStats = {
       createdCount: 0,
@@ -163,7 +164,8 @@ export class WebhooksController {
       const { updateData, archivedAt, archivedReason } = this.prepareUpdateData(
         item,
         existingRecord,
-        now
+        now,
+        apifyActorId
       );
 
       try {
@@ -172,7 +174,8 @@ export class WebhooksController {
           update: updateData,
           create: this.prepareCreateData(
             item,
-            sourceId,
+            sourceId, // TODO: Remove this field once the sourceId is removed from the coupon table
+            apifyActorId,
             id,
             now,
             archivedAt,
@@ -216,7 +219,8 @@ export class WebhooksController {
   private prepareUpdateData(
     item: any,
     existingRecord: Coupon | null,
-    now: Date
+    now: Date,
+    apifyActorId: string
   ) {
     const updateData: Prisma.CouponUpdateInput = { lastSeenAt: now };
     let archivedAt = null;
@@ -256,7 +260,7 @@ export class WebhooksController {
             connect: { locale },
           };
         }
-
+        updateData.apifyActorId = apifyActorId;
         updateData.archivedAt = archivedAt;
         updateData.archivedReason = archivedReason;
         (updateData as any)[key] =
@@ -275,7 +279,8 @@ export class WebhooksController {
   // Prepare the data for creating a new coupon
   private prepareCreateData(
     item: any,
-    sourceId: string,
+    sourceId: string, // TODO: Remove this field once the sourceId is removed from the coupon table
+    apifyActorId: string,
     id: string,
     now: Date,
     archivedAt: Date | null,
@@ -306,7 +311,8 @@ export class WebhooksController {
 
     return {
       id,
-      sourceId,
+      sourceId, // TODO: Remove this field once the sourceId is removed from the coupon table
+      apifyActorId,
       locale,
       idInSite: item.idInSite,
       domain: item.domain || null,
@@ -325,6 +331,7 @@ export class WebhooksController {
       lastSeenAt: now,
       archivedAt: archivedAt,
       archivedReason: archivedReason || null,
+      shouldBeFake: item.code ? !isValidCouponCode(item.code) : null,
     };
   }
 
@@ -346,7 +353,7 @@ export class WebhooksController {
   }
 
   // Update the coupon stats
-  private async updateCouponStats(coupons: any, sourceId: string) {
+  private async updateCouponStats(coupons: any, apifyActorId: string) {
     if (!coupons) return;
 
     const couponStats: Record<string, any> = {};
@@ -424,7 +431,7 @@ export class WebhooksController {
       await prisma.couponStats.createMany({ data: statsData });
     } catch (error) {
       Sentry.captureException(
-        new Error(`Error saving coupon stats for source ${sourceId}`),
+        new Error(`Error saving coupon stats for source ${apifyActorId}`),
         {
           extra: { error, statsData },
         }
@@ -441,7 +448,7 @@ export class WebhooksController {
 
     if (anomaliesData.length > 0) {
       Sentry.captureException(
-        new Error(`Anomalies detected for source ${sourceId}`),
+        new Error(`Anomalies detected for source ${apifyActorId}`),
         {
           extra: { anomaliesData },
         }
@@ -496,21 +503,21 @@ export class WebhooksController {
     couponStats: any,
     errors: any[],
     runId: string,
-    sourceId: string
+    apifyActorId: string
   ) {
     if (resultCount === 0) {
       Sentry.captureMessage(
-        `No data was processed for run ${runId} from source ${sourceId}`
+        `No data was processed for run ${runId} from source ${apifyActorId}`
       );
     }
     if (errors.length > 0) {
       Sentry.captureMessage(
-        `Errors occurred during processing run ${runId} from source ${sourceId}`
+        `Errors occurred during processing run ${runId} from source ${apifyActorId}`
       );
     }
     if (resultCount !== couponStats.createdCount + couponStats.updatedCount) {
       Sentry.captureMessage(
-        `Not all data was processed for run ${runId} from source ${sourceId}`
+        `Not all data was processed for run ${runId} from source ${apifyActorId}`
       );
     }
   }
@@ -545,8 +552,6 @@ export class WebhooksController {
       : data;
     const validData = this.prepareSerpData(filteredData, actorRunId, localeId); // Prepare the data for storage
 
-    // TODO CHECK IF IT'S TARGET SEARCH verified_locale from hock #233
-    // TODO: Add a check for verified_locale to ensure the locale is valid #233
     // Store the SERP data using upsert change localeId value
     for (const item of validData) {
       try {
@@ -609,16 +614,28 @@ export class WebhooksController {
   ) {
     return data
       .filter((item) => !!item.url)
-      .map((item) => ({
-        url: item.url,
-        title: item.title,
-        searchTerm: item.searchQuery.term,
-        searchPosition: item.position,
-        searchDomain: item.searchQuery.domain,
-        apifyRunId: actorRunId,
-        domain: new URL(item.url).hostname.replace('www.', ''),
-        localeId,
-      }));
+      .map((item) => {
+        const data = {
+          url: item.url,
+          title: item.title,
+          searchTerm: item.searchQuery.term,
+          searchPosition: item.position,
+          searchDomain: item.searchQuery.domain,
+          apifyRunId: actorRunId,
+          domain: new URL(item.url).hostname.replace('www.', ''),
+          localeId,
+          verified_locale: null as string | null,
+        };
+
+        if (item.searchQuery.term.startsWith('site:')) {
+          const verifiedLocale = `${item.searchQuery.languageCode.toLowerCase()}_${item.searchQuery.countryCode.toUpperCase()}`;
+          data.verified_locale = isValidLocale(verifiedLocale)
+            ? verifiedLocale
+            : (null as string | null);
+        }
+
+        return data;
+      });
   }
 
   @Post('/tests')

@@ -347,7 +347,13 @@ export class TargetsController {
   async findTargetLocales(
     @Body() body: TargetLocaleBody
   ): Promise<StandardResponse> {
-    const { urls, locale, limit = 5 } = body;
+    const {
+      urls,
+      locale,
+      customDomains = false,
+      resultsPerPage = 25,
+      maxPagesPerQuery = 1,
+    } = body;
 
     const targetLocale = await prisma.targetLocale.findFirst({
       where: {
@@ -359,20 +365,25 @@ export class TargetsController {
       return new StandardResponse(`Locale ${locale} not found`, true);
     }
 
-    // Get all brands for the locale
-    const brands = await getMerchantsForLocale(targetLocale.locale);
+    let queries = [];
 
-    // Generate queries for each brand and URL
-    const queries = brands.flatMap((brand) => {
-      // TODO: #233 remove {{website}}  add {{brand}} from searchTemplate
-      return urls.map((url) => {
-        return `site:${url} ${brand.name} `;
-      });
-    });
+    if (customDomains) {
+      const searchTemplate = targetLocale.searchTemplate
+        .replace('{{website}}', '')
+        .trim();
+      queries = urls.map((url) => `site:${url} "${searchTemplate}"`);
+    } else {
+      const brands = await getMerchantsForLocale(targetLocale.locale);
+      queries = brands.flatMap((brand) =>
+        urls.map((url) => `site:${url} ${brand.name}`)
+      );
+    }
 
     if (queries.length === 0) {
       return new StandardResponse(
-        `No queries generated for locale ${locale} and ${urls.length} URLs / ${brands.length} brands. Aborting.`,
+        `No queries generated for locale ${locale} and ${urls.length} ${
+          customDomains ? 'URLs with custom domains' : 'URLs / brands'
+        }. Aborting.`,
         true
       );
     }
@@ -388,8 +399,8 @@ export class TargetsController {
             queries: queriesChunk.join('\n'),
             countryCode: targetLocale.countryCode.toLowerCase(),
             languageCode: targetLocale.languageCode,
-            maxPagesPerQuery: 1,
-            resultsPerPage: limit,
+            maxPagesPerQuery: maxPagesPerQuery,
+            resultsPerPage: resultsPerPage,
             saveHtml: false,
             saveHtmlToKeyValueStore: false,
             includeUnfilteredResults: false,
@@ -424,7 +435,7 @@ export class TargetsController {
         });
     }
     return new StandardResponse(
-      `Target pages search started for ${locale} : ${brands.length} brands`,
+      `Target pages search started for ${locale} : ${queries.length} queries`,
       false
     );
   }
