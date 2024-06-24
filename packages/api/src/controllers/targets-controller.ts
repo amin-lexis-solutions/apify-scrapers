@@ -367,7 +367,6 @@ export class TargetsController {
 
     let queries = [];
 
-
     if (customDomains) {
       const searchTemplate = targetLocale.searchTemplate
         .replace('{{website}}', '')
@@ -379,7 +378,6 @@ export class TargetsController {
         urls.map((url) => `site:${url} ${brand.name}`)
       );
     }
-
 
     if (queries.length === 0) {
       return new StandardResponse(
