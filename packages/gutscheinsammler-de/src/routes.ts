@@ -33,13 +33,15 @@ function processCouponItem(
 
   const hasCode = !!buttonText?.toUpperCase()?.includes('ZUM GUTSCHEIN');
 
+  const isExpired = $cheerio('*').attr('class')?.includes('expired');
+
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', couponItem.sourceUrl);
   validator.addValue('merchantName', couponItem.merchantName);
   validator.addValue('title', couponItem.title);
   validator.addValue('domain', couponItem.merchantDomain);
   validator.addValue('idInSite', couponItem.idInSite);
-  validator.addValue('isExpired', false);
+  validator.addValue('isExpired', isExpired);
   validator.addValue('isShown', true);
 
   const couponUrl = hasCode
@@ -71,21 +73,24 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
-    // Selecting the script element containing json schema
-    const scriptElement = $('script[data-testid="StoreSchemaOrg"]').first();
-    const scriptContent = scriptElement?.html();
+    const merchantName = $('.ShopSummary_title__U9dPv')
+      .text()
+      ?.replace(' Coupons', '');
 
-    if (scriptElement.length == 0 || !scriptContent) {
-      logError(`Script content not found ${request.url}`);
+    if (!merchantName) {
+      logError(`merchantName not found in URL: ${request.url}`);
       return;
     }
 
-    // Parse the script content as JSON
-    const storeData = JSON.parse(scriptContent);
+    const merchantDomainLink = $(
+      'div[data-testid="ShopDetails"] .ShopDetailsList_link__ZYqnc'
+    )
+      .first()
+      .text();
 
-    const merchantName = storeData.name;
-
-    const merchantDomain = getMerchantDomainFromUrl(storeData.sameAs);
+    const merchantDomain = merchantDomainLink
+      ? getMerchantDomainFromUrl(merchantDomainLink)
+      : null;
 
     if (!merchantDomain) {
       log.warning(`merchantDomain not found ${request.url}`);
@@ -95,12 +100,20 @@ router.addHandler(Label.listing, async (context) => {
     const validCoupons = $(
       'section[data-testid=ActiveVouchers] div[data-testid=VouchersListItem]'
     );
+    const expiredCoupons = $(
+      "section[data-testid='ExpiredVouchers'] div[data-testid='VouchersListItem']"
+    );
+
+    const allItems = [...validCoupons, ...expiredCoupons];
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
             coupons: validCoupons,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
           },
         },
         context
@@ -114,7 +127,7 @@ router.addHandler(Label.listing, async (context) => {
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
 
-    for (const element of validCoupons) {
+    for (const element of allItems) {
       const $coupon = cheerio.load(element);
 
       const idInSite = $coupon('*')?.first()?.attr('data-voucherid');
@@ -169,24 +182,24 @@ router.addHandler(Label.listing, async (context) => {
     // Call the API to check if the coupon exists
     const nonExistingIds = await checkCouponIds(idsToCheck);
 
-    if (nonExistingIds.length > 0) {
-      let currentResult: CouponItemResult;
+    if (nonExistingIds.length == 0) return;
 
-      for (const id of nonExistingIds) {
-        currentResult = couponsWithCode[id];
-        // Add the coupon URL to the request queue
-        await crawler?.requestQueue?.addRequest(
-          {
-            url: currentResult.couponUrl,
-            userData: {
-              label: Label.getCode,
-              validatorData: currentResult.validator.getData(),
-            },
-            headers: CUSTOM_HEADERS_LOCAL,
+    let currentResult: CouponItemResult;
+
+    for (const id of nonExistingIds) {
+      currentResult = couponsWithCode[id];
+      // Add the coupon URL to the request queue
+      await crawler?.requestQueue?.addRequest(
+        {
+          url: currentResult.couponUrl,
+          userData: {
+            label: Label.getCode,
+            validatorData: currentResult.validator.getData(),
           },
-          { forefront: true }
-        );
-      }
+          headers: CUSTOM_HEADERS_LOCAL,
+        },
+        { forefront: true }
+      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

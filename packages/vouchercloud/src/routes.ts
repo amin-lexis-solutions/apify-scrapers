@@ -207,6 +207,10 @@ router.addHandler(Label.getCode, async (context) => {
     // Convert body to string if it's a Buffer
     const htmlContent = body instanceof Buffer ? body.toString() : body;
 
+    if (htmlContent.includes('{')) {
+      log.warning(`htmlContent not found in URL: ${request.url}`);
+      return;
+    }
     // Safely parse the JSON string
     const jsonCodeData = JSON.parse(htmlContent);
 

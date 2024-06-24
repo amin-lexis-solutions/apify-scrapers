@@ -25,7 +25,7 @@ function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', couponItem.sourceUrl);
   validator.addValue('merchantName', couponItem.merchantName);
-  validator.addValue('domain', couponItem.domain);
+  validator.addValue('domain', couponItem.merchantDomain);
   validator.addValue('title', couponItem.title);
   validator.addValue('idInSite', couponItem.idInSite);
   validator.addValue('isExpired', false);
@@ -61,42 +61,6 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
-    // Initialize variables to hold the extracted information
-    let merchantName = '';
-    let domain;
-
-    $('script[type="application/ld+json"]').each((_, element) => {
-      // Attempt to parse the JSON-LD content of each script tag
-      try {
-        const jsonData = JSON.parse($(element).html() || '');
-        console.log(jsonData);
-        // Check if the JSON-LD is of the type 'Store'
-        if (jsonData['@type'] === 'Store') {
-          merchantName = jsonData.name; // Extract the merchant name
-
-          // Extract the domain, removing 'www.' if present
-          domain = getMerchantDomainFromUrl(jsonData.url);
-
-          // Since we found our target, we stop processing further
-          return false; // Break out of the .each loop
-        }
-      } finally {
-        // We don't catch so that the error is logged in Sentry, but use finally
-        // since we want the Apify actor to end successfully and not waste resources by retrying.
-      }
-      return true; // Continue processing the next script tag
-    });
-
-    if (!merchantName) {
-      logError('Merchant name is missing');
-      return;
-    }
-
-    if (!domain) {
-      log.warning('Domain is missing');
-    }
-
-    // Assuming processCouponItem is an async function
     // Extract valid coupons with non-empty id attributes
     const validCoupons = $('div.flex--container--wrapping > div[id]')
       .filter(function (this) {
@@ -110,6 +74,9 @@ router.addHandler(Label.listing, async (context) => {
         {
           AnomalyCheckHandler: {
             coupons: validCoupons,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
           },
         },
         context
@@ -126,11 +93,29 @@ router.addHandler(Label.listing, async (context) => {
 
     for (const element of validCoupons) {
       const $coupon = cheerio.load(element);
+
+      const merchantDomainLink = $(element)
+        .find('.promoblock--logo img')
+        .attr('data-url');
+
+      const merchantDomain = merchantDomainLink
+        ? getMerchantDomainFromUrl(merchantDomainLink)
+        : null;
+
+      merchantDomain
+        ? log.info(`merchantDomain - ${merchantDomain}`)
+        : log.warning(`merchantDomain not found in item- ${request.url}`);
+
+      const merchantName = $(element)
+        ?.find('.promoblock--logo img')
+        ?.attr('alt')
+        ?.replace('Promo Codes', '');
+
       const idInSite = $coupon('*').first().attr('id');
 
       if (!idInSite) {
         logError('idInSite not found in item');
-        return;
+        continue;
       }
 
       // Extract the voucher title
@@ -141,14 +126,14 @@ router.addHandler(Label.listing, async (context) => {
 
       if (!title) {
         logError('Coupon title not found in item');
-        return;
+        continue;
       }
 
       const couponItem = {
         title,
         idInSite,
         merchantName,
-        domain,
+        merchantDomain,
         sourceUrl: request.url,
       };
       // Since element is a native DOM element, wrap it with Cheerio to use jQuery-like methods
