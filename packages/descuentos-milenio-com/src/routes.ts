@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import { createCheerioRouter, Dataset } from 'crawlee';
+import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
   generateHash,
@@ -11,22 +11,6 @@ import {
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
-
-// Define a function to check if the page matches the selectors
-function isIndexPage(
-  $: cheerio.Root,
-  indexPageSelectors: string[],
-  nonIndexPageSelectors: string[]
-): boolean {
-  const isIndexPage = indexPageSelectors.some(
-    (selector) => $(selector).length > 0
-  );
-  const isNonIndexPage = nonIndexPageSelectors.some(
-    (selector) => $(selector).length > 0
-  );
-
-  return isIndexPage && !isNonIndexPage;
-}
 
 async function processCouponItem(couponItem: any, $coupon: cheerio.Root) {
   // Extract the description
@@ -50,7 +34,7 @@ async function processCouponItem(couponItem: any, $coupon: cheerio.Root) {
   validator.addValue('title', couponItem.title);
   validator.addValue('idInSite', dataId);
   validator.addValue('description', description);
-  validator.addValue('isExpired', false);
+  validator.addValue('isExpired', couponItem.isExpired);
   validator.addValue('isShown', true);
 
   code ? validator.addValue('code', code) : null;
@@ -62,24 +46,36 @@ async function processCouponItem(couponItem: any, $coupon: cheerio.Root) {
 const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, body, log } = context;
+  const { request, $, log } = context;
   if (request.userData.label !== Label.listing) return;
 
   try {
     log.info(`Processing URL: ${request.url}`);
-    const htmlContent = body instanceof Buffer ? body.toString() : body;
-    const $ = cheerio.load(htmlContent);
 
-    // Check if this is an index page
-    const indexPageSelectors = ['.brand-index_content-main', '.brand-index']; // Add selectors that are present on the index page
-    const nonIndexPageSelectors = ['.home-index']; // Add selectors that are present on the other page
+    // Refactor to use a loop for valid coupons
+    const validItems = $('.brand-index_content-main li div.card-primary');
 
-    if (!isIndexPage($, indexPageSelectors, nonIndexPageSelectors)) {
-      log.info(`Skip URL: ${request.url} - Not a data page`);
-      await Dataset.pushData({
-        __isNotIndexPage: true,
-        __url: request.url,
-      });
+    const expiredItems = $(
+      '.main-section_discounts li.saturate-0 div.card-primary'
+    );
+    expiredItems.addClass('expired'); // explicity added expired class
+
+    const allItems = [...validItems, ...expiredItems];
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: allItems,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 
@@ -101,7 +97,7 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const merchantDomain = merchantUrl
+    const merchantDomain = merchantUrl.includes('.')
       ? getMerchantDomainFromUrl(merchantUrl)
       : null;
 
@@ -111,30 +107,13 @@ router.addHandler(Label.listing, async (context) => {
 
     merchantName = merchantName?.replace('Descuentos', '')?.trim();
 
-    // Refactor to use a loop for valid coupons
-    const validCoupons = $('ul.main-section_discounts li div.card-primary');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            coupons: validCoupons,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
-
     // Extract valid coupons
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
 
-    for (const element of validCoupons) {
-      const $coupon = cheerio.load(element);
+    for (const item of allItems) {
+      const $coupon = cheerio.load(item);
 
       const title = $coupon('div.card-primary__title')?.first()?.text()?.trim();
 
@@ -143,11 +122,14 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
+      const isExpired = $coupon('*')?.hasClass('expired');
+
       const couponItem = {
         title,
         merchantName,
         merchantDomain,
         sourceUrl: request.url,
+        isExpired,
       };
 
       result = await processCouponItem(couponItem, $coupon);
