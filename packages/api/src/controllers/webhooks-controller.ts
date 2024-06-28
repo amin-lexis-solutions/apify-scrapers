@@ -7,7 +7,6 @@ import dayjs from 'dayjs';
 import { ApifyGoogleSearchResult } from '../lib/apify';
 import { prisma } from '../lib/prisma';
 import {
-  generateHash,
   validDateOrNull,
   getToleranceMultiplier,
   removeDuplicateCoupons,
@@ -16,12 +15,14 @@ import {
   isValidLocale,
   isValidCouponCode,
 } from '../utils/utils';
+
 import {
   SerpWebhookRequestBody,
   StandardResponse,
   TestWebhookRequestBody,
   WebhookRequestBody,
 } from '../utils/validators';
+import { generateCouponId } from 'shared/helpers';
 
 const updatableFields: (keyof Coupon)[] = [
   'domain',
@@ -84,6 +85,9 @@ export class WebhooksController {
 
       // Update coupon stats
       await this.updateCouponStats(scrapedData, apifyActorId);
+
+      // Check and handle non-existing coupons in page
+      await this.checkNonExistingCouponsInPage(scrapedData);
 
       if (errors.length > 0) {
         Sentry.captureException(
@@ -157,7 +161,11 @@ export class WebhooksController {
     const targetPages = new Set<string>();
 
     for (const item of scrapedData) {
-      const id = this.generateCouponId(item);
+      const id = generateCouponId(
+        item?.merchantName,
+        item?.idInSite,
+        item?.sourceUrl
+      );
       targetPages.add(item.sourceUrl);
 
       const existingRecord = await prisma.coupon.findUnique({ where: { id } });
@@ -203,16 +211,6 @@ export class WebhooksController {
     }
 
     return { couponStats, errors, targetPages };
-  }
-
-  // Generate a unique ID for the coupon
-  private generateCouponId(item: any) {
-    if (!item.idInSite) {
-      item.idInSite = `${item.merchantName} ${item.title} ${item.domain}`
-        .replace(/[^a-zA-Z0-9]/g, '')
-        .replace(/\s+/g, '');
-    }
-    return generateHash(item.merchantName, item.idInSite, item.sourceUrl);
   }
 
   // Prepare the coupons for updates and creation
@@ -519,6 +517,38 @@ export class WebhooksController {
       Sentry.captureMessage(
         `Not all data was processed for run ${runId} from source ${apifyActorId}`
       );
+    }
+  }
+
+  // Define an asynchronous function to check and handle non-existing coupons in a page
+  private async checkNonExistingCouponsInPage(scrapedData: any) {
+    // Extract IDs of incoming coupons from the scraped data
+    const incomingCouponIds = scrapedData.map((item: any) =>
+      generateCouponId(item?.merchantName, item?.idInSite, item?.sourceUrl)
+    );
+
+    // Get the source URL from scraped data
+    const sourceUrl = scrapedData[0]['sourceUrl'];
+
+    try {
+      // Update the inaccessible coupons in the database, marking them as removed, with the current date, and expired
+      const result = await prisma.coupon.updateMany({
+        where: {
+          sourceUrl,
+          id: {
+            notIn: incomingCouponIds,
+          },
+        },
+        data: {
+          archivedReason: $Enums.ArchiveReason.removed,
+          archivedAt: new Date(),
+          isExpired: true,
+        },
+      });
+
+      console.log(`non-existing coupons in page ${result.count}`);
+    } catch (err) {
+      console.log('Error updating coupons removed from page', err);
     }
   }
 

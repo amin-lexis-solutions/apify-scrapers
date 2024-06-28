@@ -14,6 +14,7 @@ enum ArchiveReason {
   expired
   unexpired
   manual
+  removed
 }
 
 enum Reliability {
