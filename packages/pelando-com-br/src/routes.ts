@@ -58,6 +58,29 @@ router.addHandler(Label.listing, async (context) => {
     // Extracting request and body from context
     log.info(`Processing URL: ${request.url}`);
 
+    // Extract valid coupons
+    const validItems = $('ul.sc-a8fe2b69-0 > li > div');
+    const expiredItems = $('div.sc-e58a3b10-5 > div');
+
+    const allItems = [...validItems, ...expiredItems];
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: allItems,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     // Extract JSON data from the script tag
     const scriptContent = $('#schema-data-store').html();
 
@@ -77,31 +100,11 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Extract valid coupons
-    const validCoupons = $('ul.sc-a8fe2b69-0 > li > div');
-    const expiredCoupons = $('div.sc-e58a3b10-5 > div');
-
-    const items = [...validCoupons, ...expiredCoupons];
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            coupons: validCoupons,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
-
-    // Extract valid coupons
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
 
-    for (const item of items) {
+    for (const item of allItems) {
       const $coupon = cheerio.load(item);
 
       // Extract the voucher title
