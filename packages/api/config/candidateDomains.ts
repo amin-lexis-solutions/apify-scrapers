@@ -13,7 +13,7 @@ export const candidateDomains: any = {
     },
     {
       domain: 'offers.com',
-      status: status.pending,
+      status: status.accepted,
     },
     {
       domain: 'couponchief.com',
@@ -25,15 +25,15 @@ export const candidateDomains: any = {
     },
     {
       domain: 'coupons.com',
-      status: status.pending,
+      status: status.accepted,
     },
     {
       domain: 'savings.com',
-      status: status.pending,
+      status: status.accepted,
     },
     {
       domain: 'couponcabin.com',
-      status: status.pending,
+      status: status.rejected,
     },
     {
       domain: 'hotdeals.com',
@@ -77,7 +77,7 @@ export const candidateDomains: any = {
     },
     {
       domain: 'cupon.cl',
-      status: status.pending,
+      status: status.accepted,
     },
     {
       domain: 'www.codigodescuento.cl',
@@ -85,7 +85,7 @@ export const candidateDomains: any = {
     },
     {
       domain: '1001cuponesdedescuento.cl',
-      status: status.pending,
+      status: status.accepted,
     },
   ],
   [Locale.es_CO]: [
@@ -99,13 +99,13 @@ export const candidateDomains: any = {
     },
     {
       domain: '1001cuponesdedescuento.com.co',
-      status: status.pending,
+      status: status.accepted,
     },
   ],
   [Locale.fi_FI]: [
     {
       domain: 'alehinta.fi',
-      status: status.pending,
+      status: status.rejected,
     },
     {
       domain: 'promo-codes.fi',
@@ -113,7 +113,7 @@ export const candidateDomains: any = {
     },
     {
       domain: 'cuponation.fi',
-      status: status.pending,
+      status: status.accepted,
     },
     {
       domain: 'fi.coupert.com',
@@ -133,17 +133,17 @@ export const candidateDomains: any = {
     },
     {
       domain: 'alennuskoodini.fi',
-      status: status.pending,
+      status: status.accepted,
     },
   ],
   [Locale.en_IE]: [
     {
       domain: 'lovevouchers.ie',
-      status: status.pending,
+      status: status.accepted,
     },
     {
       domain: 'discountcodes.irishtimes.com',
-      status: status.pending,
+      status: status.accepted,
     },
     {
       domain: 'voucher-code.ie',
@@ -151,7 +151,7 @@ export const candidateDomains: any = {
     },
     {
       domain: 'everysaving.ie',
-      status: status.pending,
+      status: status.rejected,
     },
     {
       domain: 'promotionalcodes.ie',
