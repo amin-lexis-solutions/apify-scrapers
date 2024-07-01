@@ -84,8 +84,6 @@ function processCouponItem(
     ? `https://s.picodi.com/${countryCode}/api/offers/${couponItem.idInSite}/v2`
     : '';
 
-  console.log(hasCode, couponUrl);
-
   const generatedHash = generateCouponId(
     couponItem.merchantName,
     couponItem.idInSite,
@@ -98,7 +96,7 @@ function processCouponItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler, body, log } = context;
+  const { request, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -112,21 +110,6 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Listing ${request.url}`);
 
-    // Convert body to string if it's a Buffer
-    const htmlContent = body instanceof Buffer ? body.toString() : body;
-
-    // Define a regex pattern to extract the shop name from the HTML content
-    const shopNamePattern = /shopName\s*=\s*'([^']+)'/;
-
-    const match = htmlContent.match(shopNamePattern);
-
-    const merchantName = he.decode(match && match[1] ? match[1] : '');
-
-    if (!merchantName) {
-      logError(`Not Merchant Name found ${request.url}`);
-      return;
-    }
-
     // Extract valid coupons
     const validCoupons = $(
       'section.card-offers > ul > li.type-promo, section.card-offers > ul > li.type-code'
@@ -138,11 +121,23 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             coupons: validCoupons,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
     } catch (error: any) {
       logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
+    const merchantName =
+      $('.sidebar__link').attr('aria-label') ||
+      $('.hero-shop__img').attr('alt')?.replace('voucher code', '');
+
+    if (!merchantName) {
+      logError(`Not Merchant Name found ${request.url}`);
       return;
     }
 

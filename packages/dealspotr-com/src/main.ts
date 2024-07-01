@@ -8,7 +8,7 @@ async function main() {
 
   const crawler = await prepareCheerioScraper(router, {
     indexPageSelectors: ['.promoblock--main', '.promo-codes-page'],
-    nonIndexPageSelectors: [':not(.promo-codes-page)'],
+    nonIndexPageSelectors: ['div[data-group="storefilters"]'],
   });
 
   await crawler.run();

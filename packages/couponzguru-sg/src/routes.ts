@@ -59,13 +59,6 @@ router.addHandler(Label.listing, async (context) => {
   try {
     log.info(`Listing ${request.url}`);
 
-    const merchantName = $('.brand-heading h1').text()?.split(' ')?.[0];
-
-    // Throw an error if merchant name is not found
-    if (!merchantName) {
-      logError('merchantName not found');
-      return;
-    }
     // Extract coupons
     const validCoupons = $('.coupon-list');
 
@@ -75,11 +68,22 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             coupons: validCoupons,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
     } catch (error: any) {
       logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
+    const merchantName = $('.brand-heading h1').text()?.split(' ')?.[0];
+
+    // Throw an error if merchant name is not found
+    if (!merchantName) {
+      logError('merchantName not found');
       return;
     }
 

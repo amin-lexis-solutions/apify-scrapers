@@ -79,8 +79,6 @@ function processCouponItem(
     couponItem.sourceUrl
   );
 
-  console.log(couponUrl);
-
   return { generatedHash, hasCode, couponUrl, validator };
 }
 
@@ -101,6 +99,25 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`processing URL: ${request.url}`);
 
+    const validCoupons = $('article.Offer');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: validCoupons,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const domainSpan = $('p.BrandUrl > span');
 
     const merchantDomain =
@@ -116,22 +133,6 @@ router.addHandler(Label.listing, async (context) => {
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: CouponItemResult;
-
-    const validCoupons = $('article.Offer');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            coupons: validCoupons,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
 
     for (const item of validCoupons) {
       const $coupon = cheerio.load(item);

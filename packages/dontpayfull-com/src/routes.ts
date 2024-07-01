@@ -46,7 +46,7 @@ router.addHandler(Label.listing, async (context) => {
       couponItem.sourceUrl
     );
 
-    const couponUrl = `https://www.dontpayfull.com/at/${couponItem.domain}?c=${couponItem.idInSite}#c${couponItem.idInSite}`;
+    const couponUrl = `https://www.dontpayfull.com/at/${couponItem.merchantDomain}?c=${couponItem.idInSite}#c${couponItem.idInSite}`;
 
     return { generatedHash, hasCode, couponUrl, validator };
   }
@@ -62,6 +62,28 @@ router.addHandler(Label.listing, async (context) => {
   }
   try {
     log.info(`Listing ${request.url}`);
+
+    const items = await page.$$('#active-coupons li.obox.code');
+    const expiredItems = await page.$$('#expired-coupons li.oexpired');
+
+    const allItems = [...items, ...expiredItems];
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            coupons: allItems,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
 
     // Extract the merchant name
     const merchantName = await page.$eval('.sidebar-menu-box a', (a) =>
@@ -79,29 +101,13 @@ router.addHandler(Label.listing, async (context) => {
       log.warning('merchantDomain not found');
     }
 
-    const couponList = await page.$$('#active-coupons li.obox.code');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            coupons: couponList,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
-
     // Initialize variables
     const couponsWithCode: CouponHashMap = {};
     const idsToCheck: string[] = [];
     let result: any;
     // Loop through each coupon element and process it
 
-    for (const element of couponList) {
+    for (const element of allItems) {
       const title = await element.$eval('h3', (title) =>
         title?.textContent?.trim()
       );

@@ -8,6 +8,12 @@ async function main() {
 
   const crawler = await prepareCheerioScraper(router, {
     customHeaders: { Origin: 'https://www.picodi.com' },
+    indexPageSelectors: ['figure.hero-shop__logo', '.card-offers'],
+    nonIndexPageSelectors: [
+      '.blogs-description',
+      '.filters__link',
+      '.how-it-works ',
+    ],
   });
 
   await crawler.run();
