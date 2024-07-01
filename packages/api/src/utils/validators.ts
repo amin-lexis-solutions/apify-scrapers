@@ -211,7 +211,7 @@ export class TargetLocaleBody {
 
   @IsBoolean()
   @IsOptional()
-  customDomains?: boolean;
+  localeKeywords?: boolean;
 }
 
 export class AnomalyRequestBody {

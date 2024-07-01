@@ -6,6 +6,7 @@ echo "*/10 0-8 * * 1,4 root cd /app/packages/api && yarn schedule:find-serp" >> 
 
 # run once a week 
 echo "0 0 * * 1 root cd /app/packages/api && yarn schedule:find-serp-for-custom-malaysian-domains" >> /etc/crontab
+echo "0 0 * * 1 root cd /app/packages/api && yarn schedule:find-serp-for-custom-ch-domains" >> /etc/crontab
 
 # Run tests every monday
 echo "*/10 * * * 1 root cd /app/packages/api && yarn schedule:tests" >> /etc/crontab

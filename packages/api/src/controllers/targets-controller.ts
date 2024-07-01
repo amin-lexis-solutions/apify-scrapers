@@ -350,8 +350,8 @@ export class TargetsController {
     const {
       urls,
       locale,
-      customDomains = false,
-      resultsPerPage = 25,
+      localeKeywords = false,
+      resultsPerPage = 1,
       maxPagesPerQuery = 1,
     } = body;
 
@@ -365,25 +365,19 @@ export class TargetsController {
       return new StandardResponse(`Locale ${locale} not found`, true);
     }
 
-    let queries = [];
+    const searchTemplate = localeKeywords
+      ? `"${targetLocale.searchTemplate.replace('{{website}}', '').trim()}"`
+      : '';
 
-    if (customDomains) {
-      const searchTemplate = targetLocale.searchTemplate
-        .replace('{{website}}', '')
-        .trim();
-      queries = urls.map((url) => `site:${url} "${searchTemplate}"`);
-    } else {
-      const brands = await getMerchantsForLocale(targetLocale.locale);
-      queries = brands.flatMap((brand) =>
-        urls.map((url) => `site:${url} ${brand.name}`)
-      );
-    }
+    const brands = await getMerchantsForLocale(targetLocale.locale);
+    const queries = brands.flatMap((brand) =>
+      urls.map((url) => `site:${url} ${searchTemplate} "${brand.name}"`)
+    );
+
 
     if (queries.length === 0) {
       return new StandardResponse(
-        `No queries generated for locale ${locale} and ${urls.length} ${
-          customDomains ? 'URLs with custom domains' : 'URLs / brands'
-        }. Aborting.`,
+        `No queries generated for locale ${locale} and ${urls.length} URLs / brands . Aborting.`,
         true
       );
     }
