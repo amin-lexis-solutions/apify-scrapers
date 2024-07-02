@@ -3,9 +3,9 @@ import { ElementHandle } from 'puppeteer';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
-  CouponHashMap,
-  CouponItemResult,
-  checkCouponIds,
+  ItemHashMap,
+  ItemResult,
+  checkItemsIds,
   generateHash,
   logError,
 } from 'shared/helpers';
@@ -14,9 +14,9 @@ import { preProcess, postProcess } from 'shared/hooks';
 export const router = Router.create<PuppeteerCrawlingContext>();
 
 async function process(
-  couponItem: any,
+  item: any,
   element: ElementHandle<HTMLElement>
-): Promise<CouponItemResult> {
+): Promise<ItemResult> {
   const desc = await element.$eval(`.offer p`, (node) => node.textContent);
 
   const codeElement = await element.$('strong');
@@ -29,32 +29,32 @@ async function process(
 
   const validator = new DataValidator();
 
-  validator.addValue('sourceUrl', couponItem.sourceUrl);
-  validator.addValue('merchantName', couponItem.merchantName);
-  validator.addValue('title', couponItem.title);
-  validator.addValue('idInSite', couponItem.idInSite);
-  validator.addValue('domain', couponItem.merchantDomain);
+  validator.addValue('sourceUrl', item.sourceUrl);
+  validator.addValue('merchantName', item.merchantName);
+  validator.addValue('title', item.title);
+  validator.addValue('idInSite', item.idInSite);
+  validator.addValue('domain', item.merchantDomain);
   validator.addValue('code', code);
   validator.addValue('description', desc);
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
   const generatedHash = generateHash(
-    couponItem.merchantName,
-    couponItem.title,
-    couponItem.sourceUrl
+    item.merchantName,
+    item.title,
+    item.sourceUrl
   );
 
-  return { generatedHash, validator, hasCode, couponUrl: '' };
+  return { generatedHash, validator, hasCode, itemUrl: '' };
 }
 router.addHandler(Label.listing, async (context) => {
   const { request, page, log } = context;
 
   log.info(`Listing ${request.url}`);
 
-  const couponList = await page.$$('article');
+  const items = await page.$$('article');
 
-  if (!couponList) {
+  if (!items) {
     log.warning(`Coupon List not found ${request.url}`);
   }
 
@@ -81,7 +81,7 @@ router.addHandler(Label.listing, async (context) => {
     await preProcess(
       {
         AnomalyCheckHandler: {
-          coupons: couponList,
+          items,
         },
       },
       context
@@ -92,37 +92,42 @@ router.addHandler(Label.listing, async (context) => {
   }
 
   // Initialize variables
-  const couponsWithCode: CouponHashMap = {};
+  const itemsWithCode: ItemHashMap = {};
   const idsToCheck: string[] = [];
   let processedData: any = {};
 
-  // Loop through each coupon element and process it
-  for (const coupon of couponList) {
-    const idInSite = await coupon.evaluate((node) => node.getAttribute(`id`));
+  // Loop through each element and process it
+  for (const itemHandle of items) {
+    const idInSite = await itemHandle.evaluate((node) =>
+      node.getAttribute(`id`)
+    );
 
     if (!idInSite) {
       logError(`idInSite not found in item`);
       continue;
     }
-    const title = await coupon.$eval(`.offer h2`, (node) => node.textContent);
+    const title = await itemHandle.$eval(
+      `.offer h2`,
+      (node) => node.textContent
+    );
 
     if (!title) {
       logError(`Domtitleain not found in item`);
       continue;
     }
 
-    const couponItem = {
+    const itemData = {
       title,
       idInSite,
       merchantName,
       merchantDomain,
       sourceUrl: request.url,
     };
-    processedData = await process(couponItem, coupon);
+    processedData = await process(itemData, itemHandle);
 
     // If coupon has no code, process and store its data
     if (processedData.hasCode) {
-      couponsWithCode[processedData.generatedHash] = processedData;
+      itemsWithCode[processedData.generatedHash] = processedData;
       idsToCheck.push(processedData.generatedHash);
       continue;
     }
@@ -142,14 +147,14 @@ router.addHandler(Label.listing, async (context) => {
     }
   }
   // Call the API to check if the coupon exists
-  const nonExistingIds = await checkCouponIds(idsToCheck);
+  const nonExistingIds = await checkItemsIds(idsToCheck);
   // If non-existing coupons are found, process and store their data
   if (nonExistingIds.length == 0) return;
 
-  let currentResult: CouponItemResult;
+  let currentResult: ItemResult;
   // Loop through each nonExistingIds and process it
   for (const id of nonExistingIds) {
-    currentResult = couponsWithCode[id];
+    currentResult = itemsWithCode[id];
     await postProcess(
       {
         SaveDataHandler: {

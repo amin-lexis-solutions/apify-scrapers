@@ -3,9 +3,9 @@ import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateCouponId,
-  CouponItemResult,
-  checkCouponIds,
+  generateItemId,
+  ItemResult,
+  checkItemsIds,
   logError,
   getMerchantDomainFromUrl,
 } from 'shared/helpers';
@@ -15,7 +15,7 @@ import { preProcess, postProcess } from 'shared/hooks';
 // Export the router function that determines which handler to use based on the request label
 export const router = createCheerioRouter();
 
-function processCouponItem(merchantName, merchantDomain, voucher, sourceUrl) {
+function processItem(merchantName, merchantDomain, voucher, sourceUrl) {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
@@ -36,13 +36,13 @@ function processCouponItem(merchantName, merchantDomain, voucher, sourceUrl) {
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateCouponId(
+  const generatedHash = generateItemId(
     merchantName,
     voucher.idInSite,
     sourceUrl
   );
 
-  return { generatedHash, hasCode: voucher.hasCode, couponUrl: '', validator };
+  return { generatedHash, hasCode: voucher.hasCode, itemUrl: '', validator };
 }
 
 router.addHandler(Label.listing, async (context) => {
@@ -50,9 +50,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   try {
-    const couponDetailLinks: any[] = $(
-      '.products li.product .woocommerce-LoopProduct-link'
-    )
+    const items: any[] = $('.products li.product .woocommerce-LoopProduct-link')
       .toArray()
       .map((item) => $(item).attr('href'));
 
@@ -60,7 +58,7 @@ router.addHandler(Label.listing, async (context) => {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: couponDetailLinks,
+            items,
           },
           IndexPageHandler: {
             indexPageSelectors: request.userData.pageSelectors,
@@ -74,7 +72,7 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Loop for item detail links
-    for (const url of couponDetailLinks) {
+    for (const url of items) {
       if (!url) continue;
 
       log.info(`GetDetail from URL - ${url}`);
@@ -151,14 +149,14 @@ router.addHandler(Label.details, async (context) => {
 
     const item = { merchantName, idInSite, title, description, hasCode };
 
-    const result: CouponItemResult = processCouponItem(
+    const result: ItemResult = processItem(
       merchantName,
       merchantDomain,
       item,
       request.url
     );
 
-    const nonExistingId = await checkCouponIds([result.generatedHash]);
+    const nonExistingId = await checkItemsIds([result.generatedHash]);
 
     if (nonExistingId.length == 0) return;
 

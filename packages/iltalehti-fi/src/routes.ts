@@ -7,14 +7,14 @@ import {
   formatDateTime,
   logError,
   generateHash,
-  CouponHashMap,
-  CouponItemResult,
-  checkCouponIds,
+  ItemHashMap,
+  ItemResult,
+  checkItemsIds,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
-async function processCouponItem(couponItem: any, $cheerio: cheerio.Root) {
+async function processItem(item: any, $cheerio: cheerio.Root) {
   const couponAttr = $cheerio('*').first().attr('data-payload');
 
   const code = couponAttr?.length == 0 ? null : couponAttr?.trim();
@@ -47,11 +47,11 @@ async function processCouponItem(couponItem: any, $cheerio: cheerio.Root) {
   const validator = new DataValidator();
 
   // Add required and optional values to the validator
-  validator.addValue('sourceUrl', couponItem.sourceUrl);
-  validator.addValue('merchantName', couponItem.merchantName);
-  validator.addValue('domain', couponItem.merchantDomain);
-  validator.addValue('title', couponItem.title);
-  validator.addValue('idInSite', couponItem.idInSite);
+  validator.addValue('sourceUrl', item.sourceUrl);
+  validator.addValue('merchantName', item.merchantName);
+  validator.addValue('domain', item.merchantDomain);
+  validator.addValue('title', item.title);
+  validator.addValue('idInSite', item.idInSite);
   validator.addValue('description', description);
   validator.addValue('expiryDateAt', expiryDateAt);
   validator.addValue('isExpired', false);
@@ -60,12 +60,12 @@ async function processCouponItem(couponItem: any, $cheerio: cheerio.Root) {
   hasCode ? validator.addValue('code', code) : null;
 
   const generatedHash = generateHash(
-    couponItem.merchantName,
-    couponItem.title,
-    couponItem.sourceUrl
+    item.merchantName,
+    item.title,
+    item.sourceUrl
   );
 
-  return { generatedHash, validator, hasCode, couponUrl: '' };
+  return { generatedHash, validator, hasCode, itemUrl: '' };
 }
 
 export const router = createCheerioRouter();
@@ -110,13 +110,13 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Extract valid coupons
-    const validCoupons = $('div.view-content > div > article');
+    const items = $('div.view-content > div > article');
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: validCoupons,
+            items,
           },
         },
         context
@@ -127,14 +127,14 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Extract valid coupons
-    const couponsWithCode: CouponHashMap = {};
+    const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
-    let result: CouponItemResult;
+    let result: ItemResult;
 
-    for (const element of validCoupons) {
-      const $coupon = cheerio.load(element);
+    for (const element of items) {
+      const $cheerio = cheerio.load(element);
 
-      const idInSite = $coupon('*').first().attr('id')?.trim().split('-')[1];
+      const idInSite = $cheerio('*').first().attr('id')?.trim().split('-')[1];
 
       if (!idInSite) {
         logError('idInSite not found in item');
@@ -142,14 +142,14 @@ router.addHandler(Label.listing, async (context) => {
       }
 
       // Extract the voucher title
-      const title = $coupon('h3')?.first()?.text()?.trim();
+      const title = $cheerio('h3')?.first()?.text()?.trim();
 
       if (!title) {
         logError('title not found in item');
         continue;
       }
 
-      const couponItem = {
+      const item = {
         title,
         idInSite,
         merchantName,
@@ -157,10 +157,10 @@ router.addHandler(Label.listing, async (context) => {
         sourceUrl: request.url,
       };
 
-      result = await processCouponItem(couponItem, $coupon);
+      result = await processItem(item, $cheerio);
 
       if (result.hasCode) {
-        couponsWithCode[result.generatedHash] = result;
+        itemsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
         continue;
       }
@@ -180,14 +180,14 @@ router.addHandler(Label.listing, async (context) => {
       }
     }
     // Call the API to check if the coupon exists
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds.length == 0) return;
 
-    let currentResult: CouponItemResult;
+    let currentResult: ItemResult;
 
     for (const id of nonExistingIds) {
-      currentResult = couponsWithCode[id];
+      currentResult = itemsWithCode[id];
       // Process and store the data
       await postProcess(
         {

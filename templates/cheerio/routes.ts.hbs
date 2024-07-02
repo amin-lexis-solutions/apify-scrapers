@@ -3,11 +3,11 @@ import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateCouponId,
+  generateItemId,
   getMerchantDomainFromUrl,
-  CouponItemResult,
-  CouponHashMap,
-  checkCouponIds,
+  ItemResult,
+  ItemHashMap,
+  checkItemsIds,
   logError,
 } from 'shared/helpers';
 
@@ -16,7 +16,7 @@ import { preProcess, postProcess } from 'shared/hooks';
 // Export the router function that determines which handler to use based on the request label
 export const router = createCheerioRouter();
 
-function processCouponItem(merchantName, merchantDomain, voucher, sourceUrl) {
+function processItem(merchantName, merchantDomain, voucher, sourceUrl) {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
@@ -38,7 +38,7 @@ function processCouponItem(merchantName, merchantDomain, voucher, sourceUrl) {
   validator.addValue('isExpired', voucher.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateCouponId(
+  const generatedHash = generateItemId(
     merchantName,
     voucher.idPool,
     sourceUrl
@@ -47,9 +47,9 @@ function processCouponItem(merchantName, merchantDomain, voucher, sourceUrl) {
   const hasCode = voucher?.type === 'code';
 
   // TODO: Change the URL to the correct one
-  const couponUrl = `https://exmple.com/${voucher.idPool}`;
+  const itemUrl = `https://exmple.com/${voucher.idPool}`;
 
-  return { generatedHash, hasCode, couponUrl, validator };
+  return { generatedHash, hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {
@@ -75,16 +75,16 @@ router.addHandler(Label.listing, async (context) => {
         )
       : log.warning('merchantDomain not found');
 
-    const vouchers = []; // TODO: Extract the vouchers from the page
-    const expiredVouchers = []; // TODO: Extract the expired vouchers from the page (if any)
-    const allVouchers = [...vouchers, ...expiredVouchers];
+    const currentItems = []; // TODO: Extract the items from the page
+    const expiredItems = []; // TODO: Extract the expired items from the page (if any)
+    const items = [...currentItems, ...expiredItems];
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
             url: request.url,
-            coupons: allVouchers,
+            items,
           },
         },
         context
@@ -94,21 +94,21 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const couponsWithCode: CouponHashMap = {};
+    const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
-    for (const voucher of allVouchers) {
-      if (!voucher?.title) {
+    for (const item of items) {
+      if (!item?.title) {
         logError('Coupon title not found in item');
         continue;
       }
-      if (!voucher?.idPool) {
+      if (!item?.idPool) {
         logError('idInSite not found in item');
         continue;
       }
-      const result: CouponItemResult = processCouponItem(
+      const result: ItemResult = processItem(
         merchantName,
         merchantDomain,
-        voucher,
+        item,
         request.url
       );
 
@@ -127,19 +127,19 @@ router.addHandler(Label.listing, async (context) => {
         }
         continue;
       }
-      couponsWithCode[result.generatedHash] = result;
+      itemsWithCode[result.generatedHash] = result;
       idsToCheck.push(result.generatedHash);
     }
 
     // Check if the coupons already exist in the database
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds.length > 0) {
       for (const id of nonExistingIds) {
-        const result: CouponItemResult = couponsWithCode[id];
+        const result: ItemResult = itemsWithCode[id];
         // TODO: Implement the logic to enqueue the coupon URL to get the code if needed otherwise save the data
         await enqueueLinks({
-          urls: [result.couponUrl],
+          urls: [result.itemUrl],
           userData: {
             ...request.userData,
             label: Label.getCode,

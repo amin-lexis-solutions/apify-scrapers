@@ -5,23 +5,17 @@ import { getMerchantDomainFromUrl, logError, sleep } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
-async function fetchVoucherCode(
-  voucherCodeURL: string
-): Promise<string | null> {
+async function fetchItemCode(itemCodeURL: string): Promise<string | null> {
   try {
-    const response = await fetch(voucherCodeURL);
+    const response = await fetch(itemCodeURL);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const voucherCodeJson = await response.json();
-    const voucherCode = voucherCodeJson.voucher_code;
-    if (
-      voucherCode &&
-      voucherCode !== '' &&
-      voucherCode !== 'kein Code notwendig'
-    ) {
-      console.log(`Voucher code: ${voucherCode}`);
-      return voucherCode;
+    const itemCodeJSON = await response.json();
+    const itemCode = itemCodeJSON.voucher_code;
+    if (itemCode && itemCode !== '' && itemCode !== 'kein Code notwendig') {
+      console.log(`Item code: ${itemCode}`);
+      return itemCode;
     }
     return null;
   } finally {
@@ -43,31 +37,31 @@ router.addHandler(Label.listing, async (context) => {
 
     const content = typeof body === 'string' ? body : body.toString();
 
-    const sectionWithCoupons = parse(content).querySelector(
+    const sectionWithItems = parse(content).querySelector(
       '.providerpage__section:has(div#gutscheine)'
     );
 
-    if (!sectionWithCoupons) {
+    if (!sectionWithItems) {
       logError('No coupons found');
       return;
     }
 
-    const selCoupons = sectionWithCoupons.querySelectorAll(
+    const items = sectionWithItems.querySelectorAll(
       'div.voucher-teaser-list > div'
     );
 
-    if (selCoupons.length < 1) {
+    if (items.length < 1) {
       logError('No coupons found in the specified section');
       return;
     }
 
-    log.info(`Coupons count ${selCoupons.length}`);
+    log.info(`Coupons count ${items.length}`);
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: selCoupons,
+            items,
           },
         },
         context
@@ -77,32 +71,30 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    for (const couponElement of selCoupons) {
-      const voucherId = couponElement.getAttribute('data-ssr-vouchers-item');
+    for (const item of items) {
+      const itemId = item.getAttribute('data-ssr-vouchers-item');
 
-      if (!voucherId) {
-        logError('Voucher ID is missing in a coupon div.');
+      if (!itemId) {
+        logError('Item ID not found in div HTML tag.');
         continue;
       }
 
-      const hasCode = !couponElement.querySelector(
-        'button.ui-btn--ci-blue-600'
-      );
+      const hasCode = !item.querySelector('button.ui-btn--ci-blue-600');
 
-      log.info(`Voucher ID ${voucherId} has code: ${hasCode}`);
+      log.info(`Item ID ${itemId} has code: ${hasCode}`);
 
-      const detailsUrl = `https://www.sparwelt.de/hinge/graphql?query=%0A++query+VoucherById($id:+ID!)+%7B%0A++++voucher(id:+$id)+%7B%0A++++++id%0A++++++title%0A++++++provider+%7B%0A++++++++id%0A++++++++title%0A++++++++slug%0A++++++++domainUrl%0A++++++++image%0A++++++++affiliateDeeplink+%7B%0A++++++++++url%0A++++++++++id%0A++++++++%7D%0A++++++++minOrderValueWording%0A++++++%7D%0A++++++affiliateDeeplink+%7B%0A++++++++id%0A++++++++url%0A++++++%7D%0A++++++teaserDescription%0A++++++savingValue%0A++++++savingType%0A++++++minOrderValue%0A++++++limitProduct%0A++++++limitCustomer%0A++++++dateEnd%0A++++%7D%0A++%7D%0A&variables=%7B%22id%22:%22%2Fhinge%2Fvouchers%2F${voucherId}%22%7D`;
+      const detailsUrl = `https://www.sparwelt.de/hinge/graphql?query=%0A++query+VoucherById($id:+ID!)+%7B%0A++++voucher(id:+$id)+%7B%0A++++++id%0A++++++title%0A++++++provider+%7B%0A++++++++id%0A++++++++title%0A++++++++slug%0A++++++++domainUrl%0A++++++++image%0A++++++++affiliateDeeplink+%7B%0A++++++++++url%0A++++++++++id%0A++++++++%7D%0A++++++++minOrderValueWording%0A++++++%7D%0A++++++affiliateDeeplink+%7B%0A++++++++id%0A++++++++url%0A++++++%7D%0A++++++teaserDescription%0A++++++savingValue%0A++++++savingType%0A++++++minOrderValue%0A++++++limitProduct%0A++++++limitCustomer%0A++++++dateEnd%0A++++%7D%0A++%7D%0A&variables=%7B%22id%22:%22%2Fhinge%2Fvouchers%2F${itemId}%22%7D`;
 
       const validator = new DataValidator();
 
       validator.addValue('sourceUrl', request.url);
-      validator.addValue('idInSite', voucherId);
+      validator.addValue('idInSite', itemId);
 
       if (hasCode) {
-        const voucherCodeURL = `https://www.sparwelt.de/hinge/vouchercodes/${voucherId}`;
-        const voucherCode = await fetchVoucherCode(voucherCodeURL);
-        if (voucherCode) {
-          validator.addValue('code', voucherCode);
+        const itemCodeURL = `https://www.sparwelt.de/hinge/vouchercodes/${itemId}`;
+        const itemCode = await fetchItemCode(itemCodeURL);
+        if (itemCode) {
+          validator.addValue('code', itemCode);
         }
       }
 

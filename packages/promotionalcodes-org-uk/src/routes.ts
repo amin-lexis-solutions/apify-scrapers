@@ -5,30 +5,26 @@ import { DataValidator } from 'shared/data-validator';
 import {
   generateHash,
   logError,
-  CouponItemResult,
-  checkCouponIds,
+  ItemResult,
+  checkItemsIds,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
-async function processCouponItem(couponItem: any, $cheerio: cheerio.Root) {
+async function processItem(item: any, $cheerio: cheerio.Root) {
   const elemCode = $cheerio('div.code').first();
 
   const hasCode = !!elemCode;
 
-  const idInSite = generateHash(
-    couponItem.merchantName,
-    couponItem.title,
-    couponItem.sourceUrl
-  );
+  const idInSite = generateHash(item.merchantName, item.title, item.sourceUrl);
 
   const validator = new DataValidator();
 
   // Add required and optional values to the validator
-  validator.addValue('sourceUrl', couponItem.sourceUrl);
-  validator.addValue('merchantName', couponItem.merchantName);
-  validator.addValue('domain', couponItem.merchantDomain);
-  validator.addValue('title', couponItem.title);
+  validator.addValue('sourceUrl', item.sourceUrl);
+  validator.addValue('merchantName', item.merchantName);
+  validator.addValue('domain', item.merchantDomain);
+  validator.addValue('title', item.title);
   validator.addValue('idInSite', idInSite);
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
@@ -38,12 +34,12 @@ async function processCouponItem(couponItem: any, $cheerio: cheerio.Root) {
   hasCode ? validator.addValue('code', code) : null;
 
   const generatedHash = generateHash(
-    couponItem.merchantName,
-    couponItem.title,
-    couponItem.sourceUrl
+    item.merchantName,
+    item.title,
+    item.sourceUrl
   );
 
-  return { generatedHash, validator, hasCode, couponUrl: '' };
+  return { generatedHash, validator, hasCode, itemUrl: '' };
 }
 
 export const router = createCheerioRouter();
@@ -84,13 +80,13 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Extract valid coupons
-    const validCoupons = $('div.offers > article');
+    const items = $('div.offers > article');
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: validCoupons,
+            items,
           },
         },
         context
@@ -100,32 +96,32 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const couponsWithCode: any = {};
+    const itemsWithCode: any = {};
     const idsToCheck: string[] = [];
-    let result: CouponItemResult;
+    let result: ItemResult;
 
-    for (const element of validCoupons) {
-      const $coupon = cheerio.load(element);
+    for (const element of items) {
+      const $cheerio = cheerio.load(element);
 
       // Extract the voucher title
-      const title = $coupon('h3')?.first()?.text()?.trim();
+      const title = $cheerio('h3')?.first()?.text()?.trim();
 
       if (!title) {
         logError('title not found in item');
         continue;
       }
 
-      const couponItem = {
+      const item = {
         title,
         merchantName,
         merchantDomain,
         sourceUrl: request.url,
       };
 
-      result = await processCouponItem(couponItem, $coupon);
+      result = await processItem(item, $cheerio);
 
       if (result.hasCode) {
-        couponsWithCode[result.generatedHash] = result;
+        itemsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
         continue;
       }
@@ -145,18 +141,18 @@ router.addHandler(Label.listing, async (context) => {
       }
     }
     // Call the API to check if the coupon exists
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds.length == 0) return;
 
-    let currentResult: CouponItemResult;
+    let currentResult: ItemResult;
 
     for (const id of nonExistingIds) {
-      currentResult = couponsWithCode[id];
-      await preProcess(
+      currentResult = itemsWithCode[id];
+      await postProcess(
         {
-          AnomalyCheckHandler: {
-            coupons: currentResult.validator,
+          SaveDataHandler: {
+            validator: currentResult.validator,
           },
         },
         context

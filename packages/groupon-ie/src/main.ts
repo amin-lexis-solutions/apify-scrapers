@@ -9,7 +9,10 @@ async function main() {
 
   const crawler = await prepareCheerioScraper(router, {
     indexPageSelectors: ['.merchant.wrapper-page'],
-    nonIndexPageSelectors: ['.pull-home-desktop-container'],
+    nonIndexPageSelectors: [
+      '.pull-home-desktop-container',
+      '.category-links-item',
+    ],
   });
 
   await crawler.run();

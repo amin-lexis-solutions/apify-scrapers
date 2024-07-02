@@ -4,9 +4,9 @@ import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
 import {
   sleep,
-  generateCouponId,
-  checkCouponIds,
-  CouponItemResult,
+  generateItemId,
+  checkItemsIds,
+  ItemResult,
   logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
@@ -17,9 +17,9 @@ const CUSTOM_HEADERS_LOCAL = {
   Origin: 'https://www.picodi.com',
 };
 
-function requestForCouponWithCode(item: CouponItemResult) {
+function requestForCouponWithCode(item: ItemResult) {
   return {
-    url: item.couponUrl,
+    url: item.itemUrl,
     userData: {
       label: Label.getCode,
       validatorData: item.validator.getData(),
@@ -45,10 +45,7 @@ function extractCountryCode(url: string): string {
   return countryCode;
 }
 
-function processCouponItem(
-  couponItem: any,
-  $cheerio: cheerio.Root
-): CouponItemResult {
+function processItem(item: any, $cheerio: cheerio.Root): ItemResult {
   const elementClass = $cheerio('*').first().attr('class');
 
   const hasCode = !!elementClass?.includes('type-code');
@@ -59,7 +56,7 @@ function processCouponItem(
   if (descElement.length > 0) {
     description = he
       .decode(descElement.text())
-      .replace(couponItem.title, '') // remove the title from the descriptions
+      .replace(item.title, '') // remove the title from the descriptions
       .trim()
       .split('\n')
       .map((line) => line.trim())
@@ -70,27 +67,27 @@ function processCouponItem(
   const validator = new DataValidator();
 
   // Add required and optional values to the validator
-  validator.addValue('sourceUrl', couponItem.sourceUrl);
-  validator.addValue('merchantName', couponItem.merchantName);
-  validator.addValue('title', couponItem.title);
-  validator.addValue('idInSite', couponItem.idInSite);
+  validator.addValue('sourceUrl', item.sourceUrl);
+  validator.addValue('merchantName', item.merchantName);
+  validator.addValue('title', item.title);
+  validator.addValue('idInSite', item.idInSite);
   validator.addValue('description', description);
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
-  const countryCode = extractCountryCode(couponItem.sourceUrl);
+  const countryCode = extractCountryCode(item.sourceUrl);
 
-  const couponUrl = hasCode
-    ? `https://s.picodi.com/${countryCode}/api/offers/${couponItem.idInSite}/v2`
+  const itemUrl = hasCode
+    ? `https://s.picodi.com/${countryCode}/api/offers/${item.idInSite}/v2`
     : '';
 
-  const generatedHash = generateCouponId(
-    couponItem.merchantName,
-    couponItem.idInSite,
-    couponItem.sourceUrl
+  const generatedHash = generateItemId(
+    item.merchantName,
+    item.idInSite,
+    item.sourceUrl
   );
 
-  return { generatedHash, hasCode, couponUrl, validator };
+  return { generatedHash, hasCode, itemUrl, validator };
 }
 
 export const router = createCheerioRouter();
@@ -111,7 +108,7 @@ router.addHandler(Label.listing, async (context) => {
     log.info(`Listing ${request.url}`);
 
     // Extract valid coupons
-    const validCoupons = $(
+    const items = $(
       'section.card-offers > ul > li.type-promo, section.card-offers > ul > li.type-code'
     );
 
@@ -119,7 +116,7 @@ router.addHandler(Label.listing, async (context) => {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: validCoupons,
+            items,
           },
           IndexPageHandler: {
             indexPageSelectors: request.userData.pageSelectors,
@@ -141,14 +138,14 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const couponsWithCode: any = {};
+    const itemsWithCode: any = {};
     const idsToCheck: string[] = [];
-    let result: CouponItemResult;
+    let result: ItemResult;
 
-    for (const item of validCoupons) {
-      const $coupon = cheerio.load(item);
+    for (const item of items) {
+      const $cheerio = cheerio.load(item);
 
-      const idInSite = $coupon('*').first().attr('data-offer-id');
+      const idInSite = $cheerio('*').first().attr('data-offer-id');
 
       if (!idInSite) {
         logError('not idInSite found in item');
@@ -156,27 +153,25 @@ router.addHandler(Label.listing, async (context) => {
       }
 
       // Extract the voucher title
-      const title = $coupon('div.of__content > h3')?.first()?.text()?.trim();
+      const title = $cheerio('div.of__content > h3')?.first()?.text()?.trim();
 
       if (!title) {
         logError('title not found in item');
         continue;
       }
 
-      const couponItem = {
+      const itemData = {
         title,
         idInSite,
         merchantName,
         sourceUrl: request.url,
       };
 
-      result = processCouponItem(couponItem, $coupon);
+      result = processItem(itemData, $cheerio);
 
       if (result.hasCode) {
-        couponsWithCode[result.generatedHash] = requestForCouponWithCode(
-          result
-        );
-        couponsWithCode[result.generatedHash].userData.sourceUrl = request.url;
+        itemsWithCode[result.generatedHash] = requestForCouponWithCode(result);
+        itemsWithCode[result.generatedHash].userData.sourceUrl = request.url;
         idsToCheck.push(result.generatedHash);
         continue;
       }
@@ -199,15 +194,15 @@ router.addHandler(Label.listing, async (context) => {
     // Open a named key-value store
     const store = await KeyValueStore.open('coupons');
 
-    const couponsWithCodes = await store.getValue('coupons');
+    const itemsWithCodes = await store.getValue('coupons');
 
     // convert unknown type to object
-    const existingRequests = couponsWithCodes || {};
+    const existingRequests = itemsWithCodes || {};
 
     // merge the new requests with the existing ones
     const mergedRequests = {
       ...existingRequests,
-      ...couponsWithCode,
+      ...itemsWithCode,
     };
 
     await store.setValue('coupons', mergedRequests);
@@ -226,7 +221,7 @@ router.addHandler(Label.listing, async (context) => {
       log.debug('Queue is finished');
       // mergedRequests keys as an array of strings
       const keys = Object.keys(mergedRequests);
-      const nonExistingIds = await checkCouponIds(keys);
+      const nonExistingIds = await checkItemsIds(keys);
       log.debug(`Non-existing IDs count: ${nonExistingIds.length}`);
 
       // Filter out the non-existing IDs from the merged requests

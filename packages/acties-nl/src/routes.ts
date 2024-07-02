@@ -4,10 +4,10 @@ import { decode } from 'html-entities';
 import { DataValidator } from 'shared/data-validator';
 import {
   sleep,
-  generateCouponId,
-  checkCouponIds,
-  CouponItemResult,
-  CouponHashMap,
+  generateItemId,
+  checkItemsIds,
+  ItemResult,
+  ItemHashMap,
   getMerchantDomainFromUrl,
   logError,
 } from 'shared/helpers';
@@ -27,13 +27,13 @@ type Item = {
   title: string;
 };
 
-function processCouponItem(
+function processItem(
   merchantName: string,
   merchantDomain: string,
   pageId: string,
   item: Item,
   sourceUrl: string
-): CouponItemResult {
+): ItemResult {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
@@ -53,13 +53,13 @@ function processCouponItem(
   validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
-  const couponUrl = hasCode
+  const itemUrl = hasCode
     ? `https://www.acties.nl/store-offer/ajax-popup/${idInSite}/${pageId}?_=${Date.now()}`
     : '';
 
-  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+  const generatedHash = generateItemId(merchantName, idInSite, sourceUrl);
 
-  return { generatedHash, hasCode, couponUrl, validator };
+  return { generatedHash, hasCode, itemUrl, validator };
 }
 
 export const router = createCheerioRouter();
@@ -137,12 +137,12 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Parsing domain from Link tag
-    const domain = getMerchantDomainFromUrl(
+    const merchantDomain = getMerchantDomainFromUrl(
       `https://${$('.right ul .link span')?.text()}`
     );
     // Check if the domain starts with 'www.' and remove it if present
 
-    if (!domain) {
+    if (!merchantDomain) {
       // Send api request to disable scraping for this url
       log.warning(`merchantDomain not found for ${request.url}`);
     }
@@ -190,7 +190,7 @@ router.addHandler(Label.listing, async (context) => {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: items,
+            items,
           },
         },
         context
@@ -200,10 +200,10 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    // Process each voucher
-    const couponsWithCode: CouponHashMap = {};
+    // Process each item
+    const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
-    let result: CouponItemResult;
+    let result: ItemResult;
 
     for (const item of items) {
       await sleep(1000); // Sleep for 3 seconds between requests to avoid rate limitings
@@ -218,16 +218,16 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
-      result = processCouponItem(
+      result = processItem(
         merchantName,
-        domain,
+        merchantDomain,
         pageId,
         item,
         request.url
       );
 
       if (result.hasCode) {
-        couponsWithCode[result.generatedHash] = result;
+        itemsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
         continue;
       }
@@ -248,18 +248,18 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Call the API to check if the coupon exists
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds.length == 0) return;
 
-    let currentResult: CouponItemResult;
+    let currentResult: ItemResult;
 
     for (const id of nonExistingIds) {
-      currentResult = couponsWithCode[id];
+      currentResult = itemsWithCode[id];
       // Add the coupon URL to the request queue
       await crawler?.requestQueue?.addRequest(
         {
-          url: currentResult.couponUrl,
+          url: currentResult.itemUrl,
           userData: {
             label: Label.getCode,
             validatorData: currentResult.validator.getData(),

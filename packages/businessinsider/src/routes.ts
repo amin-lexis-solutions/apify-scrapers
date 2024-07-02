@@ -3,11 +3,11 @@ import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateCouponId,
+  generateItemId,
   getMerchantDomainFromUrl,
-  CouponItemResult,
-  CouponHashMap,
-  checkCouponIds,
+  ItemResult,
+  ItemHashMap,
+  checkItemsIds,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -17,7 +17,7 @@ import jp from 'jsonpath';
 // Export the router function that determines which handler to use based on the request label
 export const router = createPuppeteerRouter();
 
-function processCouponItem(
+function processItem(
   merchantName,
   countryCode,
   clientId,
@@ -45,17 +45,13 @@ function processCouponItem(
   validator.addValue('isExpired', voucher.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateCouponId(
-    merchantName,
-    voucher.idPool,
-    sourceUrl
-  );
+  const generatedHash = generateItemId(merchantName, voucher.idPool, sourceUrl);
 
   const hasCode = voucher?.type === 'code';
 
-  const couponUrl = `https://coupons.businessinsider.com/api/voucher/country/${countryCode}/client/${clientId}/id/${voucher.idPool}`;
+  const itemUrl = `https://coupons.businessinsider.com/api/voucher/country/${countryCode}/client/${clientId}/id/${voucher.idPool}`;
 
-  return { generatedHash, hasCode, couponUrl, validator };
+  return { generatedHash, hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {
@@ -81,17 +77,17 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Merchant Name: ${merchantName} - Domain: ${domain}`);
 
-    const vouchers = jp.query(jsonData, '$..pageProps.vouchers')[0] || [];
-    const expiredVouchers =
+    const currentItems = jp.query(jsonData, '$..pageProps.vouchers')[0] || [];
+    const expiredItems =
       jp.query(jsonData, '$..pageProps.expiredVouchers')[0] || [];
-    const allVouchers = [...vouchers, ...expiredVouchers];
+    const items = [...currentItems, ...expiredItems];
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
             url: request.url,
-            coupons: allVouchers,
+            items,
           },
         },
         context
@@ -101,15 +97,15 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const couponsWithCode: CouponHashMap = {};
+    const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
-    for (const voucher of allVouchers) {
-      const result: CouponItemResult = processCouponItem(
+    for (const item of items) {
+      const result: ItemResult = processItem(
         merchantName,
         countryCode,
         clientId,
         domain,
-        voucher,
+        item,
         request.url
       );
 
@@ -128,17 +124,17 @@ router.addHandler(Label.listing, async (context) => {
         }
         continue;
       }
-      couponsWithCode[result.generatedHash] = result;
+      itemsWithCode[result.generatedHash] = result;
       idsToCheck.push(result.generatedHash);
     }
 
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds.length > 0) {
       for (const id of nonExistingIds) {
-        const result: CouponItemResult = couponsWithCode[id];
+        const result: ItemResult = itemsWithCode[id];
         await enqueueLinks({
-          urls: [result.couponUrl],
+          urls: [result.itemUrl],
           userData: {
             ...request.userData,
             label: Label.getCode,

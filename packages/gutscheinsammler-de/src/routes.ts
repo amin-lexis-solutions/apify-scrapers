@@ -3,10 +3,10 @@ import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
   sleep,
-  generateCouponId,
-  checkCouponIds,
-  CouponItemResult,
-  CouponHashMap,
+  generateItemId,
+  checkItemsIds,
+  ItemResult,
+  ItemHashMap,
   getMerchantDomainFromUrl,
   logError,
 } from 'shared/helpers';
@@ -19,10 +19,7 @@ const CUSTOM_HEADERS_LOCAL = {
   'Accept-Encoding': 'gzip, deflate, br',
 };
 
-function processCouponItem(
-  couponItem: any,
-  $cheerio: cheerio.Root
-): CouponItemResult {
+function processItem(item: any, $cheerio: cheerio.Root): ItemResult {
   const validator = new DataValidator();
 
   const buttonElement = $cheerio(
@@ -36,25 +33,25 @@ function processCouponItem(
   const isExpired = $cheerio('*').attr('class')?.includes('expired');
 
   // Add required and optional values to the validator
-  validator.addValue('sourceUrl', couponItem.sourceUrl);
-  validator.addValue('merchantName', couponItem.merchantName);
-  validator.addValue('title', couponItem.title);
-  validator.addValue('domain', couponItem.merchantDomain);
-  validator.addValue('idInSite', couponItem.idInSite);
+  validator.addValue('sourceUrl', item.sourceUrl);
+  validator.addValue('merchantName', item.merchantName);
+  validator.addValue('title', item.title);
+  validator.addValue('domain', item.merchantDomain);
+  validator.addValue('idInSite', item.idInSite);
   validator.addValue('isExpired', isExpired);
   validator.addValue('isShown', true);
 
-  const couponUrl = hasCode
-    ? `https://www.gutscheinsammler.de/api/voucher/${couponItem.idInSite}`
+  const itemUrl = hasCode
+    ? `https://www.gutscheinsammler.de/api/voucher/${item.idInSite}`
     : '';
 
-  const generatedHash = generateCouponId(
-    couponItem.merchantName,
-    couponItem.idInSite,
-    couponItem.sourceUrl
+  const generatedHash = generateItemId(
+    item.merchantName,
+    item.idInSite,
+    item.sourceUrl
   );
 
-  return { generatedHash, hasCode, couponUrl, validator };
+  return { generatedHash, hasCode, itemUrl, validator };
 }
 
 export const router = createCheerioRouter();
@@ -97,20 +94,20 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Extract valid coupons
-    const validCoupons = $(
+    const activedItems = $(
       'section[data-testid=ActiveVouchers] div[data-testid=VouchersListItem]'
     );
-    const expiredCoupons = $(
+    const expiredItems = $(
       "section[data-testid='ExpiredVouchers'] div[data-testid='VouchersListItem']"
     );
 
-    const allItems = [...validCoupons, ...expiredCoupons];
+    const items = [...activedItems, ...expiredItems];
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: validCoupons,
+            items,
           },
           IndexPageHandler: {
             indexPageSelectors: request.userData.pageSelectors,
@@ -123,14 +120,14 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const couponsWithCode: CouponHashMap = {};
+    const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
-    let result: CouponItemResult;
+    let result: ItemResult;
 
-    for (const element of allItems) {
-      const $coupon = cheerio.load(element);
+    for (const element of items) {
+      const $cheerio = cheerio.load(element);
 
-      const idInSite = $coupon('*')?.first()?.attr('data-voucherid');
+      const idInSite = $cheerio('*')?.first()?.attr('data-voucherid');
 
       if (!idInSite) {
         logError('idInSite not found in item');
@@ -138,7 +135,7 @@ router.addHandler(Label.listing, async (context) => {
       }
 
       // Extract the voucher title
-      const title = $coupon('button[class*="VouchersListItem_titleButton"]')
+      const title = $cheerio('button[class*="VouchersListItem_titleButton"]')
         ?.first()
         ?.text()
         ?.trim();
@@ -148,7 +145,7 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
-      const couponItem = {
+      const item = {
         title,
         idInSite,
         merchantName,
@@ -156,10 +153,10 @@ router.addHandler(Label.listing, async (context) => {
         sourceUrl: request.url,
       };
 
-      result = processCouponItem(couponItem, $coupon);
+      result = processItem(item, $cheerio);
 
       if (result.hasCode) {
-        couponsWithCode[result.generatedHash] = result;
+        itemsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
         continue;
       }
@@ -180,18 +177,18 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Call the API to check if the coupon exists
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds.length == 0) return;
 
-    let currentResult: CouponItemResult;
+    let currentResult: ItemResult;
 
     for (const id of nonExistingIds) {
-      currentResult = couponsWithCode[id];
+      currentResult = itemsWithCode[id];
       // Add the coupon URL to the request queue
       await crawler?.requestQueue?.addRequest(
         {
-          url: currentResult.couponUrl,
+          url: currentResult.itemUrl,
           userData: {
             label: Label.getCode,
             validatorData: currentResult.validator.getData(),

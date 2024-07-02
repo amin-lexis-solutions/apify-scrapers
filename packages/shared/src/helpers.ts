@@ -6,10 +6,10 @@ import axios from 'axios';
 import { DataValidator } from './data-validator';
 import { Dataset, log } from 'apify';
 
-export type CouponItemResult = {
+export type ItemResult = {
   generatedHash: string;
   hasCode: boolean;
-  couponUrl: string;
+  itemUrl: string;
   validator: DataValidator;
 };
 
@@ -18,7 +18,7 @@ type IndexPageSelectors = {
   nonIndexSelector: string[];
 };
 
-export type CouponHashMap = { [key: string]: CouponItemResult };
+export type ItemHashMap = { [key: string]: ItemResult };
 
 // Normalizes strings by trimming, converting to lowercase, and replacing multiple spaces with a single space.
 function normalizeString(s: string): string {
@@ -36,7 +36,7 @@ export async function fetchSentryUrl() {
   }
 }
 
-export async function checkCouponIds(ids: any[]): Promise<any[]> {
+export async function checkItemsIds(ids: any[]): Promise<any[]> {
   try {
     // Send a POST request to the API to check if the coupon IDs exist
     const response = await axios.post(
@@ -61,19 +61,19 @@ export async function checkCouponIds(ids: any[]): Promise<any[]> {
   }
 }
 
-export function generateCouponId(
+export function generateItemId(
   merchantName?: string | null,
   idInSite?: string | null,
   sourceUrl?: string
 ): string {
   const normalizedMerchant = merchantName ? normalizeString(merchantName) : '';
-  const normalizedVoucher = idInSite ? normalizeString(idInSite) : '';
+  const normalizedTitle = idInSite ? normalizeString(idInSite) : '';
 
   const normalizedUrl = sourceUrl
     ? normalizeString(getMerchantDomainFromUrl(sourceUrl))
     : '';
 
-  const combinedString = `${normalizedMerchant}|${normalizedVoucher}|${normalizedUrl}`;
+  const combinedString = `${normalizedMerchant}|${normalizedTitle}|${normalizedUrl}`;
 
   const hash = crypto.createHash('sha256');
   hash.update(combinedString);
@@ -83,14 +83,14 @@ export function generateCouponId(
 // Generates a hash from merchant name, voucher title, and source URL
 export function generateHash(
   merchantName: string,
-  voucherTitle: string,
+  itemTitle: string,
   sourceUrl: string
 ): string {
   const normalizedMerchant = normalizeString(merchantName);
-  const normalizedVoucher = normalizeString(voucherTitle);
+  const normalizedTitle = normalizeString(itemTitle);
   const normalizedUrl = normalizeString(sourceUrl);
 
-  const combinedString = `${normalizedMerchant}|${normalizedVoucher}|${normalizedUrl}`;
+  const combinedString = `${normalizedMerchant}|${normalizedTitle}|${normalizedUrl}`;
 
   const hash = crypto.createHash('sha256');
   hash.update(combinedString);
@@ -171,42 +171,36 @@ export async function processAndStoreData(
   }
 }
 
-// Just a wrapper around getDomainFromUrl in case already existing code needs to be reused
-// Domain can be null if does not exist.
-export function extractDomainFromUrl(url: string): string | null {
-  return getMerchantDomainFromUrl(url);
-}
-
-export async function checkExistingCouponsAnomaly(
+export async function checkExistingItemsAnomaly(
   sourceUrl: string,
-  couponsCount: number
+  count: number
 ) {
-  log.info(`checkExistingCouponsAnomaly - ${sourceUrl}`);
+  log.info(`checkExistingItemsAnomaly - ${sourceUrl}`);
 
   try {
     const response = await axios.post(
       `${process.env.BASE_URL}/items/anomaly-detector`,
       {
         sourceUrl,
-        couponsCount,
+        couponsCount: count,
       }
     );
 
     const hasAnomaly = response?.data?.anomalyType;
 
     if (hasAnomaly) {
-      log.error(`Coupons anomaly detected - ${sourceUrl}`);
+      log.error(`Item anomaly detected - ${sourceUrl}`);
 
-      Sentry.captureException(`Coupons anomaly detected`, {
+      Sentry.captureException(`Item anomaly detected`, {
         extra: {
           url: sourceUrl,
-          couponsCount,
+          count,
         },
       });
     }
     return hasAnomaly;
   } catch (e) {
-    log.error(`Error fetching coupons anomaly`, { e });
+    log.error(`Error fetching Item anomaly`, { e });
   }
 }
 

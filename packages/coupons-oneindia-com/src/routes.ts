@@ -2,11 +2,11 @@ import { createPuppeteerRouter } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
-  CouponHashMap,
-  CouponItemResult,
-  checkCouponIds,
+  ItemHashMap,
+  ItemResult,
+  checkItemsIds,
   formatDateTime,
-  generateCouponId,
+  generateItemId,
   getMerchantDomainFromUrl,
   logError,
 } from 'shared/helpers';
@@ -15,39 +15,39 @@ import { postProcess, preProcess } from 'shared/hooks';
 // Export the router function that determines which handler to use based on the request label
 export const router = createPuppeteerRouter();
 
-function processCouponItem(couponItem): CouponItemResult {
+function processItem(item): ItemResult {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
-  const idInSite = couponItem?.idPool?.replace('in_', '');
+  const idInSite = item?.idPool?.replace('in_', '');
 
   // Add required values to the validator
-  validator.addValue('sourceUrl', couponItem.sourceUrl);
-  validator.addValue('merchantName', couponItem.merchantName);
-  validator.addValue('title', couponItem.title);
+  validator.addValue('sourceUrl', item.sourceUrl);
+  validator.addValue('merchantName', item.merchantName);
+  validator.addValue('title', item.title);
   validator.addValue('idInSite', idInSite);
 
   // Add optional values to the validator
-  validator.addValue('domain', couponItem?.merchantDomain);
-  validator.addValue('description', couponItem?.description);
-  validator.addValue('termsAndConditions', couponItem?.termsAndConditions);
-  validator.addValue('expiryDateAt', formatDateTime(couponItem?.endTime));
-  validator.addValue('startDateAt', formatDateTime(couponItem?.startTime));
-  validator.addValue('isExclusive', couponItem?.exclusiveVoucher);
-  validator.addValue('isExpired', couponItem?.isExpired);
+  validator.addValue('domain', item?.merchantDomain);
+  validator.addValue('description', item?.description);
+  validator.addValue('termsAndConditions', item?.termsAndConditions);
+  validator.addValue('expiryDateAt', formatDateTime(item?.endTime));
+  validator.addValue('startDateAt', formatDateTime(item?.startTime));
+  validator.addValue('isExclusive', item?.exclusiveVoucher);
+  validator.addValue('isExpired', item?.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateCouponId(
-    couponItem.merchantName,
+  const generatedHash = generateItemId(
+    item.merchantName,
     idInSite,
-    couponItem.sourceUrl
+    item.sourceUrl
   );
 
-  const hasCode = couponItem?.type.includes('code');
+  const hasCode = item?.type.includes('code');
 
-  const couponUrl = `https://coupons.oneindia.com/api/voucher/country/in/client/${couponItem?.retailerId}/id/${couponItem?.idPool}`;
+  const itemUrl = `https://coupons.oneindia.com/api/voucher/country/in/client/${item?.retailerId}/id/${item?.idPool}`;
 
-  return { generatedHash, hasCode, couponUrl, validator };
+  return { generatedHash, hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {
@@ -93,7 +93,7 @@ router.addHandler(Label.listing, async (context) => {
       ? getMerchantDomainFromUrl(merchantUrl)
       : null;
     // Combine active and expired vouchers
-    const activeItems = pageProps.vouchers.map((voucher) => ({
+    const currentItems = pageProps.vouchers.map((voucher) => ({
       ...voucher,
       is_expired: false,
     }));
@@ -103,13 +103,13 @@ router.addHandler(Label.listing, async (context) => {
       is_expired: true,
     }));
 
-    const items = [...activeItems, ...expiredItems];
+    const items = [...currentItems, ...expiredItems];
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: items,
+            items,
           },
           IndexPageHandler: {
             indexPageSelectors: request.userData.pageSelectors,
@@ -122,9 +122,9 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const couponsWithCode: CouponHashMap = {};
+    const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
-    let result: CouponItemResult;
+    let result: ItemResult;
 
     for (const item of items) {
       if (!item.idPool) {
@@ -137,7 +137,7 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
-      const couponItem = {
+      const itemData = {
         merchantName,
         merchantDomain,
         retailerId,
@@ -145,10 +145,10 @@ router.addHandler(Label.listing, async (context) => {
         ...item,
       };
 
-      result = processCouponItem(couponItem);
+      result = processItem(itemData);
 
       if (result.hasCode) {
-        couponsWithCode[result.generatedHash] = result;
+        itemsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
         continue;
       }
@@ -168,17 +168,17 @@ router.addHandler(Label.listing, async (context) => {
       }
     }
     // Call the API to check if the coupon exists
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds.length == 0) return;
 
-    let currentResult: CouponItemResult;
+    let currentResult: ItemResult;
 
     for (const id of nonExistingIds) {
-      currentResult = couponsWithCode[id];
+      currentResult = itemsWithCode[id];
       // Add the coupon URL to the request queue
       await enqueueLinks({
-        urls: [currentResult.couponUrl],
+        urls: [currentResult.itemUrl],
         userData: {
           label: Label.getCode,
           validatorData: currentResult.validator.getData(),

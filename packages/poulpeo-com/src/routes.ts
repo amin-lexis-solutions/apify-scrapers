@@ -1,10 +1,10 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
-  generateCouponId,
-  CouponHashMap,
-  checkCouponIds,
-  CouponItemResult,
+  generateItemId,
+  ItemHashMap,
+  checkItemsIds,
+  ItemResult,
   logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
@@ -25,9 +25,9 @@ router.addHandler(Label.listing, async (context) => {
     });
   }
 
-  async function makeRequest(couponUrl, validatorData) {
+  async function makeRequest(itemUrl, validatorData) {
     await enqueueLinks({
-      urls: [couponUrl],
+      urls: [itemUrl],
       userData: {
         label: Label.getCode,
         validatorData,
@@ -54,13 +54,13 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const validCoupons = await page.$$('.-horizontal.m-offer');
+    const items = await page.$$('.-horizontal.m-offer');
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: validCoupons,
+            items,
           },
         },
         context
@@ -70,12 +70,12 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    // Extract validCoupons
-    const couponsWithCode: CouponHashMap = {};
+    // Extract items
+    const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
-    let result: CouponItemResult;
+    let result: ItemResult;
 
-    for (const element of validCoupons) {
+    for (const element of items) {
       const codeElement = await element.$(
         '.m-offer__action .a-btnSlide__truncateCode'
       );
@@ -114,20 +114,16 @@ router.addHandler(Label.listing, async (context) => {
       idInSite = await extractIdInSite(element);
       validator.addValue('idInSite', idInSite);
 
-      const couponUrl = `https://www.poulpeo.com/o.htm?c=${idInSite}`;
+      const itemUrl = `https://www.poulpeo.com/o.htm?c=${idInSite}`;
 
-      const generatedHash = generateCouponId(
-        merchantName,
-        idInSite,
-        request.url
-      );
+      const generatedHash = generateItemId(merchantName, idInSite, request.url);
 
       const hasCode = !!codeElement;
 
-      result = { generatedHash, hasCode, couponUrl, validator };
+      result = { generatedHash, hasCode, itemUrl, validator };
 
       if (result.hasCode) {
-        couponsWithCode[result.generatedHash] = result;
+        itemsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
         continue;
       }
@@ -147,16 +143,16 @@ router.addHandler(Label.listing, async (context) => {
       }
     }
     // Call the API to check if the coupon exists
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds?.length === 0) return;
 
-    let currentResult: CouponItemResult;
+    let currentResult: ItemResult;
 
     for (const id of nonExistingIds) {
-      currentResult = couponsWithCode[id];
+      currentResult = itemsWithCode[id];
       // Add the coupon URL to the request queue
-      await makeRequest(currentResult.couponUrl, currentResult.validator);
+      await makeRequest(currentResult.itemUrl, currentResult.validator);
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

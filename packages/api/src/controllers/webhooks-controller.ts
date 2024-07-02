@@ -22,7 +22,7 @@ import {
   TestWebhookRequestBody,
   WebhookRequestBody,
 } from '../utils/validators';
-import { generateCouponId } from 'shared/helpers';
+import { generateItemId } from 'shared/helpers';
 
 const updatableFields: (keyof Coupon)[] = [
   'domain',
@@ -161,7 +161,7 @@ export class WebhooksController {
     const targetPages = new Set<string>();
 
     for (const item of scrapedData) {
-      const id = generateCouponId(
+      const id = generateItemId(
         item?.merchantName,
         item?.idInSite,
         item?.sourceUrl
@@ -524,7 +524,7 @@ export class WebhooksController {
   private async checkNonExistingCouponsInPage(scrapedData: any) {
     // Extract IDs of incoming coupons from the scraped data
     const incomingCouponIds = scrapedData.map((item: any) =>
-      generateCouponId(item?.merchantName, item?.idInSite, item?.sourceUrl)
+      generateItemId(item?.merchantName, item?.idInSite, item?.sourceUrl)
     );
 
     // Get the source URL from scraped data

@@ -3,11 +3,11 @@ import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateCouponId,
+  generateItemId,
   getMerchantDomainFromUrl,
-  CouponItemResult,
-  CouponHashMap,
-  checkCouponIds,
+  ItemResult,
+  ItemHashMap,
+  checkItemsIds,
   logError,
 } from 'shared/helpers';
 
@@ -16,36 +16,32 @@ import { preProcess, postProcess } from 'shared/hooks';
 // Export the router function that determines which handler to use based on the request label
 export const router = createCheerioRouter();
 
-function processCouponItem(merchantName, merchantDomain, voucher, sourceUrl) {
+function processItem(merchantName, merchantDomain, item, sourceUrl) {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
-  const idInSite = voucher?.idInSite;
+  const idInSite = item?.idInSite;
   // Add required values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
-  validator.addValue('title', voucher.title);
+  validator.addValue('title', item.title);
   validator.addValue('idInSite', idInSite);
 
   // Add optional values to the validator
   validator.addValue('domain', merchantDomain);
-  validator.addValue('description', voucher.description);
-  validator.addValue('startDateAt', formatDateTime(voucher.startTime));
-  validator.addValue('isExclusive', voucher.exclusiveVoucher);
+  validator.addValue('description', item.description);
+  validator.addValue('startDateAt', formatDateTime(item.startTime));
+  validator.addValue('isExclusive', item.exclusiveVoucher);
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateCouponId(
-    merchantName,
-    voucher.idInSite,
-    sourceUrl
-  );
+  const generatedHash = generateItemId(merchantName, item.idInSite, sourceUrl);
 
-  const couponUrl = `https://www.groupon.ie/discount-codes/redemption/${idInSite}?merchant=${encodeURI(
+  const itemUrl = `https://www.groupon.ie/discount-codes/redemption/${idInSite}?merchant=${encodeURI(
     merchantName
   )}&linkType=MerchantPage`;
 
-  return { generatedHash, hasCode: voucher.hasCode, couponUrl, validator };
+  return { generatedHash, hasCode: item.hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {
@@ -54,6 +50,26 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   try {
+    const items = $('li.coupons-list-row');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            url: request.url,
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error) {
+      logError(`Preprocess Error: ${error}`);
+      return;
+    }
+
     const merchantName = $('.merchant-block-background')
       .attr('aria-label')
       ?.split(',')[0];
@@ -72,38 +88,18 @@ router.addHandler(Label.listing, async (context) => {
         )
       : log.warning('merchantDomain not found');
 
-    const vouchers = $('li.coupons-list-row'); // TODO: Extract the vouchers from the page
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            url: request.url,
-            coupons: vouchers,
-          },
-          IndexPageHandler: {
-            indexPageSelectors: request.userData.pageSelectors,
-          },
-        },
-        context
-      );
-    } catch (error) {
-      logError(`Preprocess Error: ${error}`);
-      return;
-    }
-
-    const couponsWithCode: CouponHashMap = {};
+    const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
 
-    for (const voucher of vouchers) {
-      const title = $(voucher).find('.coupon-tile-title')?.text();
+    for (const selector of items) {
+      const title = $(selector).find('.coupon-tile-title')?.text();
 
       if (!title) {
         logError('Coupon title not found in item');
         continue;
       }
 
-      const idInSite = $(voucher)
+      const idInSite = $(selector)
         ?.find('span[id]')
         ?.attr('id')
         ?.replace('offer-', '');
@@ -113,14 +109,14 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
-      const hasCode = $(voucher)
+      const hasCode = $(selector)
         ?.find('.coupon-tile-type')
         ?.text()
         ?.includes('Code');
 
       const item = { title, idInSite, hasCode };
 
-      const result: CouponItemResult = processCouponItem(
+      const result: ItemResult = processItem(
         merchantName,
         merchantDomain,
         item,
@@ -142,19 +138,19 @@ router.addHandler(Label.listing, async (context) => {
         }
         continue;
       }
-      couponsWithCode[result.generatedHash] = result;
+      itemsWithCode[result.generatedHash] = result;
       idsToCheck.push(result.generatedHash);
     }
 
     // Check if the coupons already exist in the database
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds.length == 0) return;
 
     for (const id of nonExistingIds) {
-      const result: CouponItemResult = couponsWithCode[id];
+      const result: ItemResult = itemsWithCode[id];
       await enqueueLinks({
-        urls: [result.couponUrl],
+        urls: [result.itemUrl],
         userData: {
           ...request.userData,
           label: Label.getCode,

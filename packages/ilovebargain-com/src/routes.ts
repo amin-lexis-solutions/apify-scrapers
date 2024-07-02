@@ -4,10 +4,10 @@ import cheerio from 'cheerio';
 import { DataValidator } from 'shared/data-validator';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import {
-  generateCouponId,
-  CouponHashMap,
-  checkCouponIds,
-  CouponItemResult,
+  generateItemId,
+  ItemHashMap,
+  checkItemsIds,
+  ItemResult,
   logError,
 } from 'shared/helpers';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -25,13 +25,13 @@ router.addHandler(Label.listing, async (context) => {
   }
   try {
     // Find all valid coupons on the page
-    const validCoupons = $('#codes .offer-item');
+    const items = $('#codes .offer-item');
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: validCoupons,
+            items,
           },
         },
         context
@@ -42,19 +42,19 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Iterate over each coupon to extract url
-    for (const coupon of validCoupons) {
-      const id = $(coupon).attr('data-cid');
+    for (const item of items) {
+      const id = $(item).attr('data-cid');
 
       if (!id) {
         logError(`idInsite not found in item`);
         continue;
       }
-      // Construct coupon URL
-      const couponUrl = `${request.url}?show=${id}`;
+      // Construct item URL
+      const itemUrl = `${request.url}?show=${id}`;
 
       await crawler.requestQueue.addRequest(
         {
-          url: couponUrl,
+          url: itemUrl,
           userData: {
             label: Label.details,
             id: id,
@@ -96,13 +96,13 @@ router.addHandler(Label.details, async (context) => {
     return;
   }
   // Extract validCoupons
-  const couponsWithCode: CouponHashMap = {};
+  const itemsWithCode: ItemHashMap = {};
   const idsToCheck: string[] = [];
-  let result: CouponItemResult;
+  let result: ItemResult;
 
   for (const item of items) {
-    const $coupon = cheerio.load(item);
-    const title = $coupon('.-offer-title .code-link-popup')
+    const $cheerio = cheerio.load(item);
+    const title = $cheerio('.-offer-title .code-link-popup')
       ?.text()
       ?.trim()
       ?.split('Discount')?.[0];
@@ -111,16 +111,16 @@ router.addHandler(Label.details, async (context) => {
       logError(`title not found in item`);
       continue;
     }
-    const desc = $coupon('.-description')?.text()?.trim();
-    const idInSite = $coupon('*')?.attr('data-cid');
+    const desc = $cheerio('.-description')?.text()?.trim();
+    const idInSite = $cheerio('*')?.attr('data-cid');
 
     if (!idInSite) {
       logError(`idInSite not found in item`);
       continue;
     }
 
-    const code = $coupon('.-code-container')?.attr('data-clipboard-text');
-    const couponUrl = request.url;
+    const code = $cheerio('.-code-container')?.attr('data-clipboard-text');
+    const itemUrl = request.url;
 
     // Create a DataValidator instance and populate it with coupon data
     const validator = new DataValidator();
@@ -136,17 +136,17 @@ router.addHandler(Label.details, async (context) => {
     validator.addValue('isShown', true);
 
     // Generate a unique hash for the coupon using merchant name, unique ID, and request URL
-    const generatedHash = generateCouponId(merchantName, idInSite, request.url);
+    const generatedHash = generateItemId(merchantName, idInSite, request.url);
 
     const hasCode = !!code;
 
     // Create a result object containing generated hash, code availability, coupon URL, and validator data
-    result = { generatedHash, hasCode, couponUrl, validator };
+    result = { generatedHash, hasCode, itemUrl, validator };
 
     // If the coupon does not have a code, process and store its data using the validator
     if (result.hasCode) {
-      // If the coupon has a code, store its details in the couponsWithCode object
-      couponsWithCode[result.generatedHash] = result;
+      // If the coupon has a code, store its details in the itemsWithCode object
+      itemsWithCode[result.generatedHash] = result;
       // Add the generated hash to the list of IDs to check
       idsToCheck.push(result.generatedHash);
       continue;
@@ -168,14 +168,14 @@ router.addHandler(Label.details, async (context) => {
   }
 
   // Call the API to check if the coupon exists
-  const nonExistingIds = await checkCouponIds(idsToCheck);
+  const nonExistingIds = await checkItemsIds(idsToCheck);
 
   if (nonExistingIds.length == 0) return;
 
-  let currentResult: CouponItemResult;
+  let currentResult: ItemResult;
 
   for (const id of nonExistingIds) {
-    currentResult = couponsWithCode[id];
+    currentResult = itemsWithCode[id];
     // Enqueue the coupon URL for further processing with appropriate label and validator data
     await postProcess(
       {

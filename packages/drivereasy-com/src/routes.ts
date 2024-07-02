@@ -1,10 +1,10 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
-  generateCouponId,
-  CouponHashMap,
-  checkCouponIds,
-  CouponItemResult,
+  generateItemId,
+  ItemHashMap,
+  checkItemsIds,
+  ItemResult,
   getMerchantDomainFromUrl,
   logError,
 } from 'shared/helpers';
@@ -66,7 +66,7 @@ router.addHandler(Label.listing, async (context) => {
     });
   }
 
-  async function getCouponUrl(domain, id) {
+  async function getitemUrl(domain, id) {
     return `https://www.drivereasy.com/coupons/${domain}?promoid=${id}`;
   }
 
@@ -85,13 +85,13 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const validCoupons = await page.$$('.list_coupons li .offer_card');
+    const items = await page.$$('.list_coupons li .offer_card');
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: validCoupons,
+            items,
           },
         },
         context
@@ -101,13 +101,13 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    // Extract validCoupons
+    // Extract items
 
-    const couponsWithCode: CouponHashMap = {};
+    const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
-    let result: CouponItemResult;
+    let result: ItemResult;
 
-    for (const element of validCoupons) {
+    for (const element of items) {
       const hasCode = true;
 
       const title = await getCouponTitle(element);
@@ -124,7 +124,7 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
-      const couponUrl = await getCouponUrl(domain, idInSite);
+      const itemUrl = await getitemUrl(domain, idInSite);
       const expireDate = await extractExpireDate(element);
 
       const validator = new DataValidator();
@@ -140,16 +140,12 @@ router.addHandler(Label.listing, async (context) => {
         validator.addValue('expiryDateAt', expireDate);
       }
 
-      const generatedHash = generateCouponId(
-        merchantName,
-        idInSite,
-        request.url
-      );
+      const generatedHash = generateItemId(merchantName, idInSite, request.url);
 
-      result = { generatedHash, hasCode, couponUrl, validator };
+      result = { generatedHash, hasCode, itemUrl, validator };
 
       if (result.hasCode) {
-        couponsWithCode[result.generatedHash] = result;
+        itemsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
         continue;
       }
@@ -169,17 +165,17 @@ router.addHandler(Label.listing, async (context) => {
       }
     }
     // Call the API to check if the coupon exists
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds.length > 0) {
-      let currentResult: CouponItemResult;
+      let currentResult: ItemResult;
 
       for (const id of nonExistingIds) {
-        currentResult = couponsWithCode[id];
+        currentResult = itemsWithCode[id];
 
         // Add the coupon URL to the request queue
         await enqueueLinks({
-          urls: [currentResult.couponUrl],
+          urls: [currentResult.itemUrl],
           userData: {
             label: Label.getCode,
             validatorData: currentResult.validator.getData(),

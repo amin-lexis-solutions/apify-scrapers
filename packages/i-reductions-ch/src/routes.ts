@@ -10,7 +10,7 @@ export enum Label {
   'getCode' = 'GetCodePage',
 }
 
-type Voucher = {
+type Item = {
   isExpired: boolean;
   isExclusive: boolean;
   idInSite: string | undefined;
@@ -84,14 +84,14 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
     }
 
     // Extract coupons and offers using Puppeteer
-    const vouchers: Voucher[] = await page.evaluate(() => {
-      const voucherElements = Array.from(
+    const items: Item[] = await page.evaluate(() => {
+      const itemElements = Array.from(
         document.querySelectorAll(
           'main.main-shop > div.container > div.row > div > div.row > div.container > div.card-offer-shop'
         )
       );
 
-      return voucherElements.map((el) => {
+      return itemElements.map((el) => {
         const elementClass = el.className || '';
         const isExpired = elementClass.includes('offer-exp');
         const isExclusive = !!el.querySelector(
@@ -129,7 +129,7 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: vouchers,
+            items,
           },
         },
         context
@@ -140,7 +140,7 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
     }
 
     // Process each voucher
-    for (const voucher of vouchers) {
+    for (const item of items) {
       await sleep(1000); // Sleep for x seconds between requests to avoid rate limitings
 
       // Create a new DataValidator instance
@@ -149,18 +149,18 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
       // Add required values to the validator
       validator.addValue('sourceUrl', request.url);
       validator.addValue('merchantName', merchantName);
-      validator.addValue('title', voucher.title);
-      validator.addValue('idInSite', voucher.idInSite);
+      validator.addValue('title', item.title);
+      validator.addValue('idInSite', item.idInSite);
 
       // Add optional values to the validator
       validator.addValue('domain', domain);
-      validator.addValue('isExclusive', voucher.isExclusive);
-      validator.addValue('isExpired', voucher.isExpired);
+      validator.addValue('isExclusive', item.isExclusive);
+      validator.addValue('isExpired', item.isExpired);
       validator.addValue('isShown', true);
 
       // Get the code
       const cleanRequestUrl = request.url.split('?')[0];
-      const codeDetailsUrl = `${cleanRequestUrl}?c=${voucher.idInSite}&so=s#c-${voucher.idInSite}`;
+      const codeDetailsUrl = `${cleanRequestUrl}?c=${item.idInSite}&so=s#c-${item.idInSite}`;
       const validatorData = validator.getData();
 
       // Add the request to the request queue

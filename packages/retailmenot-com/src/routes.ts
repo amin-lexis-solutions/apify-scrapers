@@ -1,10 +1,10 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
-  generateCouponId,
-  CouponHashMap,
-  checkCouponIds,
-  CouponItemResult,
+  generateItemId,
+  ItemHashMap,
+  checkItemsIds,
+  ItemResult,
   getMerchantDomainFromUrl,
   logError,
 } from 'shared/helpers';
@@ -32,18 +32,16 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
     // Extract domain from the request URL
-    const domain = getMerchantDomainFromUrl(request.url);
+    const merchantDomain = getMerchantDomainFromUrl(request.url);
 
     // Find all valid coupons on the page
-    const validCoupons = await page.$$(
-      'div[data-component-class="top_offers"] div'
-    );
+    const items = await page.$$('div[data-component-class="top_offers"] div');
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: validCoupons,
+            items,
           },
         },
         context
@@ -53,13 +51,13 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    // Extract validCoupons
-    const couponsWithCode: CouponHashMap = {};
+    // Extract items
+    const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
-    let result: CouponItemResult;
+    let result: ItemResult;
 
     // Iterate over each valid coupon element
-    for (const element of validCoupons) {
+    for (const element of items) {
       // If element is null, skip to the next iteration
       if (!element) {
         continue;
@@ -101,11 +99,11 @@ router.addHandler(Label.listing, async (context) => {
       }
 
       // Construct coupon URL
-      const couponUrl = `https://www.retailmenot.com/view/${domain}?u=${idInSite}&outclicked=true`;
+      const itemUrl = `https://www.retailmenot.com/view/${merchantDomain}?u=${idInSite}&outclicked=true`;
 
       // Create a DataValidator instance and populate it with coupon data
       const validator = new DataValidator();
-      validator.addValue('domain', domain);
+      validator.addValue('domain', merchantDomain);
       validator.addValue('sourceUrl', request.url);
       validator.addValue('merchantName', merchantName);
       validator.addValue('title', couponTitle);
@@ -114,16 +112,12 @@ router.addHandler(Label.listing, async (context) => {
       validator.addValue('isShown', true);
 
       // Generate a unique hash for the coupon using merchant name, unique ID, and request URL
-      const generatedHash = generateCouponId(
-        merchantName,
-        idInSite,
-        request.url
-      );
+      const generatedHash = generateItemId(merchantName, idInSite, request.url);
       // Create a result object containing generated hash, code availability, coupon URL, and validator data
-      result = { generatedHash, hasCode, couponUrl, validator };
-      // If the coupon has a code, store its details in the couponsWithCode object
+      result = { generatedHash, hasCode, itemUrl, validator };
+      // If the coupon has a code, store its details in the itemsWithCode object
       if (result.hasCode) {
-        couponsWithCode[result.generatedHash] = result;
+        itemsWithCode[result.generatedHash] = result;
         // Add the generated hash to the list of IDs to check
         idsToCheck.push(result.generatedHash);
         continue;
@@ -144,16 +138,16 @@ router.addHandler(Label.listing, async (context) => {
       }
     }
     // Call the API to check if the coupon exists
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds.length > 0) {
-      let currentResult: CouponItemResult;
+      let currentResult: ItemResult;
 
       for (const id of nonExistingIds) {
-        currentResult = couponsWithCode[id];
+        currentResult = itemsWithCode[id];
         // Enqueue the coupon URL for further processing with appropriate label and validator data
         await enqueueLinks({
-          urls: [currentResult.couponUrl],
+          urls: [currentResult.itemUrl],
           userData: {
             label: Label.getCode,
             validatorData: currentResult.validator,

@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/node';
 import {
-  checkExistingCouponsAnomaly,
+  checkExistingItemsAnomaly,
   checkIndexPageSelectors,
   processAndStoreData,
 } from './helpers';
@@ -8,11 +8,11 @@ import {
 /**
  * Type definition for the AnomalyCheckHandler object.
  * @typedef {Object} AnomalyCheckHandler
- * @property {Array} coupons - An array of coupons.
+ * @property {Array} items - An array of items.
  * @property {string} [url] - The URL to check for anomalies.
  */
 type AnomalyCheckHandler = {
-  coupons: any[];
+  items: any[];
   url?: string;
 };
 
@@ -36,7 +36,7 @@ type SaveDataHandler = {
 
 /**
  * Pre-processes hook.
- * Checks for anomalies in the coupons and throws an error if an anomaly is detected.
+ * Checks for anomalies in the items and throws an error if an anomaly is detected.
  * @param {any} load - The load to pre-process.
  * @param {any} context - The context in which the pre-processing is happening.
  * @throws {Error} If the context is missing or an anomaly is detected.
@@ -63,9 +63,9 @@ export const preProcess = async (load: any, context: any): Promise<boolean> => {
 
     if (AnomalyCheckHandler) {
       if (
-        await checkExistingCouponsAnomaly(
+        await checkExistingItemsAnomaly(
           AnomalyCheckHandler?.url || context.request.url,
-          AnomalyCheckHandler.coupons.length
+          AnomalyCheckHandler.items.length
         )
       ) {
         throw new Error('Anomaly detected');

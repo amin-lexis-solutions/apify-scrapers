@@ -4,10 +4,10 @@ import {
   processAndStoreData,
   sleep,
   getMerchantDomainFromUrl,
-  generateCouponId,
-  checkCouponIds,
-  CouponItemResult,
-  CouponHashMap,
+  generateItemId,
+  checkItemsIds,
+  ItemResult,
+  ItemHashMap,
   logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
@@ -63,30 +63,30 @@ interface ShoppingShop {
   domainUrl: string;
 }
 
-function processCouponItem(
+function processItem(
   merchantName: string,
-  domain: string | null,
-  couponItem: OfferNode,
+  merchantDomain: string | null,
+  item: OfferNode,
   sourceUrl: string
-): CouponItemResult {
-  const idInSite = couponItem.voucher.id.split(':')[3];
+): ItemResult {
+  const idInSite = item.voucher.id.split(':')[3];
 
-  const hasCode = couponItem.voucher.hasVoucherCode;
+  const hasCode = item.voucher.hasVoucherCode;
 
-  const code = couponItem.voucher.code;
+  const code = item.voucher.code;
 
-  const isExclusive = couponItem.voucher.exclusive;
+  const isExclusive = item.voucher.exclusive;
 
-  let limitProduct = couponItem.voucher.limitProduct.trim();
+  let limitProduct = item.voucher.limitProduct.trim();
   if (limitProduct === '') {
     limitProduct = 'keine';
   }
 
   let savingValue = '';
-  if (couponItem.voucher.savingType === 1) {
-    savingValue = `${couponItem.voucher.savingValue}%`;
+  if (item.voucher.savingType === 1) {
+    savingValue = `${item.voucher.savingValue}%`;
   } else {
-    savingValue = couponItem.voucher.savingValue;
+    savingValue = item.voucher.savingValue;
   }
 
   const description = `Gutscheinwert: ${limitProduct}\nGilt für:\n    ${savingValue}\n    alle Kunden`;
@@ -96,8 +96,8 @@ function processCouponItem(
   // Add required and optional values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
-  validator.addValue('domain', domain);
-  validator.addValue('title', couponItem.title);
+  validator.addValue('domain', merchantDomain);
+  validator.addValue('title', item.title);
   validator.addValue('description', description);
   validator.addValue('idInSite', idInSite);
   validator.addValue('isExpired', false);
@@ -106,13 +106,13 @@ function processCouponItem(
 
   code ? validator.addValue('code', code) : null;
 
-  const couponUrl = code
+  const itemUrl = code
     ? `https://www.sparwelt.de/hinge/vouchercodes/${idInSite}`
     : '';
 
-  const generatedHash = generateCouponId(merchantName, idInSite, sourceUrl);
+  const generatedHash = generateItemId(merchantName, idInSite, sourceUrl);
 
-  return { generatedHash, hasCode, couponUrl, validator };
+  return { generatedHash, hasCode, itemUrl, validator };
 }
 
 export const router = createCheerioRouter();
@@ -156,29 +156,29 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    let offers;
+    let items;
     let merchantName: string;
-    let domain: string | null;
+    let merchantDomain: string | null;
     let noNode = false;
 
     if (jsonData.data.offers && jsonData.data.offers.length > 0) {
-      offers = jsonData.data.offers as OfferItem[];
-      merchantName = offers[0].node.partnerShoppingShop.title;
-      domain = getMerchantDomainFromUrl(
-        offers[0].node.partnerShoppingShop.shoppingShop.domainUrl
+      items = jsonData.data.offers as OfferItem[];
+      merchantName = items[0].node.partnerShoppingShop.title;
+      merchantDomain = getMerchantDomainFromUrl(
+        items[0].node.partnerShoppingShop.shoppingShop.domainUrl
       );
     } else if (jsonData.data.vouchers && jsonData.data.vouchers.length > 0) {
       noNode = true;
-      offers = jsonData.data.vouchers as OfferNode[];
+      items = jsonData.data.vouchers as OfferNode[];
       merchantName = jsonData.data.vouchers[0].partnerShoppingShop.title;
-      domain = getMerchantDomainFromUrl(
+      merchantDomain = getMerchantDomainFromUrl(
         jsonData.data.vouchers[0].partnerShoppingShop.shoppingShop.domainUrl
       );
     } else {
-      log.warning(`No offers found: ${request.url}`);
+      log.warning(`No items found: ${request.url}`);
       return;
     }
-    log.info(`Found ${offers.length} offers`);
+    log.info(`Found ${items.length} items`);
 
     if (!merchantName) {
       log.info(`Merchant name not found: ${request.url}`);
@@ -189,7 +189,7 @@ router.addHandler(Label.listing, async (context) => {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            coupons: offers,
+            items,
           },
         },
         context
@@ -199,11 +199,11 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const couponsWithCode: CouponHashMap = {};
+    const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
-    let result: CouponItemResult | undefined;
+    let result: ItemResult | undefined;
 
-    for (const item of offers) {
+    for (const item of items) {
       const offerNode: OfferNode = noNode ? item : item.node;
 
       const title = offerNode?.title;
@@ -218,10 +218,15 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
-      result = processCouponItem(merchantName, domain, offerNode, request.url);
+      result = processItem(
+        merchantName,
+        merchantDomain,
+        offerNode,
+        request.url
+      );
 
       if (result.hasCode) {
-        couponsWithCode[result.generatedHash] = result;
+        itemsWithCode[result.generatedHash] = result;
         idsToCheck.push(result.generatedHash);
         continue;
       }
@@ -242,16 +247,16 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Call the API to check if the coupon exists
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
 
     if (nonExistingIds.length > 0) {
-      let currentResult: CouponItemResult;
+      let currentResult: ItemResult;
       for (const id of nonExistingIds) {
-        currentResult = couponsWithCode[id];
+        currentResult = itemsWithCode[id];
         // Add the coupon URL to the request queue
         await crawler?.requestQueue?.addRequest(
           {
-            url: currentResult.couponUrl,
+            url: currentResult.itemUrl,
             userData: {
               label: Label.getCode,
               validatorData: currentResult.validator.getData(),

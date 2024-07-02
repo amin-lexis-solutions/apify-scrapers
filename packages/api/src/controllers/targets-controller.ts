@@ -374,7 +374,6 @@ export class TargetsController {
       urls.map((url) => `site:${url} ${searchTemplate} "${brand.name}"`)
     );
 
-
     if (queries.length === 0) {
       return new StandardResponse(
         `No queries generated for locale ${locale} and ${urls.length} URLs / brands . Aborting.`,
