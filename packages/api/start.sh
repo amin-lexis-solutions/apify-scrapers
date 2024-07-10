@@ -27,6 +27,9 @@ if ! DATABASE_URL=$DATABASE_URL_NON_POOLED yarn prisma:migrate; then
     exit 1
 fi
 
+yarn data-migration:05_apifyActor_changeOwner
+yarn data-migration:06_apifyActor_cleanup
+
 # Seed database ensuring the operation is idempotent
 if ! DATABASE_URL=$DATABASE_URL_NON_POOLED yarn prisma:seed:migrate-domains; then
     echo "Failed to seed the database."

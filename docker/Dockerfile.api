@@ -17,9 +17,6 @@ WORKDIR /app/packages/api
 
 RUN yarn prisma:generate
 
-RUN yarn data-migration:05_apifyActor_changeOwner
-RUN yarn data-migration:06_apifyActor_cleanup
-
 RUN yarn build
 
 RUN echo "$TLS_CA_CERT_MONGO" >ca-mongo.crt
