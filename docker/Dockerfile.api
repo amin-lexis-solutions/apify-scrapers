@@ -15,11 +15,11 @@ COPY packages/shared ./packages/shared/
 
 WORKDIR /app/packages/api
 
+RUN yarn prisma:generate
+
 RUN yarn data-migration:03_apifyActorId_as_key
 RUN yarn data-migration:05_apifyActor_changeOwner
 RUN yarn data-migration:06_apifyActor_cleanup
-
-RUN yarn prisma:generate
 
 RUN yarn build
 
