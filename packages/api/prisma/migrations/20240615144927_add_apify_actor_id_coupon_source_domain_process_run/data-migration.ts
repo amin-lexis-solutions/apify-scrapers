@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { PrismaClient } from '@prisma/client';
 import ProgressBar from 'progress';
 
@@ -19,10 +20,16 @@ async function main() {
     width: 40,
   });
 
+  if (!sources.length) {
+    console.log('No sources found');
+    return;
+  }
+
   for (const source of sources) {
     try {
       await prisma.sourceDomain.updateMany({
         where: {
+          // @ts-ignore
           sourceId: source.id,
         },
         data: {
@@ -32,6 +39,7 @@ async function main() {
 
       await prisma.coupon.updateMany({
         where: {
+          // @ts-ignore
           sourceId: source.id,
         },
         data: {
@@ -41,6 +49,7 @@ async function main() {
 
       await prisma.processedRun.updateMany({
         where: {
+          // @ts-ignore
           sourceId: source.id,
         },
         data: {
@@ -48,7 +57,7 @@ async function main() {
         },
       });
     } catch (e) {
-      console.error(`❌ Error processing source ${source.name}: ${e}`);
+      console.log(`❌ Error processing source ${source.name}: ${e}`);
       continue;
     }
     bar.tick();
