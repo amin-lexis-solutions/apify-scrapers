@@ -1,0 +1,37 @@
+name: Deploy Apify Actors
+description: Deploy Apify actors to Apify platform
+
+inputs:
+  base-url:
+    description: 'Base URL for the API'
+    required: false
+    default: ${{ secrets.BASE_URL }}
+  api-token:
+    description: 'API token for Apify'
+    required: false
+    default: ${{ secrets.APIFY_TOKEN }}
+  max_concurrent_runs:
+    description: 'Maximum number of actors to runs concurrently'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Apify CLI
+      shell: bash
+      run: npm install apify-cli
+
+    - name: Authenticate with Apify using API token
+      shell: bash
+      env:
+        APIFY_TOKEN: ${{ inputs.api-token }}
+      run: npx apify login --token $APIFY_TOKEN
+
+    - name: Deploy Modified Packages
+      shell: bash
+      env:
+        BASE_URL: ${{ inputs.base-url }}
+        APIFY_TOKEN: ${{ inputs.api-token }}
+        MAX_CONCURRENT_RUNS: ${{ inputs.max_concurrent_runs }}
+      run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
+       

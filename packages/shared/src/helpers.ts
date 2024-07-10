@@ -9,7 +9,7 @@ import { Dataset, log } from 'apify';
 export type ItemResult = {
   generatedHash: string;
   hasCode: boolean;
-  itemUrl: string;
+  itemUrl?: string;
   validator: DataValidator;
 };
 

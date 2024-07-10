@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: 'osZWVXZmuSbFaUjEB',
+    apifyActorId: 'nUe7y2cbKzfGF1tof',
     domains: [
       {
         domain: 'cp.sg',

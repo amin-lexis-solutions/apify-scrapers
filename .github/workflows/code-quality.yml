@@ -1,0 +1,52 @@
+name: code-quality
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+jobs:
+  eslint:
+    name: runner / eslint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code.
+        uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: yarn install --inline-builds
+        env:
+          HUSKY: 0 
+      - name: eslint
+        uses: reviewdog/action-eslint@v1
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          eslint_flags: --ignore-path .gitignore . --ext .ts,.json
+  check-config:
+    name: runner / check-config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code.
+        uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: check-config
+        uses: ./.github/actions/check-config
+  unit-tests:
+    name: runner / unit-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code.
+        uses: actions/checkout@v4
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: unit-tests
+        uses: ./.github/actions/actor-tests
+          

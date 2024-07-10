@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: '7ymjYOi4Y7gcccfPM',
+    apifyActorId: '27mFdG0jeWvhoza2f',
     domains: [
       {
         domain: 'dontpayfull.com',

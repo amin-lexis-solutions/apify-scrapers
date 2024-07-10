@@ -1,30 +1,13 @@
+/* eslint-disable no-console */
 import dotenv from 'dotenv';
 import path from 'path';
+import { availableActorRuns } from '../utils/utils';
+import fetch from 'node-fetch';
 
 dotenv.config({ path: path.resolve(__dirname, '.env.cron') });
 
-const MAX_CONCURRENT_RUNS = Number(process.env.MAX_CONCURRENT_RUNS);
-const FINISHED_STATUSES = new Set([
-  'SUCCEEDED',
-  'FAILED',
-  'ABORTED',
-  'TIMED_OUT',
-]);
-const APIFY_GET_ALL_RUNS_URL = `https://api.apify.com/v2/actor-runs?token=${process.env.API_KEY_APIFY}&desc=true`;
-
-const runActors = async () => {
-  const response = await fetch(APIFY_GET_ALL_RUNS_URL, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-  });
-
-  const apifyActorRuns: any = await response.json();
-
-  const runningActorCount = apifyActorRuns.data.items.filter(
-    (item: any) => !FINISHED_STATUSES.has(item.status)
-  ).length;
-
-  const maxConcurrency = MAX_CONCURRENT_RUNS - runningActorCount;
+export const runActors = async () => {
+  const maxConcurrency = await availableActorRuns();
 
   if (maxConcurrency < 1) {
     console.log('Max concurrency reached, skipping actors run');
@@ -41,7 +24,7 @@ const runActors = async () => {
   })
     .then((data) => {
       if (data.status != 200) {
-        throw new Error('Failed to run actors');
+        throw new Error(`Failed to run actors with status ${data.status}`);
       }
       console.log(
         `🚀  Actors run successfully with concurrency ${maxConcurrency} `
@@ -50,4 +33,12 @@ const runActors = async () => {
     .catch((e) => console.error(e));
 };
 
-runActors();
+const main = async () => {
+  try {
+    await runActors();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+main();

@@ -52,16 +52,9 @@ export class WebhooksController {
   ): Promise<StandardResponse> {
     const { defaultDatasetId, status, usageTotalUsd } = webhookData.resource;
     const { actorRunId, actorId: apifyActorId } = webhookData.eventData;
-    const { sourceId } = webhookData;
-
-    // TODO: Remove this field once the sourceId is removed from the coupon table
-    if (!sourceId) {
-      return new StandardResponse('sourceId is a required field', true);
-    }
 
     const run = await prisma.processedRun.create({
       data: {
-        sourceId, // TODO: Remove this field once the sourceId is removed from the coupon table
         apifyActorId,
         actorRunId,
         status,
@@ -79,7 +72,6 @@ export class WebhooksController {
       // Process coupons
       const { couponStats, errors } = await this.processCoupons(
         coupons,
-        sourceId, // TODO: Remove this field once the sourceId is removed from the coupon table
         apifyActorId
       );
 
@@ -145,11 +137,7 @@ export class WebhooksController {
   }
 
   // Process and store the coupons
-  private async processCoupons(
-    scrapedData: any,
-    sourceId: string, // TODO: Remove this field once the sourceId is removed from the coupon table
-    apifyActorId: string
-  ) {
+  private async processCoupons(scrapedData: any, apifyActorId: string) {
     const now = new Date();
     const couponStats = {
       createdCount: 0,
@@ -182,7 +170,6 @@ export class WebhooksController {
           update: updateData,
           create: this.prepareCreateData(
             item,
-            sourceId, // TODO: Remove this field once the sourceId is removed from the coupon table
             apifyActorId,
             id,
             now,
@@ -258,7 +245,9 @@ export class WebhooksController {
             connect: { locale },
           };
         }
-        updateData.apifyActorId = apifyActorId;
+        updateData.source_relation = {
+          connect: { apifyActorId },
+        };
         updateData.archivedAt = archivedAt;
         updateData.archivedReason = archivedReason;
         (updateData as any)[key] =
@@ -277,7 +266,6 @@ export class WebhooksController {
   // Prepare the data for creating a new coupon
   private prepareCreateData(
     item: any,
-    sourceId: string, // TODO: Remove this field once the sourceId is removed from the coupon table
     apifyActorId: string,
     id: string,
     now: Date,
@@ -309,7 +297,6 @@ export class WebhooksController {
 
     return {
       id,
-      sourceId, // TODO: Remove this field once the sourceId is removed from the coupon table
       apifyActorId,
       locale,
       idInSite: item.idInSite,
@@ -522,6 +509,13 @@ export class WebhooksController {
 
   // Define an asynchronous function to check and handle non-existing coupons in a page
   private async checkNonExistingCouponsInPage(scrapedData: any) {
+    // Ensure scrapedData is not empty
+    if (scrapedData.length === 0) {
+      // eslint-disable-next-line no-console
+      console.log('No scraped data provided');
+      return; // Exit the function if scrapedData is empty
+    }
+
     // Extract IDs of incoming coupons from the scraped data
     const incomingCouponIds = scrapedData.map((item: any) =>
       generateItemId(item?.merchantName, item?.idInSite, item?.sourceUrl)

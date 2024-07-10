@@ -1,0 +1,39 @@
+{
+  "name": "savings-com",
+  "version": "0.0.1",
+  "type": "commonjs",
+  "description": "This is an example of a Crawlee project.",
+  "dependencies": {
+    "@sentry/node": "^6.13.3",
+    "apify": "3.1.14",
+    "axios": "^1.6.2",
+    "chrono-node": "^2.7.3",
+    "crawlee": "3.7.2",
+    "html-entities": "^2.4.0",
+    "moment": "^2.29.4",
+    "node-html-parser": "^6.1.11",
+    "jsonpath": "^1.1.1"
+  },
+  "devDependencies": {
+    "@apify/tsconfig": "^0.1.0",
+    "@types/jest": "^29.5.12",
+    "@types/jsonpath": "^0.2.4",
+    "@types/node": "18.11.18",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.5",
+    "ts-node": "10.9.2",
+    "tsc-alias": "1.8.8",
+    "tsconfig-paths": "4.2.0",
+    "typescript": "5.3.3"
+  },
+  "scripts": {
+    "start": "yarn start:dev",
+    "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
+    "build": "tsc && tsc-alias",
+    "test": "jest"
+  },
+  "author": "It's not you it's me",
+  "license": "ISC",
+  "main": "index.js",
+  "keywords": []
+}

@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: 'jW21dASnQlaoFhC84',
+    apifyActorId: 'ah4kbvNrRpcWPF8TU',
     domains: [
       {
         domain: 'drivereasy.com',

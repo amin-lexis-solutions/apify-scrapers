@@ -75,7 +75,7 @@ export class CouponsController {
     }
 
     if (sourceName) {
-      where.source = { name: sourceName };
+      where.source_relation = { name: sourceName };
     }
 
     if (archived) {
@@ -110,7 +110,7 @@ export class CouponsController {
         take: pageSize,
         where: where,
         include: {
-          source: {
+          source_relation: {
             select: { name: true, isActive: true, apifyActorId: true },
           },
         },

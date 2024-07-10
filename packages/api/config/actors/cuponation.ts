@@ -24,6 +24,10 @@ export default [
         domain: 'cuponation.com.sg',
         locales: [Locale.en_SG],
       },
+      {
+        domain: 'cuponation.fi',
+        locales: [Locale.fi_FI],
+      },
     ],
     name: 'cuponation',
   },

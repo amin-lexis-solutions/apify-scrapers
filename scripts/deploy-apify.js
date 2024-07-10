@@ -1,94 +1,132 @@
 #!/usr/bin/env node
 
-/* eslint-disable no-console */
-const fs = require('fs');
-const { execSync } = require('child_process');
+const fs = require('fs').promises;
+const { exec } = require('child_process');
 const path = require('path');
+const util = require('util');
 
-// Parse actorId from first argument
-const actorId = process.argv[2];
+const execAsync = util.promisify(exec);
 
-// Parse actor type from second argument = cheerio | puppeteer
-const actorType = process.argv[3];
+const [actorId, actorType, dryRunFlag] = process.argv.slice(2);
+const actorFolder = path.resolve(__dirname, `../packages/${actorId}`);
+const sharedFolder = path.resolve(__dirname, `../packages/shared`);
+const tempDir = path.resolve(__dirname, `../${actorId}-scraper`);
 
-// Check if dry run
-const dryRun = process.argv[4] === '--dry-run';
+const validateInputs = () => {
+  if (!actorId || !actorType) {
+    console.error(
+      'Usage: deploy-apify.js <actorId> <actorType=cheerio|puppeteer>'
+    );
+    process.exit(1);
+  }
+  if (!['cheerio', 'puppeteer'].includes(actorType)) {
+    console.error('Invalid actor type. Must be "cheerio" or "puppeteer"');
+    process.exit(1);
+  }
+};
 
-if (!actorId) {
-  console.error('Usage: deploy-apify.js <actorId>');
-  process.exit(1);
-}
+const fileExists = async (filePath) => {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch {
+    return false;
+  }
+};
 
-if (!actorType) {
-  console.error(
-    'Usage: deploy-apify.js <actorId> <actorType=cheerio|puppeteer>'
+const setupTempDirectory = async () => {
+  if (!(await fileExists(tempDir))) {
+    await fs.mkdir(tempDir, { recursive: true });
+  }
+  const tempPackageDir = path.resolve(tempDir, 'packages');
+  await fs.mkdir(tempPackageDir, { recursive: true });
+  await Promise.all([
+    fs.cp(sharedFolder, path.join(tempPackageDir, 'shared'), {
+      recursive: true,
+    }),
+    fs.cp(actorFolder, path.join(tempPackageDir, actorId), { recursive: true }),
+    fs.copyFile(
+      path.resolve(__dirname, '../package.prod.json'),
+      path.join(tempDir, 'package.prod.json')
+    ),
+    fs.copyFile(
+      path.resolve(__dirname, '../package.json'),
+      path.join(tempDir, 'package.json')
+    ),
+    fs.copyFile(
+      path.resolve(__dirname, '../yarn.lock'),
+      path.join(tempDir, 'yarn.lock')
+    ),
+    fs.cp(path.resolve(__dirname, '../.actor'), path.join(tempDir, '.actor'), {
+      recursive: true,
+    }),
+  ]);
+};
+
+const prepareActorFiles = async () => {
+  const actorDir = path.join(tempDir, '.actor');
+  if (!(await fileExists(actorDir))) {
+    await fs.mkdir(actorDir, { recursive: true });
+  }
+  const dockerfileTemplate = await fs.readFile(
+    path.resolve(__dirname, `../docker/Dockerfile.${actorType}.template`),
+    'utf8'
   );
-  process.exit(1);
-}
+  const dockerfile = dockerfileTemplate.replace(/{{actorId}}/g, actorId);
+  await Promise.all([
+    fs.writeFile(
+      path.join(actorDir, 'actor.json'),
+      JSON.stringify(getActorSpec(actorId), null, 2)
+    ),
+    fs.writeFile(
+      path.join(actorDir, 'input.json'),
+      JSON.stringify(getActorInputSpec(actorId), null, 2)
+    ),
+    fs.writeFile(path.join(actorDir, 'Dockerfile'), dockerfile),
+  ]);
+};
 
-if (actorType !== 'cheerio' && actorType !== 'puppeteer') {
-  console.error('Invalid actor type. Must be "cheerio" or "puppeteer"');
-  process.exit(1);
-}
+const deployActor = async () => {
+  if (dryRunFlag === '--dry-run') {
+    console.info('Dry run complete. Exiting...');
+    return;
+  }
+  try {
+    const { stdout, stderr } = await execAsync('npx apify push', {
+      cwd: tempDir,
+    });
+    console.log(stdout);
+    if (stderr) console.error(stderr);
+  } catch (error) {
+    console.error('Error during apify push:', error);
+  } finally {
+    await cleanup();
+  }
+};
 
-console.info(`Writing files for actor ${actorId}...`);
+const cleanup = async () => {
+  console.info('Cleaning up...');
+  try {
+    await fs.rm(tempDir, { recursive: true, force: true });
+    console.info(`Successfully deleted ${tempDir}`);
+  } catch (error) {
+    console.error(`Error deleting ${tempDir}:`, error);
+  }
+};
 
-const dockerfileTemplate = fs.readFileSync(
-  path.resolve(__dirname, `../docker/Dockerfile.${actorType}.template`),
-  'utf8'
-);
-
-const dockerfile = dockerfileTemplate.replaceAll('{{actorId}}', actorId);
-
-fs.writeFileSync(
-  '.actor/actor.json',
-  JSON.stringify(getActorSpec(actorId), null, 2)
-);
-
-fs.writeFileSync(
-  '.actor/input.json',
-  JSON.stringify(getActorInputSpec(actorId), null, 2)
-);
-
-fs.writeFileSync('.actor/Dockerfile', dockerfile);
-
-const gitIgnoreContent = fs.readFileSync(
-  path.resolve(__dirname, '../.gitignore'),
-  'utf8'
-);
-
-const additionalGitIgnoreContent = [
-  'packages/*',
-  `!packages/shared/`,
-  `!packages/${actorId}/`,
-  '',
-].join('\n');
-
-if (!gitIgnoreContent.includes(additionalGitIgnoreContent)) {
-  fs.writeFileSync(
-    '.gitignore',
-    [gitIgnoreContent, additionalGitIgnoreContent].join('\n')
-  );
-}
-
-console.info('Deploying actor to Apify...');
-
-if (dryRun) {
-  console.info('Dry run complete. Exiting...');
-  process.exit(0);
-}
-
-// run apify push, delete the files, and exit, handle errors and command+c
+const main = async () => {
+  validateInputs();
+  await setupTempDirectory();
+  await prepareActorFiles();
+  await deployActor();
+};
 
 process.on('SIGINT', cleanup);
-try {
-  execSync('apify push', {
-    stdio: 'inherit',
-    cwd: path.resolve(__dirname, '..'),
-  });
-} finally {
-  cleanup();
-}
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
 
 function getActorSpec(actorId) {
   return {
@@ -106,7 +144,7 @@ function getActorSpec(actorId) {
   };
 }
 
-function getActorInputSpec() {
+function getActorInputSpec(actorId) {
   return {
     title: `${actorId} scraper`,
     description: '',
@@ -118,7 +156,7 @@ function getActorInputSpec() {
         title: 'Start URLs',
         type: 'array',
         description:
-          "A static list of URLs to scrape. <br><br>For details, see the <a href='https://apify.com/apify/cheerio-scraper#start-urls' target='_blank' rel='noopener'>Start URLs</a> section in the README.",
+          'A static list of URLs to scrape. For details, see the Start URLs section in the README.',
         prefill: [
           {
             url: 'https://apify.com',
@@ -140,12 +178,4 @@ function getActorInputSpec() {
     },
     required: ['startUrls'],
   };
-}
-
-function cleanup() {
-  console.info('Cleaning up...');
-  fs.unlinkSync('.actor/actor.json');
-  fs.unlinkSync('.actor/input.json');
-  fs.unlinkSync('.actor/Dockerfile');
-  fs.writeFileSync('.gitignore', gitIgnoreContent);
 }

@@ -1,0 +1,10 @@
+name: Unit Tests
+description: Run unit tests for all packages
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Unit Tests
+      shell: bash
+      run: chmod +x ./scripts/unit-tests.sh && ./scripts/unit-tests.sh
+       

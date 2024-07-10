@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: 'VEed5ySZN1WPPrzDs',
+    apifyActorId: 'dBqzMdqiHdMwbKcOX',
     domains: [
       {
         domain: 'couponzguru.sg',

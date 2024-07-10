@@ -31,4 +31,12 @@ module.exports = {
     '@typescript-eslint/no-var-requires': 'warn',
     'max-len': ['warn', { code: 120 }],
   },
+  overrides: [
+    {
+      files: ['*.json'], // Targeting all JSON files
+      rules: {
+        'max-len': 'off', // Turning off the max-len rule for JSON files
+      },
+    },
+  ],
 };

@@ -5,7 +5,7 @@ import { apify } from '../lib/apify';
 import { getMerchantsForLocale } from '../lib/oberst-api';
 import { CostLimit } from '../middlewares/api-middleware';
 import { prisma } from '../lib/prisma';
-import { getWebhookUrl } from '../utils/utils';
+import { getWebhookUrl, availableActorRuns } from '../utils/utils';
 import {
   RunNLocalesBody,
   FindTargetPagesBody,
@@ -197,20 +197,21 @@ export class TargetsController {
       include: {
         domains: true,
       },
-      // take: maxConcurrency,
+      take: maxConcurrency,
     });
 
     console.log(
-      `Found ${sources.length} potential sources (domains) to be scheduled for scraping`
+      `Found ${sources.length} sources that have not been scraped today or have never been scraped.`
     );
 
     let actorsStarted = 0;
 
     const counts: any = [];
     for (const source of sources) {
-      if (maxConcurrency <= actorsStarted) {
+      const availableRuns = await availableActorRuns();
+      if (maxConcurrency <= actorsStarted || availableRuns <= actorsStarted) {
         console.log(
-          `Already scheduled the maximum ${maxConcurrency} number of actors. Skipping source ${source.id}.`
+          `Reached the limit of ${actorsStarted} actors started. Skipping the rest of the sources.`
         );
         break;
       }

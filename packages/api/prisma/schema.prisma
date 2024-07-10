@@ -24,8 +24,7 @@ enum Reliability {
 
 model Coupon {
   id                 String         @id
-  sourceId           String
-  apifyActorId       String?
+  apifyActorId       String
   idInSite           String
   domain             String?
   merchantName       String
@@ -47,11 +46,11 @@ model Coupon {
   archivedReason     ArchiveReason?
 
 
-  source Source       @relation(fields: [sourceId], references: [id])
+  source_relation Source       @relation(fields: [apifyActorId], references: [apifyActorId])
 
   locale_relation TargetLocale @relation(fields: [locale], references: [locale], onDelete: Cascade)
 
-  @@index([sourceId])
+  @@index([apifyActorId])
   @@index([locale])
   @@index([archivedAt])
   @@index([domain])
@@ -74,15 +73,13 @@ model SourceDomain {
   id           String      @id @default(uuid())
   domain       String
   reliability  Reliability @default(reliable)
-  source       Source      @relation(fields: [sourceId], references: [id])
-  sourceId     String
-  apifyActorId String?
+  source_relation       Source      @relation(fields: [apifyActorId], references: [apifyActorId])
+  apifyActorId String
 }
 
 // Maps to a single Apify actor run
 model ProcessedRun {
   id                  String    @id @default(uuid())
-  sourceId            String?
   apifyActorId        String?   
   localeId            String?
   actorRunId          String    @unique
@@ -98,7 +95,7 @@ model ProcessedRun {
   processingErrors    Json?
   costInUsdMicroCents Int       @default(0)
 
-  source       Source?       @relation(fields: [sourceId], references: [id])
+  source_relation       Source?       @relation(fields: [apifyActorId], references: [apifyActorId])
   targetLocale TargetLocale? @relation(fields: [localeId], references: [id])
 }
 

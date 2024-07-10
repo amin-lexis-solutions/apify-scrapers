@@ -1,4 +1,6 @@
+/* eslint-disable no-console */
 import crypto from 'crypto';
+import fetch from 'node-fetch';
 import * as Sentry from '@sentry/node';
 import { SOURCES_DATA } from '../../config/actors';
 import { localesToImport } from '../../config/primary-locales';
@@ -233,4 +235,64 @@ export function isValidCouponCode(code: string): boolean {
 
   // If none of the invalid criteria match, the code is valid
   return true;
+}
+
+export async function availableActorRuns(): Promise<number> {
+  try {
+    const RAM_GB_PER_ACTOR = 4;
+    const MAX_CONCURRENT_RUNS = Number(process.env.MAX_CONCURRENT_RUNS);
+    const APIFY_GET_ALL_RUNS_URL = `https://api.apify.com/v2/users/me/limits?token=${process.env.API_KEY_APIFY}`;
+
+    const response = await fetch(APIFY_GET_ALL_RUNS_URL, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    if (!response.ok) {
+      console.error('🚫 Failed to fetch actor limits');
+      return 0;
+    }
+
+    const apifyAccountLimit: any = await response.json();
+    const {
+      activeActorJobCount,
+      actorMemoryGbytes,
+    } = apifyAccountLimit.data.current;
+    const {
+      maxConcurrentActorJobs,
+      maxActorMemoryGbytes,
+    } = apifyAccountLimit.data.limits;
+
+    if (
+      MAX_CONCURRENT_RUNS <= 0 ||
+      MAX_CONCURRENT_RUNS > maxConcurrentActorJobs
+    ) {
+      console.log('🚫 Invalid MAX_CONCURRENT_RUNS value');
+      return 0;
+    }
+
+    if (actorMemoryGbytes >= maxActorMemoryGbytes) {
+      console.log('🚫 Actor memory limit reached');
+      return 0;
+    }
+
+    if (
+      activeActorJobCount >= maxConcurrentActorJobs ||
+      activeActorJobCount >= MAX_CONCURRENT_RUNS
+    ) {
+      console.log('🚫 Actor concurrency limit reached');
+      return 0;
+    }
+
+    const availableMemory = maxActorMemoryGbytes - actorMemoryGbytes;
+    const availableRuns = Math.min(
+      MAX_CONCURRENT_RUNS - activeActorJobCount,
+      Math.floor(availableMemory / RAM_GB_PER_ACTOR)
+    );
+
+    return availableRuns;
+  } catch (error) {
+    console.error('🚫 Error fetching actor runs', error);
+    throw error;
+  }
 }

@@ -1,0 +1,23 @@
+name: Ensure Actors Are Shared
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/**'
+      - '!packages/api/**'
+
+jobs:
+  check-actors:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Run script that verifies all actors are shared
+        env:
+          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+        run: chmod +x ./scripts/shared-apify-actors.sh && ./scripts/shared-apify-actors.sh

@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: '1RdCR0WPHU6GKRv9B',
+    apifyActorId: 'kk5pdikOLGixKevAz',
     domains: [
       {
         domain: 'shopper.com',

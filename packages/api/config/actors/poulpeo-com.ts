@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: 'osZWVXZmuSbFaUjEB',
+    apifyActorId: '32NnFvBo5wte3nh9f',
     domains: [
       {
         domain: 'poulpeo.com',

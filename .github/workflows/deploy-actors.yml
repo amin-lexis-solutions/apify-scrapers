@@ -1,4 +1,4 @@
-name: Rebuild Apify Actor
+name: Deploy Apify Actors
 
 on:
   push:
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  rebuild:
+  deploy-actors:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     steps:
@@ -25,15 +25,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Apify CLI
-        run: npm install -g apify-cli
+      - name: Deploy Modified Packages
+        uses: ./.github/actions/deploy-actors
+        with:
+          max_concurrent_runs: 5
 
-      - name: Authenticate with Apify using API token
-        env:
-          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
-        run: apify login --token $APIFY_TOKEN
-
-      - name: Deploy Apify Actor
-        env:
-          BASE_URL: 'https://codes-api-d9jbl.ondigitalocean.app'
-        run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh

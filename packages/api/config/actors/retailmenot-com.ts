@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: 'eUGRqyWajLssu7Kcp',
+    apifyActorId: 'Hknvq8kXV1Km9HEnK',
     domains: [
       {
         domain: 'retailmenot.com',

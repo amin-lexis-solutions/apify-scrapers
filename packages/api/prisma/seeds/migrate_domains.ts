@@ -7,6 +7,17 @@ async function seedSources() {
     (source) => source.apifyActorId !== null
   ) as any;
 
+  // get array of ApifyActorIds from activeSources
+  const apifyActorIds = activeSources.map(
+    (source: any) => source.apifyActorId
+  ) as string[];
+
+  // set all sources to inactive where not in apifyActorIds
+  await prisma.source.updateMany({
+    where: { NOT: { apifyActorId: { in: apifyActorIds } } },
+    data: { isActive: false },
+  });
+
   for (const { apifyActorId, domains, name } of activeSources) {
     const existingSource = await prisma.source.findUnique({
       where: { apifyActorId: apifyActorId },

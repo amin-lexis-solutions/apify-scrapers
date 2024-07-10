@@ -23,6 +23,7 @@ module.exports = function (plop) {
     ],
     actions: function (data) {
       const basePath = `./packages/${data.name}/`;
+      const actorConfigPath = `./packages/api/config/actors`;
 
       // Check if the directory already exists
       const fs = require('fs');
@@ -98,6 +99,19 @@ module.exports = function (plop) {
 
             return JSON.stringify(content, null, 2);
           },
+        },
+        {
+          type: 'add',
+          path: `${actorConfigPath}/${data.name}.ts`,
+          templateFile: 'templates/actor-config.ts.hbs',
+          data: {
+            actorName: data.name,
+          },
+        },
+        {
+          type: 'add',
+          path: `${basePath}/tests/main.test.ts`,
+          templateFile: 'templates/test.ts.hbs',
         },
       ];
 

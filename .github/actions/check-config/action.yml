@@ -1,0 +1,9 @@
+name: Check Packages Config
+description: Check packages configuration
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check Packages Config
+      shell: bash
+      run: chmod +x ./scripts/check-packages.js && ./scripts/check-packages.js
