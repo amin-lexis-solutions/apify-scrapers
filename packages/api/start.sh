@@ -21,10 +21,6 @@ printenv >> /app/packages/api/src/.env.cron
 # Start the cron service
 service cron start
 
-yarn data-migration:03_apifyActorId_as_key
-yarn data-migration:05_apifyActor_changeOwner
-yarn data-migration:06_apifyActor_cleanup
-
 # Perform database migrations and handle potential failures
 if ! DATABASE_URL=$DATABASE_URL_NON_POOLED yarn prisma:migrate; then
     echo "Failed to migrate the database."
