@@ -4,7 +4,7 @@
 # echo "*/5 * * * * root cd /app/packages/api && yarn schedule:actors" >> /etc/crontab
 echo "*/10 0-8 * * 1,4 root cd /app/packages/api && yarn schedule:find-serp" >> /etc/crontab
 
-# run once a week 
+# run once a week
 echo "0 0 * * 1 root cd /app/packages/api && yarn schedule:find-serp-for-custom-malaysian-domains" >> /etc/crontab
 echo "0 0 * * 1 root cd /app/packages/api && yarn schedule:find-serp-for-custom-ch-domains" >> /etc/crontab
 echo "0 0 * * 1 root cd /app/packages/api && yarn schedule:find-serp-for-cuponation-domains" >> /etc/crontab
@@ -20,6 +20,10 @@ printenv >> /app/packages/api/src/.env.cron
 
 # Start the cron service
 service cron start
+
+yarn data-migration:03_apifyActorId_as_key
+yarn data-migration:05_apifyActor_changeOwner
+yarn data-migration:06_apifyActor_cleanup
 
 # Perform database migrations and handle potential failures
 if ! DATABASE_URL=$DATABASE_URL_NON_POOLED yarn prisma:migrate; then
