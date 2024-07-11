@@ -8,21 +8,26 @@ async function main() {
     languageCode,
     searchTemplate,
   } of localesToImport) {
-    await prisma.targetLocale.upsert({
-      where: { locale: locale },
-      create: {
-        locale,
-        countryCode,
-        languageCode,
-        searchTemplate,
-        isActive: false,
-      },
-      update: {
-        countryCode,
-        languageCode,
-        searchTemplate,
-      },
-    });
+    try {
+      await prisma.targetLocale.upsert({
+        where: { locale: locale },
+        update: {
+          countryCode,
+          languageCode,
+          searchTemplate,
+        },
+        create: {
+          locale,
+          countryCode,
+          languageCode,
+          searchTemplate,
+          isActive: false,
+        },
+      });
+      console.log(`🌱 Seeded target locale ${locale}`);
+    } catch (e) {
+      console.error(e);
+    }
   }
 }
 

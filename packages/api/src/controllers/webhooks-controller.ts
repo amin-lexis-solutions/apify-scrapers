@@ -66,6 +66,18 @@ export class WebhooksController {
       const scrapedData = await this.fetchScrapedData(defaultDatasetId, run.id);
       if (!scrapedData) return;
 
+      console.log(
+        `Processing ${scrapedData.length} coupons Actor ${actorRunId}`
+      );
+
+      await prisma.processedRun.update({
+        where: { id: run.id },
+        data: {
+          resultCount: scrapedData.length,
+          costInUsdMicroCents: Number(usageTotalUsd) * 1000000,
+        },
+      });
+
       // Handle non-index pages
       const coupons = await this.handleNonIndexPages(scrapedData, actorRunId);
 
@@ -101,7 +113,6 @@ export class WebhooksController {
           errorCount: errors.length,
           processingErrors: errors,
           processedAt: new Date(),
-          costInUsdMicroCents: Number(usageTotalUsd) * 1000000,
         },
       });
 
@@ -164,18 +175,20 @@ export class WebhooksController {
         apifyActorId
       );
 
+      const createData = this.prepareCreateData(
+        item,
+        apifyActorId,
+        id,
+        now,
+        archivedAt,
+        archivedReason
+      );
+
       try {
         await prisma.coupon.upsert({
           where: { id },
           update: updateData,
-          create: this.prepareCreateData(
-            item,
-            apifyActorId,
-            id,
-            now,
-            archivedAt,
-            archivedReason
-          ),
+          create: createData,
         });
 
         // Count the number of created, updated, archived and unarchived records for the stats
@@ -184,6 +197,8 @@ export class WebhooksController {
         errors.push({
           index: scrapedData.indexOf(item),
           error: error,
+          updateData: updateData,
+          createData: createData,
         });
       }
     }
