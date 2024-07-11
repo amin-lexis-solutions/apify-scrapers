@@ -314,6 +314,8 @@ export class WebhooksController {
       : getLocaleFromUrl(item.sourceUrl);
 
     if (!locale) {
+      console.log('Locale not found for coupon', item);
+      console.log(getLocaleFromUrl(item.sourceUrl));
       Sentry.captureException(
         `Locale not found for coupon ${id}. Source URL: ${sourceUrl}`,
         { extra: { item } }
