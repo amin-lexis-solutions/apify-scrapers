@@ -165,6 +165,8 @@ export class WebhooksController {
     const errors: Record<string, any>[] = [];
     const targetPages = new Set<string>();
 
+    console.log('Scraped Data length is ' + scrapedData.length);
+
     for (const item of scrapedData) {
       const id = generateItemId(
         item?.merchantName,
