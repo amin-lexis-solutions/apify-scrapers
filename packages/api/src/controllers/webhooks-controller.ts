@@ -78,20 +78,26 @@ export class WebhooksController {
         },
       });
 
+      console.log(1111);
+
       // Handle non-index pages
       const coupons = await this.handleNonIndexPages(scrapedData, actorRunId);
+      console.log(2222);
 
       // Process coupons
       const { couponStats, errors } = await this.processCoupons(
         coupons,
         apifyActorId
       );
+      console.log(3333);
 
       // Update coupon stats
       await this.updateCouponStats(scrapedData, apifyActorId);
+      console.log(44444);
 
       // Check and handle non-existing coupons in page
       await this.checkNonExistingCouponsInPage(scrapedData);
+      console.log(55555);
 
       if (errors.length > 0) {
         Sentry.captureException(
@@ -185,11 +191,13 @@ export class WebhooksController {
       );
 
       try {
-        await prisma.coupon.upsert({
+        const couponsData = await prisma.coupon.upsert({
           where: { id },
           update: updateData,
           create: createData,
         });
+
+        console.log(couponsData);
 
         // Count the number of created, updated, archived and unarchived records for the stats
         this.updateCouponStatsCount(couponStats, existingRecord, updateData);
