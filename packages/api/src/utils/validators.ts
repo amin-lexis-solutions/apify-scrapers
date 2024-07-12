@@ -105,6 +105,11 @@ export class CouponMatchRequestBody {
   ids: string[];
 }
 
+export class CouponIdsRequestBody {
+  @IsArray()
+  ids: string[];
+}
+
 export class FakeCouponsRequestBody {
   @IsArray()
   ids: string[];

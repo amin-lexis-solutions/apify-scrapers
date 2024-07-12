@@ -92,22 +92,15 @@ export function getGoogleActorPriceInUsdMicroCents(
 // Function to get locale from url
 export function getLocaleFromUrl(url: string): string | null {
   // find if url is present in any domain of SOURCES_DATA
-  console.log('url ' + url);
-  console.log('source length ' + SOURCES_DATA.length);
-
   const source = SOURCES_DATA.find((source: any) =>
     source.domains.some((d: any) => url.includes(`${d.domain}/`))
   );
-  console.log('source ' + source);
 
   if (source) {
     const domain = source.domains.find((d: any) =>
       url.includes(`${d.domain}/`)
     );
-    console.log('domain ' + domain);
     if (domain) {
-      console.log('inside if (domain) ');
-
       if (domain.routes && Object.keys(domain.routes).length > 0) {
         const route = Object.keys(domain.routes).find((key) =>
           url.includes(`${domain.domain}${key}`)

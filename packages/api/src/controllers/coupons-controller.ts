@@ -21,6 +21,7 @@ import {
   AnomalyRequestBody,
   ReliabilityRequestBody,
   FakeCouponsRequestBody,
+  CouponIdsRequestBody,
 } from '../utils/validators';
 
 @JsonController('/items')
@@ -129,6 +130,38 @@ export class CouponsController {
         currentPage: page,
         lastPage,
         results: data,
+      }
+    );
+  }
+
+  // Get a list of items by ID
+  @Post('/ids')
+  @OpenAPI({
+    summary: 'Get items by ID',
+    description: 'Get a list of items by ID',
+  })
+  @ResponseSchema(StandardResponse)
+  @Authorized()
+  @OpenAPI({ security: [{ bearerAuth: [] }] })
+  async getItemsByIds(@Body() params: CouponIdsRequestBody) {
+    const { ids } = params;
+
+    if (!ids || ids.length === 0) {
+      throw new BadRequestError(
+        'IDs parameter is required and cannot be empty.'
+      );
+    }
+
+    const items = await prisma.coupon.findMany({
+      where: { id: { in: ids } },
+    });
+
+    return new StandardResponse(
+      `Success! ${items.length} total results found.`,
+      false,
+      {
+        totalResults: items.length,
+        results: items,
       }
     );
   }

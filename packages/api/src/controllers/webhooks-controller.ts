@@ -78,26 +78,20 @@ export class WebhooksController {
         },
       });
 
-      console.log(1111);
-
       // Handle non-index pages
       const coupons = await this.handleNonIndexPages(scrapedData, actorRunId);
-      console.log(2222);
 
       // Process coupons
       const { couponStats, errors } = await this.processCoupons(
         coupons,
         apifyActorId
       );
-      console.log(3333);
 
       // Update coupon stats
       await this.updateCouponStats(scrapedData, apifyActorId);
-      console.log(44444);
 
       // Check and handle non-existing coupons in page
       await this.checkNonExistingCouponsInPage(scrapedData);
-      console.log(55555);
 
       if (errors.length > 0) {
         Sentry.captureException(
@@ -165,8 +159,6 @@ export class WebhooksController {
     const errors: Record<string, any>[] = [];
     const targetPages = new Set<string>();
 
-    console.log('Scraped Data length is ' + scrapedData.length);
-
     for (const item of scrapedData) {
       const id = generateItemId(
         item?.merchantName,
@@ -193,13 +185,11 @@ export class WebhooksController {
       );
 
       try {
-        const couponsData = await prisma.coupon.upsert({
+        await prisma.coupon.upsert({
           where: { id },
           update: updateData,
           create: createData,
         });
-
-        console.log(couponsData);
 
         // Count the number of created, updated, archived and unarchived records for the stats
         this.updateCouponStatsCount(couponStats, existingRecord, updateData);
@@ -314,8 +304,6 @@ export class WebhooksController {
       : getLocaleFromUrl(item.sourceUrl);
 
     if (!locale) {
-      console.log('Locale not found for coupon', item);
-      console.log(getLocaleFromUrl(item.sourceUrl));
       Sentry.captureException(
         `Locale not found for coupon ${id}. Source URL: ${sourceUrl}`,
         { extra: { item } }
