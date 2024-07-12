@@ -79,7 +79,7 @@ export class CouponsController {
       where.source_relation = { name: sourceName };
     }
 
-    if (archived) {
+    if (archived !== undefined) {
       where.archivedAt = archived ? { not: null } : null;
     }
 
