@@ -8,7 +8,10 @@ const sourcesData: any[] = [];
 
 // Read the directory and import each .ts file
 fs.readdirSync(directoryPath).forEach((file) => {
-  if (file.endsWith('.ts') && file !== 'index.ts') {
+  if (
+    (file.endsWith('.ts') && file !== 'index.ts') ||
+    (file.endsWith('.js') && file !== 'index.js')
+  ) {
     const moduleName = path.basename(file, '.ts');
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const module = require(`./${moduleName}`);
