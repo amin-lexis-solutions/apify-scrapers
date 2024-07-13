@@ -32,4 +32,6 @@ jobs:
         uses: ./.github/actions/deploy-actors
         with:
           max_concurrent_runs: 5
+          api-token: ${{ secrets.APIFY_TOKEN }}
+          base-url: ${{ secrets.BASE_URL }}
 
