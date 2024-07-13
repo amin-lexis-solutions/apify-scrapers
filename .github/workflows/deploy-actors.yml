@@ -24,7 +24,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
+      - run: yarn install --inline-builds
+        env:
+          HUSKY: 0 
+          
       - name: Deploy Modified Packages
         uses: ./.github/actions/deploy-actors
         with:
