@@ -12,7 +12,7 @@
     "import-sort": "import-sort --write */packages/**/**/**/**/**/*.{ts}",
     "lint": "eslint --ignore-path .gitignore . --ext .ts,.json",
     "lint:fix": "eslint --ignore-path .gitignore . --ext .ts,.json --fix",
-    "prepare": "test -n \"$CI\" || ./node_modules/.bin/husky install",
+    "prepare:dev": "test -n \"$CI\" || ./node_modules/.bin/husky install",
     "check-config": "node ./scripts/check-packages.js",
     "generate:actor": "plop"
   },
