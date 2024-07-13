@@ -4,12 +4,10 @@ description: Deploy Apify actors to Apify platform
 inputs:
   base-url:
     description: 'Base URL for the API'
-    required: false
-    default: ${{ secrets.BASE_URL }}
+    required: true
   api-token:
     description: 'API token for Apify'
-    required: false
-    default: ${{ secrets.APIFY_TOKEN }}
+    required: true
   max_concurrent_runs:
     description: 'Maximum number of actors to runs concurrently'
     required: true
