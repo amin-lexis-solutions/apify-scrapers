@@ -31,9 +31,9 @@ model Coupon {
   title              String
   description        String?
   termsAndConditions String?
-  expiryDateAt       DateTime?
+  expiryDateAt       DateTime?      @db.Date
   code               String?
-  startDateAt        DateTime?
+  startDateAt        DateTime?      @db.Date
   sourceUrl          String
   isShown            Boolean?
   isExpired          Boolean?

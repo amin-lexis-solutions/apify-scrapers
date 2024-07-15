@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Coupon" ALTER COLUMN "expiryDateAt" SET DATA TYPE DATE,
+ALTER COLUMN "startDateAt" SET DATA TYPE DATE;
