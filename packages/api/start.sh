@@ -6,7 +6,7 @@ chmod 0644 /etc/cron.d/cronjobs
 crontab /etc/cron.d/cronjobs
 
 # Export environment variables to ensure availability for cron jobs
-printenv >> /app/packages/api/src/.env.cron
+printenv >> /app/packages/api/.env
 
 # Start the cron service
 service cron start

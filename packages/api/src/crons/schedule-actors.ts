@@ -1,10 +1,10 @@
 /* eslint-disable no-console */
 import dotenv from 'dotenv';
-import path from 'path';
+
 import { availableActorRuns } from '../utils/utils';
 import fetch from 'node-fetch';
 
-dotenv.config({ path: path.resolve(__dirname, '.env.cron') });
+dotenv.config();
 
 export const runActors = async () => {
   const maxConcurrency = await availableActorRuns();
@@ -14,7 +14,7 @@ export const runActors = async () => {
     return;
   }
 
-  fetch(`${process.env.BASE_URL}targets/run`, {
+  fetch(`${process.env.BASE_URL}/targets/run`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

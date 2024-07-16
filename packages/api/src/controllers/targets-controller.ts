@@ -39,12 +39,12 @@ export class TargetsController {
     });
 
     const unusableLocaleIndex = locales.findIndex(
-      (locale) => !locale.searchTemplate.includes('{{website}}')
+      (locale) => !locale.searchTemplate.includes('{{merchant_name}}')
     );
 
     if (unusableLocaleIndex > -1) {
       return new StandardResponse(
-        `Locale with ID ${locales[unusableLocaleIndex].id} does not contain '{{website}}' in the search template. Aborting.`,
+        `Locale ${locales[unusableLocaleIndex].locale} does not contain '{{merchant_name}}' in the search template. Aborting.`,
         true
       );
     }
@@ -54,7 +54,7 @@ export class TargetsController {
         let domains = await getMerchantsForLocale(locale.locale);
         domains = domains.slice(0, limit);
 
-        await findSerpForLocaleAndDomains(locale, domains);
+        await findSerpForLocaleAndMerchants(locale, domains);
 
         await prisma.targetLocale.update({
           where: { id: locale.id },
@@ -133,31 +133,31 @@ export class TargetsController {
     });
 
     const unusableLocaleIndex = locales.findIndex(
-      (locale) => !locale.searchTemplate.includes('{{website}}')
+      (locale) => !locale.searchTemplate.includes('{{merchant_name}}')
     );
 
     if (unusableLocaleIndex > -1) {
       return new StandardResponse(
-        `Locale with ID ${locales[unusableLocaleIndex].id} does not contain '{{website}}' in the search template. Aborting.`,
+        `Locale ${locales[unusableLocaleIndex].locale} does not contain '{{merchant_name}}' in the search template. Aborting.`,
         true
       );
     }
 
     const counts = await Promise.all(
       locales.map(async (locale) => {
-        let domains = await getMerchantsForLocale(locale.locale);
+        let merchants = await getMerchantsForLocale(locale.locale);
         if (limitDomainsPerLocale) {
-          domains = domains.slice(0, limitDomainsPerLocale);
+          merchants = merchants.slice(0, limitDomainsPerLocale);
         }
 
-        await findSerpForLocaleAndDomains(locale, domains);
+        await findSerpForLocaleAndMerchants(locale, merchants);
 
         await prisma.targetLocale.update({
           where: { id: locale.id },
           data: { lastSerpRunAt: new Date() },
         });
 
-        return domains.length;
+        return merchants.length;
       })
     );
 
@@ -367,7 +367,9 @@ export class TargetsController {
     }
 
     const searchTemplate = localeKeywords
-      ? `"${targetLocale.searchTemplate.replace('{{website}}', '').trim()}"`
+      ? `"${targetLocale.searchTemplate
+          .replace('{{merchant_name}}', '')
+          .trim()}"`
       : '';
 
     const brands = await getMerchantsForLocale(targetLocale.locale);
@@ -435,20 +437,20 @@ export class TargetsController {
   }
 }
 
-async function findSerpForLocaleAndDomains(
+async function findSerpForLocaleAndMerchants(
   locale: TargetLocale,
-  domains: Array<{ domain: string }>
+  merchants: Array<{ domain: string; name: string }>
 ) {
   console.log(
-    `Locale ${locale.id} has ${domains.length} domains to search. Chunking into a few request with 1 000 domains each`
+    `Locale ${locale.locale} has ${merchants.length} merchants to search for`
   );
 
   const chunkSize = 1_000;
-  for (let i = 0; i < domains.length; i += chunkSize) {
-    const domainsChunk = domains.slice(i, i + chunkSize);
+  for (let i = 0; i < merchants.length; i += chunkSize) {
+    const merchantsChunk = merchants.slice(i, i + chunkSize);
 
-    const queries = domainsChunk.map(({ domain }) => {
-      return locale.searchTemplate.replace('{{website}}', domain);
+    const queries = merchantsChunk.map(({ name }) => {
+      return locale.searchTemplate.replace('{{merchant_name}}', name);
     });
 
     await apify
@@ -482,7 +484,7 @@ async function findSerpForLocaleAndDomains(
       )
       .then(() => {
         console.log(
-          `Started search for ${locale.locale} with ${domainsChunk.length} domains`
+          `Started search for ${locale.locale} with ${merchantsChunk.length} domains`
         );
       });
   }

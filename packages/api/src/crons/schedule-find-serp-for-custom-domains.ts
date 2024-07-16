@@ -1,10 +1,10 @@
 /* eslint-disable no-console */
 import dotenv from 'dotenv';
-import path from 'path';
+
 import { Locale } from '../../config/locales';
 import { availableActorRuns } from '../utils/utils';
 
-dotenv.config({ path: path.resolve(__dirname, '.env.cron') });
+dotenv.config();
 
 const findTargets = async (locale: string) => {
   try {
@@ -15,7 +15,7 @@ const findTargets = async (locale: string) => {
       return;
     }
 
-    fetch(`${process.env.BASE_URL}targets/find-for-urls-and-locale`, {
+    fetch(`${process.env.BASE_URL}/targets/find-for-urls-and-locale`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
