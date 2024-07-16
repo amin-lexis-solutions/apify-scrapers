@@ -1,19 +1,9 @@
 #!/bin/bash
 
 # Setup for handling cron jobs within Docker
-# echo "*/5 * * * * root cd /app/packages/api && yarn schedule:actors" >> /etc/crontab
-echo "*/10 0-8 * * 1,4 root cd /app/packages/api && yarn schedule:find-serp" >> /etc/crontab
-
-# run once a week
-echo "0 0 * * 1 root cd /app/packages/api && yarn schedule:find-serp-for-custom-malaysian-domains" >> /etc/crontab
-echo "0 0 * * 1 root cd /app/packages/api && yarn schedule:find-serp-for-custom-ch-domains" >> /etc/crontab
-echo "0 0 * * 1 root cd /app/packages/api && yarn schedule:find-serp-for-cuponation-domains" >> /etc/crontab
-
-# Run tests every monday
-echo "*/10 * * * 1 root cd /app/packages/api && yarn schedule:tests" >> /etc/crontab
-
-# Cron job to cleanup old data every day at 4:30 AM
-echo "30 4 * * * root cd /app/packages/api && yarn schedule:periodic-coupons-cleanup" >> /etc/crontab
+cp /app/packages/api/src/crons/cronjobs /etc/cron.d/
+chmod 0644 /etc/cron.d/cronjobs
+crontab /etc/cron.d/cronjobs
 
 # Export environment variables to ensure availability for cron jobs
 printenv >> /app/packages/api/src/.env.cron
