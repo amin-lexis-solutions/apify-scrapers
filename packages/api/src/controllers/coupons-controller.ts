@@ -23,6 +23,7 @@ import {
   FakeCouponsRequestBody,
   CouponIdsRequestBody,
 } from '../utils/validators';
+import dayjs from 'dayjs';
 
 @JsonController('/items')
 export class CouponsController {
@@ -118,6 +119,17 @@ export class CouponsController {
       }),
     ]);
 
+    // Format the expiryDateAt field for each item in the data array
+    const formattedData = data.map((item) => ({
+      ...item,
+      startDateAt: item.startDateAt
+        ? dayjs(item.startDateAt).format('YYYY-MM-DD')
+        : null,
+      expiryDateAt: item.expiryDateAt
+        ? dayjs(item.expiryDateAt).format('YYYY-MM-DD')
+        : null,
+    }));
+
     const lastPage = Math.ceil(totalResults / pageSize);
     const currentPageResults = data.length;
 
@@ -129,7 +141,7 @@ export class CouponsController {
         currentPageResults,
         currentPage: page,
         lastPage,
-        results: data,
+        results: formattedData,
       }
     );
   }
@@ -156,12 +168,22 @@ export class CouponsController {
       where: { id: { in: ids } },
     });
 
+    const formattedData = items.map((item) => ({
+      ...item,
+      startDateAt: item.startDateAt
+        ? dayjs(item.startDateAt).format('YYYY-MM-DD')
+        : null,
+      expiryDateAt: item.expiryDateAt
+        ? dayjs(item.expiryDateAt).format('YYYY-MM-DD')
+        : null,
+    }));
+
     return new StandardResponse(
       `Success! ${items.length} total results found.`,
       false,
       {
         totalResults: items.length,
-        results: items,
+        results: formattedData,
       }
     );
   }
