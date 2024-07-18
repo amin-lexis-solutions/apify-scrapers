@@ -573,7 +573,7 @@ export class WebhooksController {
   ): Promise<StandardResponse> {
     const { defaultDatasetId, status } = webhookData.resource;
     const actorRunId = webhookData.eventData.actorRunId;
-    const { localeId, removeDuplicates = true } = webhookData;
+    const { localeId, removeDuplicates = false } = webhookData;
 
     if (status !== 'SUCCEEDED') {
       return new StandardResponse(

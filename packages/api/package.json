@@ -26,6 +26,7 @@
     "scripts:generate-wiki": "ts-node scripts/wiki-locale-generator.ts",
     "scripts:run-cost": "ts-node -r tsconfig-paths/register  scripts/actors-run-costs.ts",
     "scripts:serp-cost": "ts-node -r tsconfig-paths/register  scripts/serp-run-cost.ts",
+    "scripts:load-serp": "ts-node -r tsconfig-paths/register  scripts/load_serp_results.ts",
     "scripts:tests": "ts-node -r tsconfig-paths/register  scripts/automated-tests.ts",
     "schedule:actors": "./node_modules/.bin/ts-node -r tsconfig-paths/register  ./src/crons/schedule-actors.ts",
     "schedule:find-serp": "./node_modules/.bin/ts-node -r tsconfig-paths/register ./src/crons/schedule-find-serp.ts",
