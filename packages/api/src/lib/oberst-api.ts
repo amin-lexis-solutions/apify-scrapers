@@ -4,6 +4,7 @@ import { getMerchantName } from '@api/utils/utils';
 type Merchant = {
   domain: string;
   name: string;
+  id: number;
 };
 
 const API_URL =
@@ -35,15 +36,17 @@ export async function getMerchantsForLocale(
 
   if (ensureNameIsPresent) {
     return merchantMyResponse.map((merchant: any) => {
-      if (merchant.name === '') {
+      if (!merchant.name || merchant.name === '') {
         return {
           domain: merchant.domain,
           name: getMerchantName(merchant.domain),
+          id: merchant.id,
         };
       }
       return {
         domain: merchant.domain,
         name: merchant.name,
+        id: merchant.id,
       };
     });
   }

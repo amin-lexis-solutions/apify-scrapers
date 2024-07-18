@@ -41,7 +41,7 @@ model Coupon {
   firstSeenAt        DateTime       @default(now())
   lastSeenAt         DateTime       @default(now())
   archivedAt         DateTime?
-  shouldBeFake       Boolean?       
+  shouldBeFake       Boolean?
   locale             String
   archivedReason     ArchiveReason?
 
@@ -80,7 +80,7 @@ model SourceDomain {
 // Maps to a single Apify actor run
 model ProcessedRun {
   id                  String    @id @default(uuid())
-  apifyActorId        String?   
+  apifyActorId        String?
   localeId            String?
   actorRunId          String    @unique
   finishedAt          DateTime  @default(now())
@@ -113,6 +113,7 @@ model TargetLocale {
   pages          TargetPage[]
   coupons        Coupon[]
   runs           ProcessedRun[]
+  merchants      Merchant[]
 }
 
 // Maps to a page we want to scrape using an Apify actor
@@ -142,7 +143,7 @@ model TargetPage {
 model CouponStats {
   id              String   @id @default(uuid())
   sourceUrl       String
-  couponsCount    Int // Number of coupons on the page     
+  couponsCount    Int // Number of coupons on the page
   surgeThreshold  Int // Number of standard deviations above the mean
   plungeThreshold Int // Number of standard deviations below the mean
   createdAt       DateTime @default(now())
@@ -154,4 +155,24 @@ model Test {
   apifyActorId   String   @unique
   status         String
   lastRunAt      DateTime @default(now())
+}
+
+model Merchant {
+  id             String         @id @default(uuid())
+  oberst_id      BigInt
+  locale         String         @db.VarChar(255)
+  name           String         @db.VarChar(255)
+  domain         String         @db.VarChar(255)
+  disabledAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @default(now())
+
+  @@unique([locale, oberst_id])
+
+  @@index([disabledAt])
+  @@index([oberst_id])
+  @@index([locale])
+  @@index([name])
+
+  locale_relation TargetLocale @relation(fields: [locale], references: [locale], onDelete: Cascade)
 }
