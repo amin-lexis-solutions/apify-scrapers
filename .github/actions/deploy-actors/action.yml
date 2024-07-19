@@ -8,6 +8,9 @@ inputs:
   api-token:
     description: 'API token for Apify'
     required: true
+  api-secret:
+    description: 'API secret for the API'
+    required: true
   max_concurrent_runs:
     description: 'Maximum number of actors to runs concurrently'
     required: true
@@ -31,5 +34,5 @@ runs:
         BASE_URL: ${{ inputs.base-url }}
         APIFY_TOKEN: ${{ inputs.api-token }}
         MAX_CONCURRENT_RUNS: ${{ inputs.max_concurrent_runs }}
+        API_SECRET: ${{ inputs.api-secret }}
       run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh
-       

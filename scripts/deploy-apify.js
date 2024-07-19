@@ -137,6 +137,7 @@ function getActorSpec(actorId) {
     input: './input.json',
     environmentVariables: {
       BASE_URL: process.env.BASE_URL,
+      API_SECRET: process.env.API_SECRET,
     },
     storages: {
       dataset: './output.json',

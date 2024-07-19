@@ -26,12 +26,11 @@ jobs:
           node-version: '20'
       - run: yarn install --inline-builds
         env:
-          HUSKY: 0 
-          
+          HUSKY: 0
       - name: Deploy Modified Packages
         uses: ./.github/actions/deploy-actors
         with:
           max_concurrent_runs: 5
           api-token: ${{ secrets.APIFY_TOKEN }}
           base-url: ${{ secrets.BASE_URL }}
-
+          api-secret: ${{ secrets.API_SECRET }}
