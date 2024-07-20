@@ -14,6 +14,7 @@ import {
   getLocaleFromUrl,
   isValidLocale,
   isValidCouponCode,
+  findMerchantBySearchTerm,
 } from '../utils/utils';
 
 import {
@@ -575,12 +576,12 @@ export class WebhooksController {
     const actorRunId = webhookData.eventData.actorRunId;
     const { localeId, removeDuplicates = false } = webhookData;
 
-    if (status !== 'SUCCEEDED') {
-      return new StandardResponse(
-        `The actor run was not successful. Status: ${status}`,
-        true
-      );
-    }
+    // if (status !== 'SUCCEEDED') {
+    //   return new StandardResponse(
+    //     `The actor run was not successful. Status: ${status}`,
+    //     true
+    //   );
+    // }
 
     const data: ApifyGoogleSearchResult[] = await fetch(
       `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?clean=true&format=json&view=organic_results`
@@ -589,7 +590,16 @@ export class WebhooksController {
     const filteredData = removeDuplicates
       ? this.filterDuplicateDomains(data) // Remove duplicate domains
       : data;
-    const validData = this.prepareSerpData(filteredData, actorRunId, localeId); // Prepare the data for storage
+    const merchants = await prisma.merchant.findMany({
+      // where: { disabledAt: null },
+      include: { locale_relation: true },
+    });
+    const validData = this.prepareSerpData(
+      filteredData,
+      actorRunId,
+      localeId,
+      merchants
+    ); // Prepare the data for storage
 
     // Store the SERP data using upsert change localeId value
     for (const item of validData) {
@@ -649,17 +659,25 @@ export class WebhooksController {
   private prepareSerpData(
     data: ApifyGoogleSearchResult[],
     actorRunId: string,
-    localeId: string
+    localeId: string,
+    merchants: any[]
   ) {
     return data
       .filter((item) => !!item.url)
       .map((item) => {
+        const merchant: any = findMerchantBySearchTerm(
+          item.searchQuery.term,
+          localeId,
+          merchants
+        );
+        const merchantId = merchant ? merchant.id : null;
         const data = {
           url: item.url,
           title: item.title,
           searchTerm: item.searchQuery.term,
           searchPosition: item.position,
           searchDomain: item.searchQuery.domain,
+          merchantId,
           apifyRunId: actorRunId,
           domain: new URL(item.url).hostname.replace('www.', ''),
           localeId,

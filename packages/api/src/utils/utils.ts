@@ -296,3 +296,21 @@ export async function availableActorRuns(): Promise<number> {
     throw error;
   }
 }
+
+export function findMerchantBySearchTerm(
+  searchTerm: string,
+  localeId: string,
+  merchants: any[]
+) {
+  for (const merchant of merchants) {
+    if (
+      merchant.name &&
+      searchTerm.startsWith(merchant.name) &&
+      merchant.locale_relation &&
+      merchant.locale_relation.id === localeId
+    ) {
+      return merchant;
+    }
+  }
+  return null;
+}

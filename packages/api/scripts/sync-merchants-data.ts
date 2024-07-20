@@ -53,6 +53,11 @@ async function handleMerchants(locale: string) {
       disabledAt: new Date(),
     },
   });
+
+  return {
+    totalMerchants: merchantsData.length,
+    disabledMerchants: existingMerchantNames.size,
+  };
 }
 
 async function main() {
@@ -66,10 +71,13 @@ async function main() {
   });
 
   console.log(`Total locales ${locales.length}`);
-
+  let totalMerchant = 0;
   for (const { locale } of locales) {
-    await handleMerchants(locale);
+    const { totalMerchants } = await handleMerchants(locale);
+    totalMerchant = totalMerchant + totalMerchants;
   }
+
+  console.log(`Total merchants ${totalMerchant}`);
 }
 
 main()
