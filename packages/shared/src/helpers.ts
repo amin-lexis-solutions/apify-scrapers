@@ -17,7 +17,7 @@ type IndexPageSelectors = {
   indexSelector: string[];
   nonIndexSelector: string[];
 };
-// Trigger CI deployment
+
 export type ItemHashMap = { [key: string]: ItemResult };
 
 // Normalizes strings by trimming, converting to lowercase, and replacing multiple spaces with a single space.

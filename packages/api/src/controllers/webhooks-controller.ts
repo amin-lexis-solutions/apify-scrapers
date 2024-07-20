@@ -572,16 +572,16 @@ export class WebhooksController {
   async receiveSerpData(
     @Body() webhookData: SerpWebhookRequestBody
   ): Promise<StandardResponse> {
-    const { defaultDatasetId, status } = webhookData.resource;
+    const { defaultDatasetId, status, startedAt } = webhookData.resource;
     const actorRunId = webhookData.eventData.actorRunId;
     const { localeId, removeDuplicates = false } = webhookData;
 
-    // if (status !== 'SUCCEEDED') {
-    //   return new StandardResponse(
-    //     `The actor run was not successful. Status: ${status}`,
-    //     true
-    //   );
-    // }
+    if (status !== 'SUCCEEDED') {
+      return new StandardResponse(
+        `The actor run was not successful. Status: ${status}`,
+        true
+      );
+    }
 
     const data: ApifyGoogleSearchResult[] = await fetch(
       `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?clean=true&format=json&view=organic_results`
@@ -590,10 +590,14 @@ export class WebhooksController {
     const filteredData = removeDuplicates
       ? this.filterDuplicateDomains(data) // Remove duplicate domains
       : data;
+
     const merchants = await prisma.merchant.findMany({
-      // where: { disabledAt: null },
-      include: { locale_relation: true },
+      where: {
+        locale_relation: { id: localeId },
+        OR: [{ disabledAt: null }, { disabledAt: { gt: new Date(startedAt) } }],
+      },
     });
+
     const validData = this.prepareSerpData(
       filteredData,
       actorRunId,
@@ -667,7 +671,6 @@ export class WebhooksController {
       .map((item) => {
         const merchant: any = findMerchantBySearchTerm(
           item.searchQuery.term,
-          localeId,
           merchants
         );
         const merchantId = merchant ? merchant.id : null;

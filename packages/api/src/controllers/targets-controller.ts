@@ -224,6 +224,7 @@ export class TargetsController {
           AND: [
             { domain: { in: sourceDomains } },
             { disabledAt: null },
+            { merchant: { disabledAt: null } },
             {
               OR: [
                 { lastApifyRunAt: null },

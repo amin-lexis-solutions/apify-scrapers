@@ -15,6 +15,7 @@ import {
   ValidateNested,
   IsUrl,
   IsFQDN,
+  IsDateString,
 } from 'class-validator';
 
 export class StandardResponse {
@@ -135,6 +136,9 @@ export class Resource {
 
   @IsNumber()
   usageTotalUsd: number;
+
+  @IsDateString()
+  startedAt: string;
 }
 
 export class WebhookRequestBody {

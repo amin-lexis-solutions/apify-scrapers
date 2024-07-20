@@ -1,5 +1,4 @@
 import fetch from 'node-fetch';
-import { getMerchantName } from '@api/utils/utils';
 
 type Merchant = {
   domain: string;
@@ -39,7 +38,7 @@ export async function getMerchantsForLocale(
       if (!merchant.name || merchant.name === '') {
         return {
           domain: merchant.domain,
-          name: getMerchantName(merchant.domain),
+          name: merchant.domain,
           id: merchant.id,
         };
       }

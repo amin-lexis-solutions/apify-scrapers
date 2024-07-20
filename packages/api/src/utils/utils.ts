@@ -297,18 +297,9 @@ export async function availableActorRuns(): Promise<number> {
   }
 }
 
-export function findMerchantBySearchTerm(
-  searchTerm: string,
-  localeId: string,
-  merchants: any[]
-) {
+export function findMerchantBySearchTerm(searchTerm: string, merchants: any[]) {
   for (const merchant of merchants) {
-    if (
-      merchant.name &&
-      searchTerm.startsWith(merchant.name) &&
-      merchant.locale_relation &&
-      merchant.locale_relation.id === localeId
-    ) {
+    if (merchant.name && searchTerm.startsWith(merchant.name)) {
       return merchant;
     }
   }

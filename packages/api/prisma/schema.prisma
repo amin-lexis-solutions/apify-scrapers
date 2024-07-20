@@ -133,7 +133,7 @@ model TargetPage {
   markedAsNonIndexAt DateTime?
   disabledAt         DateTime?
   verified_locale    String? // e.g. en_US
-  merchantId        String?
+  merchantId         String
   locale TargetLocale @relation(fields: [localeId], references: [id])
   merchant Merchant? @relation(fields: [merchantId], references: [id])
   @@index([localeId])

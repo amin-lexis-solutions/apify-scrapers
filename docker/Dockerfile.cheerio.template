@@ -1,7 +1,7 @@
 # Specify the base Docker image. You can read more about
 # the available images at https://crawlee.dev/docs/guides/docker-images
 # You can also use any other image from Docker Hub.
-FROM apify/actor-node:18 AS builder
+FROM apify/actor-node:20 AS builder
 
 # Set the working directory.
 WORKDIR /usr/src/app
@@ -24,13 +24,16 @@ COPY packages/shared ./packages/shared/
 RUN yarn --cwd packages/{{actorId}} build
 
 # Create final image
-FROM apify/actor-node:18
+FROM apify/actor-node:20
 
-# Copy only built JS files from builder image
-COPY --from=builder /usr/src/app/packages/{{actorId}}/dist /usr/src/app/packages/{{actorId}}/dist
+RUN npm install -g pnpm
 
-# Set the working directory.
+# Set the working directory in the final image.
 WORKDIR /usr/src/app
+
+# Copy built JS files and other necessary files from the builder stage.
+COPY --from=builder /usr/src/app/packages/{{actorId}}/dist /usr/src/app/packages/{{actorId}}/dist
+COPY --from=builder /usr/src/app/packages/shared/dist /usr/src/app/packages/shared/dist
 
 # Copy just package.json and package-lock.json
 # to speed up the build using Docker layer cache.
@@ -39,7 +42,7 @@ COPY yarn.lock ./
 COPY packages/{{actorId}}/package.json ./packages/{{actorId}}/
 
 # Install only production dependencies
-RUN yarn --cwd packages/{{actorId}} install --production --focus && (yarn list || true) && node --version && yarn --version
+RUN pnpm install --prod --filter ./packages/{{actorId}} && (pnpm list || true) && node --version && pnpm --version
 
 # Next, copy the remaining files and directories with the source code.
 # Since we do this after yarn install, quick build will be really fast
@@ -48,4 +51,4 @@ COPY packages/{{actorId}} ./packages/{{actorId}}/
 COPY packages/shared ./packages/shared/
 
 # Run the image.
-CMD yarn --cwd packages/{{actorId}} start:prod
+CMD pnpm --filter ./packages/{{actorId}} start:prod

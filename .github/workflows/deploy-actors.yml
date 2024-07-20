@@ -24,9 +24,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - run: yarn install --inline-builds
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --prefer-offline --no-optional
         env:
           HUSKY: 0
+
       - name: Deploy Modified Packages
         uses: ./.github/actions/deploy-actors
         with:

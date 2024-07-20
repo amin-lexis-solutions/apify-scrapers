@@ -20,7 +20,7 @@ runs:
   steps:
     - name: Install Apify CLI
       shell: bash
-      run: npm install apify-cli
+      run: npx pnpm add apify-cli
 
     - name: Authenticate with Apify using API token
       shell: bash

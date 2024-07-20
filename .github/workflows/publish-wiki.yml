@@ -20,12 +20,12 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install Yarn
-        run: npm install -g yarn
+      - name: Install pnpm
+        run: npm install -g pnpm
       - name: Install dependencies
-        run: cd packages/api && yarn install
+        run: cd packages/api && pnpm install
       - name: Generate wiki
-        run: cd packages/api && yarn scripts:generate-wiki
+        run: cd packages/api && pnpm run scripts:generate-wiki
       - uses: Andrew-Chen-Wang/github-wiki-action@v4
         with:
           path: ./packages/api/wiki
