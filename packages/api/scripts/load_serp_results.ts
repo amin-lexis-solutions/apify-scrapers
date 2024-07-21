@@ -189,7 +189,7 @@ export const main = async () => {
           searchDomain: item.searchQuery.domain,
           apifyRunId: runId,
           domain: new URL(item.url).hostname.replace('www.', ''),
-          localeId,
+          locale: { connect: { id: localeId } },
           verified_locale: null as string | null,
         };
 
