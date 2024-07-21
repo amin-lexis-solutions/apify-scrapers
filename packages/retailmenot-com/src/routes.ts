@@ -145,7 +145,7 @@ router.addHandler(Label.listing, async (context) => {
 
       for (const id of nonExistingIds) {
         currentResult = itemsWithCode[id];
-        // Enqueue the coupon URL for further processing with appropriate label and validator data
+        if (!currentResult.itemUrl) continue;
         await enqueueLinks({
           urls: [currentResult.itemUrl],
           userData: {

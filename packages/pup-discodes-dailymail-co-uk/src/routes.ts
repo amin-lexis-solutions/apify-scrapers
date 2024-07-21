@@ -229,7 +229,7 @@ router.addHandler(Label.listing, async (context) => {
     for (const id of nonExistingIds) {
       currentResult = itemsWithCode[id];
       validatorData = currentResult.validator.getData();
-
+      if (!currentResult.itemUrl) continue;
       await enqueueLinks({
         urls: [currentResult.itemUrl],
         userData: {

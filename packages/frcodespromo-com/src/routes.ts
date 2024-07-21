@@ -6,10 +6,10 @@ import {
   ItemHashMap,
   ItemResult,
   logError,
+  generateHash,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
-import { generateHash } from '../../api/src/utils/utils';
 
 async function processItem(item: any, $cheerioElement: cheerio.Root) {
   const elemCode = $cheerioElement('span.coupon_code').first();

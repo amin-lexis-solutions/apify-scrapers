@@ -7,10 +7,10 @@ import {
   ItemHashMap,
   ItemResult,
   logError,
+  generateHash,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
-import { generateHash } from '../../api/src/utils/utils';
 
 async function processItem(item: any, $cheerio: cheerio.Root) {
   const codeCss = item.isExpired

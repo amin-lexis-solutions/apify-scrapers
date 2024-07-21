@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/node';
 import crypto from 'crypto';
 import * as chrono from 'chrono-node';
 import moment from 'moment';
-import { DataValidator } from './data-validator';
+import { DataValidator } from 'shared/data-validator';
 import { Dataset, log } from 'crawlee';
 
 // Normalizes strings by trimming, converting to lowercase, and replacing multiple spaces with a single space
