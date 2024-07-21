@@ -189,15 +189,15 @@ export class TargetsController {
     const sources = await prisma.source.findMany({
       where: {
         isActive: true,
-        OR: [
-          { lastRunAt: null },
-          { lastRunAt: { lt: dayjs().startOf('day').toDate() } },
-        ],
+        // OR: [
+        //   { lastRunAt: null },
+        //   { lastRunAt: { lt: dayjs().startOf('day').toDate() } },
+        // ],
       },
       include: {
         domains: true,
       },
-      take: maxConcurrency,
+      // take: maxConcurrency,
     });
 
     console.log(
@@ -229,7 +229,7 @@ export class TargetsController {
               OR: [
                 { lastApifyRunAt: null },
                 {
-                  lastApifyRunAt: { lt: dayjs().subtract(30, 'days').toDate() },
+                  lastApifyRunAt: { lt: dayjs().startOf('day').toDate() },
                 },
               ],
             },
