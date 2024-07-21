@@ -133,6 +133,7 @@ router.addHandler(Label.listing, async (context) => {
     if (nonExistingIds.length > 0) {
       for (const id of nonExistingIds) {
         const result: ItemResult = itemsWithCode[id];
+        if (!result.itemUrl) continue;
         await enqueueLinks({
           urls: [result.itemUrl],
           userData: {
