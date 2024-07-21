@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable no-console */
 
 const fs = require('fs').promises;
 const { exec } = require('child_process');
@@ -36,7 +37,13 @@ const fileExists = async (filePath) => {
 
 const setupTempDirectory = async () => {
   if (!(await fileExists(tempDir))) {
-    await fs.mkdir(tempDir, { recursive: true });
+    try {
+      console.log(`Attempting to create directory: ${tempDir}`);
+      await fs.mkdir(tempDir, { recursive: true });
+      console.log(`Directory created successfully: ${tempDir}`);
+    } catch (error) {
+      console.error(`Failed to create directory: ${tempDir}`, error);
+    }
   }
   const tempPackageDir = path.resolve(tempDir, 'packages');
   await fs.mkdir(tempPackageDir, { recursive: true });
@@ -79,11 +86,15 @@ const prepareActorFiles = async () => {
       JSON.stringify(getActorSpec(actorId), null, 2)
     ),
     fs.writeFile(
-      path.join(actorDir, 'input.json'),
+      path.join(actorDir, 'INPUT_SCHEMA.json'),
       JSON.stringify(getActorInputSpec(actorId), null, 2)
     ),
-    fs.writeFile(path.join(actorDir, 'Dockerfile'), dockerfile),
+    fs.writeFile(path.join(tempDir, 'Dockerfile'), dockerfile),
   ]);
+
+  // ls -la
+  console.log(await fs.readdir(tempDir));
+  console.log(await fs.readdir(actorDir));
 };
 
 const deployActor = async () => {
@@ -134,7 +145,6 @@ function getActorSpec(actorId) {
     name: `${actorId}-scraper`,
     title: `${actorId} Scraper`,
     version: '0.0',
-    input: './input.json',
     environmentVariables: {
       BASE_URL: process.env.BASE_URL,
       API_SECRET: process.env.API_SECRET,
