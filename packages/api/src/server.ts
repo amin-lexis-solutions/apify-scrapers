@@ -7,6 +7,7 @@ import 'reflect-metadata'; // Required for routing-controllers
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 
 import express, { Express } from 'express';
+import { json } from 'body-parser';
 
 import expressBasicAuth from 'express-basic-auth';
 import {
@@ -50,6 +51,9 @@ app.use(Sentry.Handlers.requestHandler());
 
 // TracingHandler creates a trace for every incoming request
 app.use(Sentry.Handlers.tracingHandler());
+
+// Set the limit to 50MB
+app.use(json({ limit: '5mb' }));
 
 const routingControllersOptions: RoutingControllersOptions = {
   controllers: [
