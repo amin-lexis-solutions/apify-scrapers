@@ -76,6 +76,29 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
+    // Extract valid coupons
+    const activedItems = $('div.c_list:not(.expired) > div[itemprop="offers"]');
+    const expiredItems = $('div.c_list.expired > div[itemprop="offers"]');
+
+    const items = [...activedItems, ...expiredItems];
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const merchantLink = $('div.page_link_n > div > span');
 
     const merchantName = he.decode(
@@ -96,26 +119,6 @@ router.addHandler(Label.listing, async (context) => {
     const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
     let result: ItemResult | undefined;
-
-    // Extract valid coupons
-    const activedItems = $('div.c_list:not(.expired) > div[itemprop="offers"]');
-    const expiredItems = $('div.c_list.expired > div[itemprop="offers"]');
-
-    const items = [...activedItems, ...expiredItems];
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
 
     for (const item of items) {
       const $cheerio = cheerio.load(item);

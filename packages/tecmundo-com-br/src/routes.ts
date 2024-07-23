@@ -83,6 +83,25 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
+    const items = $('div.coupons__list > div.coupons__item');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const merchantLink = $('div.card-shop-header a[data-shop]');
 
     if (merchantLink.length === 0) {
@@ -105,22 +124,6 @@ router.addHandler(Label.listing, async (context) => {
     const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
     let result: ItemResult;
-
-    const items = $('div.coupons__list > div.coupons__item');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
 
     for (const item of items) {
       const $cheerioElement = cheerio.load(item);

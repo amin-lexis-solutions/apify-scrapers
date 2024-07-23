@@ -11,7 +11,10 @@ async function main() {
       "div[data-testid='VouchersList']",
       "div[data-testid='VouchersListItem']",
     ],
-    nonIndexPageSelectors: [':not(.ShopSummaryLogo_logo__yeHxg)'],
+    nonIndexPageSelectors: [
+      'section[data-testid="CategoriesOverviewGrid"]',
+      '[data-testid="StoresSection"]',
+    ],
   });
 
   await crawler.run();

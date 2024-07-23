@@ -69,15 +69,6 @@ router.addHandler(Label.listing, async (context) => {
     // Extracting request and body from context
     log.info(`\nProcessing URL: ${request.url}`);
 
-    const elementH2 = $('div.hot-page2-alp-con-left-1 > h2');
-
-    const merchantName = he.decode(elementH2?.text()?.trim());
-
-    if (!merchantName) {
-      logError('Merchant name is missing');
-      return;
-    }
-
     const items = $(
       'div.hot-page2-alp-con-right-1 > div.row > div.hot-page2-alp-r-list'
     );
@@ -88,11 +79,23 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
     } catch (error: any) {
       logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
+    const elementH2 = $('div.hot-page2-alp-con-left-1 > h2');
+
+    const merchantName = he.decode(elementH2?.text()?.trim());
+
+    if (!merchantName) {
+      logError('Merchant name is missing');
       return;
     }
 

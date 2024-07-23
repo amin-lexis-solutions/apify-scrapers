@@ -4,36 +4,7 @@ import ProgressBar from 'progress';
 
 const prisma = new PrismaClient();
 
-const apifyActorIds = [
-  {
-    old: '8pEZLVo1t8WCIIoQg',
-    new: 'FqbDWz0KKZiWDDUHe',
-  },
-  {
-    old: '1RdCR0WPHU6GKRv9B',
-    new: 'kk5pdikOLGixKevAz',
-  },
-  {
-    old: 'jW21dASnQlaoFhC84',
-    new: 'ah4kbvNrRpcWPF8TU',
-  },
-  {
-    old: '7ymjYOi4Y7gcccfPM',
-    new: '27mFdG0jeWvhoza2f',
-  },
-  {
-    old: 'osZWVXZmuSbFaUjEB',
-    new: 'nUe7y2cbKzfGF1tof',
-  },
-  {
-    old: 'VEed5ySZN1WPPrzDs',
-    new: 'dBqzMdqiHdMwbKcOX',
-  },
-  {
-    old: 'f4UgcbL0WF2TgRJhe',
-    new: 'aqJdVfuzq6imf3Qj5',
-  },
-];
+const apifyActorIds: any = [];
 
 const migrateApifyActorIds = async () => {
   console.log('🚀 Migrating Apify Actor IDs...');

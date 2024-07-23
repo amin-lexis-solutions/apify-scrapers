@@ -70,6 +70,26 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
+    // Extract valid coupons
+    const items = $('div.active-offers-container div.offerbox-store');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const merchantLink = $(
       'ol.breadcrumb > li:last-child > a > span[itemprop=name]'
     ).first();
@@ -80,23 +100,6 @@ router.addHandler(Label.listing, async (context) => {
 
     if (!merchantName) {
       logError('Merchant name is missing');
-      return;
-    }
-
-    // Extract valid coupons
-    const items = $('div.active-offers-container div.offerbox-store');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 

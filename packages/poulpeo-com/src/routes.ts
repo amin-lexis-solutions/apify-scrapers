@@ -6,6 +6,7 @@ import {
   checkItemsIds,
   ItemResult,
   logError,
+  formatDateTime,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -13,6 +14,28 @@ import { postProcess, preProcess } from 'shared/hooks';
 // Export the router function that determines which handler to use based on the request label
 const router = Router.create<PuppeteerCrawlingContext>();
 
+function processItem(item: any) {
+  const validator = new DataValidator();
+
+  validator.addValue('merchantName', item.merchantName);
+  validator.addValue('title', item.title);
+  validator.addValue('sourceUrl', item.sourceUrl);
+  validator.addValue('isShown', true);
+  validator.addValue('isExpired', false);
+  validator.addValue('expiryDateAt', formatDateTime(item.expiryDateAt));
+  validator.addValue('idInSite', item.idInSite);
+  validator.addValue('termsAndConditions', item.termsAndConditions);
+
+  const itemUrl = `https://www.poulpeo.com/o.htm?c=${item.idInSite}`;
+
+  const generatedHash = generateItemId(
+    item.merchantName,
+    item.idInSite,
+    item.sourceUrl
+  );
+
+  return { generatedHash, hasCode: item.hasCode, itemUrl, validator };
+}
 router.addHandler(Label.listing, async (context) => {
   const { page, request, enqueueLinks, log } = context;
 
@@ -20,8 +43,7 @@ router.addHandler(Label.listing, async (context) => {
 
   async function getMerchantName(page) {
     return await page.evaluate(() => {
-      const name = document.querySelector('.m-pageHeader__title')?.textContent;
-      return name;
+      return document.querySelector('.m-pageHeader__title')?.textContent;
     });
   }
 
@@ -36,23 +58,8 @@ router.addHandler(Label.listing, async (context) => {
     });
   }
 
-  async function extractIdInSite(element) {
-    return await element.evaluate((selector) =>
-      selector.getAttribute('data-offer-id')
-    );
-  }
-
   try {
     log.info(`Listing ${request.url}`);
-
-    await page.waitForSelector('.-grid');
-
-    const merchantName = await getMerchantName(page);
-
-    if (!merchantName) {
-      logError('merchan name not found');
-      return;
-    }
 
     const items = await page.$$('.-horizontal.m-offer');
 
@@ -62,11 +69,21 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
     } catch (error: any) {
       logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
+    const merchantName = await getMerchantName(page);
+
+    if (!merchantName) {
+      logError('merchan name not found');
       return;
     }
 
@@ -79,48 +96,50 @@ router.addHandler(Label.listing, async (context) => {
       const codeElement = await element.$(
         '.m-offer__action .a-btnSlide__truncateCode'
       );
-      let idInSite;
 
-      const couponTitle = await element.evaluate(
-        (node) => node.querySelector('.m-offer__title')?.textContent
+      const title = await page.evaluate(
+        (node) => node.querySelector('.m-offer__title')?.textContent,
+        element
       );
 
-      if (!couponTitle) {
+      if (!title) {
         logError(`not couponTitle found in item`);
         continue;
       }
 
-      if (codeElement) {
-        idInSite = await element.evaluate(
-          (block) =>
-            block.getAttribute('data-offer-id') ||
-            block.getAttribute('id')?.split('r')?.[1]
+      const idInSite = await page.evaluate((block) => {
+        return (
+          block?.getAttribute('data-offer-id') ||
+          block?.getAttribute('id')?.replace('r', '')
         );
-      }
-
-      const validator = new DataValidator();
-
-      validator.addValue('merchantName', merchantName);
-      validator.addValue('title', couponTitle);
-      validator.addValue('sourceUrl', request.url);
-      validator.addValue('isShown', true);
-      validator.addValue('isExpired', false);
+      }, element);
 
       if (!idInSite) {
         logError(`not idInSite found in item`);
         continue;
       }
 
-      idInSite = await extractIdInSite(element);
-      validator.addValue('idInSite', idInSite);
+      const expiryDateAt = await page.evaluate((node) => {
+        const details = node?.querySelector('.m-offer__details')?.innerHTML;
+        const match = details?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+        return match?.[0];
+      }, element);
 
-      const itemUrl = `https://www.poulpeo.com/o.htm?c=${idInSite}`;
+      const termsAndConditions = await page.evaluate((node) => {
+        return node?.querySelector('.m-offer__details')?.textContent;
+      }, element);
 
-      const generatedHash = generateItemId(merchantName, idInSite, request.url);
+      const itemData = {
+        merchantName,
+        title,
+        termsAndConditions,
+        idInSite,
+        expiryDateAt,
+        hasCode: !!codeElement,
+        sourceUrl: request.url,
+      };
 
-      const hasCode = !!codeElement;
-
-      result = { generatedHash, hasCode, itemUrl, validator };
+      result = processItem(itemData);
 
       if (result.hasCode) {
         itemsWithCode[result.generatedHash] = result;
@@ -167,7 +186,7 @@ router.addHandler(Label.getCode, async (context) => {
 
   log.info(`GetCode ${request.url}`);
 
-  await page.waitForSelector('#o-modal');
+  await page.waitForNavigation();
 
   try {
     const validatorData = request.userData.validatorData;

@@ -163,6 +163,34 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
+    // Extract valid coupons
+    const currentItems = $(
+      'section#store-active-coupon > div:not([class^=nocode])[class*=code], section#store-active-coupon > div[class*=nocode]'
+    );
+    // Extract expired coupons
+    const expiredItems = $(
+      'section.wb.y > div:not([class^=nocode])[class*=code], section.wb.y > div[class*=nocode]'
+    );
+
+    const items = [...currentItems, ...expiredItems];
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     // Check if valid page
     if (!$('div#coupon-header img.ek').length) {
       logError(`Not Merchant URL: ${request.url}`);
@@ -186,31 +214,6 @@ router.addHandler(Label.listing, async (context) => {
 
     if (!merchantDomain) {
       logError(`merchantDomain not found ${request.url}`);
-      return;
-    }
-
-    // Extract valid coupons
-    const currentItems = $(
-      'section#store-active-coupon > div:not([class^=nocode])[class*=code], section#store-active-coupon > div[class*=nocode]'
-    );
-    // Extract expired coupons
-    const expiredItems = $(
-      'section.wb.y > div:not([class^=nocode])[class*=code], section.wb.y > div[class*=nocode]'
-    );
-
-    const items = [...currentItems, ...expiredItems];
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 

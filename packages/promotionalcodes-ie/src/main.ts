@@ -7,7 +7,10 @@ import { router } from './routes';
 async function main() {
   await Actor.init();
 
-  const crawler = await prepareCheerioScraper(router);
+  const crawler = await prepareCheerioScraper(router, {
+    nonIndexPageSelectors: ['#A', '#C'],
+    indexPageSelectors: ['div div.clipboard'],
+  });
 
   await crawler.run();
   await Actor.exit();

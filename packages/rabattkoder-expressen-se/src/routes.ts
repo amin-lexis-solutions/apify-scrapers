@@ -81,6 +81,26 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
+    const items = $('.voucher__list > div.voucher');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            url: request.url,
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const merchantName = getMerchantName();
 
     if (!merchantName) {
@@ -97,22 +117,6 @@ router.addHandler(Label.listing, async (context) => {
     const merchantDomain = merchantEmailTag
       ?.text()
       ?.match(/([a-zA-Z0-9]+)\.([a-z]+)/)?.[0];
-
-    const items = $('.voucher__list > div.voucher');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
 
     const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];

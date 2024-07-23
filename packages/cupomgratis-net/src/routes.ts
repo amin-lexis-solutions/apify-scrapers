@@ -65,6 +65,29 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
+    // Extract valid coupons
+    const currentItems = $('div#active_coupons > div.store_detail_box');
+    const expiredItems = $('div#expired_coupons > div.store_detail_box');
+
+    const items = [...currentItems, ...expiredItems];
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     // Check if the breadcrumbs element exists to validate the page
     if ($('#core_main_breadcrumbs_left > li').length === 0) {
       logError(`Not a valid page: ${request.url}`);
@@ -79,26 +102,6 @@ router.addHandler(Label.listing, async (context) => {
 
     if (!merchantName) {
       logError(`Unable to find merchant name ${request.url}`);
-      return;
-    }
-
-    // Extract valid coupons
-    const currentItems = $('div#active_coupons > div.store_detail_box');
-    const expiredItems = $('div#expired_coupons > div.store_detail_box');
-
-    const items = [...currentItems, ...expiredItems];
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 
@@ -161,7 +164,10 @@ router.addHandler(Label.listing, async (context) => {
 
     for (const id of nonExistingIds) {
       currentResult = itemsWithCode[id];
+
+      // Add the coupon URL to the request queue
       if (!currentResult.itemUrl) continue;
+
       await enqueueLinks({
         urls: [currentResult.itemUrl],
         userData: {

@@ -49,6 +49,26 @@ router.addHandler(Label.listing, async (context) => {
   try {
     const itemScript = $("script[type='application/ld+json']")?.html();
 
+    const itemInPage = $('#coupons');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            url: request.url,
+            items: itemInPage,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error) {
+      logError(`Preprocess Error: ${error}`);
+      return;
+    }
+
     if (!itemScript) {
       logError(`itemScript not found in page - ${request.url}`);
       return;
@@ -76,21 +96,6 @@ router.addHandler(Label.listing, async (context) => {
 
     const currentItems = itemsJSON.makesOffer;
     const items = [...currentItems];
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            url: request.url,
-            items,
-          },
-        },
-        context
-      );
-    } catch (error) {
-      logError(`Preprocess Error: ${error}`);
-      return;
-    }
 
     const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
@@ -132,7 +137,9 @@ router.addHandler(Label.listing, async (context) => {
 
     for (const id of nonExistingIds) {
       const result: ItemResult = itemsWithCode[id];
+
       if (!result.itemUrl) continue;
+
       await enqueueLinks({
         urls: [result.itemUrl],
         userData: {

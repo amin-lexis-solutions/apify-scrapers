@@ -78,6 +78,26 @@ router.addHandler(Label.listing, async (context) => {
 
     log.warning(`Processing URL: ${request.url}`);
 
+    // Extract valid coupons
+    const items = $('div.promotion-list__promotions > div');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const merchantLink = $(
       'ol.breadcrumb > li:last-child > a.breadcrumb-item__link'
     );
@@ -95,23 +115,6 @@ router.addHandler(Label.listing, async (context) => {
 
     if (!merchantDomain) {
       log.warning('Domain is missing');
-    }
-
-    // Extract valid coupons
-    const items = $('div.promotion-list__promotions > div');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
     }
 
     const itemsWithCode: ItemHashMap = {};

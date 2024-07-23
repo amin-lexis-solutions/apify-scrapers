@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: null,
+    apifyActorId: 'YNBDQfdN0Nw8bADq1',
     domains: [
       {
         domain: 'voucherpages.ie',

@@ -1,4 +1,4 @@
-import { createPuppeteerRouter } from 'crawlee';
+import { createPuppeteerRouter, sleep } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
@@ -38,48 +38,30 @@ router.addHandler(Label.listing, async (context) => {
   const { request, page, log } = context;
   if (request.userData.label !== Label.listing) return;
 
-  // wait for the page to load completely
-  await page.waitForSelector('.css-17m9sjs');
-
   try {
-    const {
-      merchantName,
-      merchantSite,
-    }: {
-      merchantName: string | '';
-      merchantSite: string | '';
-    } = (await page.$eval('.css-17m9sjs a.css-1cvlksa', (a: any) => {
-      return {
-        merchantName: a.textContent || '',
-        merchantSite: a.href || '',
-      };
-    })) || { merchantName: null, merchantSite: null };
-
-    const merchantDomain = getMerchantDomainFromUrl(merchantSite);
-
-    log.info(`Processing ${merchantName} coupons`);
+    // wait for the page to load completely
+    await page.waitForSelector('main article section');
 
     // load all the coupons by clicking the load more button
-    let loadMoreButton;
-    while ((loadMoreButton = await page.$('.css-1f2y3i5'))) {
-      await loadMoreButton.click();
-      await page
-        .waitForSelector('.css-1f2y3i5', { timeout: 500 })
-        // eslint-disable-next-line @typescript-eslint/no-empty-function
-        .catch(() => {});
+    const loadMoreButton = await page.$$('section#more button');
+
+    for (const button of loadMoreButton) {
+      await button?.focus();
+
+      await button?.click();
+      // Add a delay if needed to avoid overwhelming the server
+      await sleep(50);
     }
 
     // find all the coupons in #top-coupons section
     const topItems =
       (
-        await page.$$eval('#top-coupons li.css-1etz4gb', (coupons) => {
-          return coupons.map((coupon) => {
-            const title =
-              coupon.querySelector('h2 .css-7f3d9a')?.textContent || '';
+        await page.$$eval('#top-coupons li', (coupons) => {
+          return coupons?.map((coupon) => {
+            const title = coupon?.querySelector('h2 span')?.textContent || '';
             const code =
-              coupon.querySelector('.css-198h9ap span.css-efj85z')
-                ?.textContent || '';
-            const idInSite = coupon.getAttribute('id') || '';
+              coupon?.querySelector('button')?.getAttribute('title') || '';
+            const idInSite = coupon?.getAttribute('id') || '';
             if (!title) return null;
             return {
               title,
@@ -93,14 +75,11 @@ router.addHandler(Label.listing, async (context) => {
     // find all the coupons in the table
     const otherItems =
       (
-        await page.$$eval('table.css-1kbncg9 tr', (coupons) => {
-          return coupons.map((coupon) => {
-            const title =
-              coupon.querySelector('h2.css-1p8jodt')?.textContent || '';
+        await page.$$eval('section table tbody tr', (coupons) => {
+          return coupons?.map((coupon) => {
+            const title = coupon?.querySelector('h2')?.textContent || '';
             const code =
-              coupon
-                .querySelector('button.css-198rnhu')
-                ?.getAttribute('title') || '';
+              coupon?.querySelector('button')?.getAttribute('title') || '';
             const idInSite = coupon.getAttribute('id') || '';
             if (!title) return null;
             return { title, idInSite, code };
@@ -118,6 +97,9 @@ router.addHandler(Label.listing, async (context) => {
             url: request.url,
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
@@ -125,6 +107,23 @@ router.addHandler(Label.listing, async (context) => {
       log.error(`Preprocess Error: ${error}`);
       return;
     }
+
+    const {
+      merchantName,
+      merchantSite,
+    }: {
+      merchantName: string | '';
+      merchantSite: string | '';
+    } = (await page.$eval('section p a', (a: any) => {
+      return {
+        merchantName: a.textContent || '',
+        merchantSite: a.href || '',
+      };
+    })) || { merchantName: null, merchantSite: null };
+
+    const merchantDomain = getMerchantDomainFromUrl(merchantSite);
+
+    log.info(`Processing ${merchantName} coupons`);
 
     // Initialize variables
     const itemsWithCode: ItemHashMap = {};

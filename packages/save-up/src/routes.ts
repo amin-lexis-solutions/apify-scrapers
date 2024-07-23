@@ -64,6 +64,25 @@ router.addHandler(Label.listing, async (context) => {
     const htmlContent = body instanceof Buffer ? body.toString() : body;
     const $ = cheerio.load(htmlContent);
 
+    const items = $('ul#vouchers > li > div');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const merchantNameElem = $('div.breadcrumbs span.breadcrumb_last');
 
     if (!merchantNameElem) {
@@ -79,22 +98,6 @@ router.addHandler(Label.listing, async (context) => {
       log.warning(`merchantDomain not found in ${request.url}`);
     }
     const merchantDomain = merchantDomainTag.attr('href')?.split('@')?.[1];
-
-    const items = $('ul#vouchers > li > div');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
 
     // Extract items
     const itemsWithCode: ItemHashMap = {};

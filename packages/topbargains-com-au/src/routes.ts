@@ -80,6 +80,33 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
+    // Extract valid coupons
+    const currentItems = $(
+      'div.view-coupons-block-store-pages div.main-coupon-wrapper'
+    );
+    // Extract expired coupons
+    const expiredItems = $(
+      'div.view-expired-coupons-block-store-pages div.main-coupon-wrapper'
+    );
+    const items = [...currentItems, ...expiredItems];
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const merchantLogoImgSelector = 'div.store-image.block-center img';
 
     // Check if valid page
@@ -110,30 +137,6 @@ router.addHandler(Label.listing, async (context) => {
     const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
     let result: ItemResult | undefined;
-
-    // Extract valid coupons
-    const currentItems = $(
-      'div.view-coupons-block-store-pages div.main-coupon-wrapper'
-    );
-    // Extract expired coupons
-    const expiredItems = $(
-      'div.view-expired-coupons-block-store-pages div.main-coupon-wrapper'
-    );
-    const items = [...currentItems, ...expiredItems];
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
 
     for (const item of items) {
       if ($(item).find('div.coupon-cloumn > a[data-coupon]').length === 0) {

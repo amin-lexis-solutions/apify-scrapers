@@ -91,6 +91,32 @@ router.addHandler(Label.listing, async (context) => {
 
     log.warning(`Listing ${request.url}`);
 
+    // Extract valid coupons
+    const currentItems = $(
+      'div.voucherGroup div.voucherCard:not(.voucherCard--expired)'
+    );
+    const expiredItems = $(
+      'div.voucherGroup div.voucherCard.voucherCard--expired'
+    );
+    const items = [...currentItems, ...expiredItems];
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const merchantLogoImgSelector = 'div.shopHeader img.shopLogo';
 
     // Check if valid page
@@ -112,29 +138,6 @@ router.addHandler(Label.listing, async (context) => {
 
     if (!merchantDomain) {
       log.warning('domain name is missing');
-    }
-
-    // Extract valid coupons
-    const currentItems = $(
-      'div.voucherGroup div.voucherCard:not(.voucherCard--expired)'
-    );
-    const expiredItems = $(
-      'div.voucherGroup div.voucherCard.voucherCard--expired'
-    );
-    const items = [...currentItems, ...expiredItems];
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
     }
 
     const itemsWithCode: ItemHashMap = {};

@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: 'FqbDWz0KKZiWDDUHe',
+    apifyActorId: 'Kjda9EM4aeq3SuJcS',
     domains: [
       {
         domain: 'singacoupons.net',

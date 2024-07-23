@@ -54,8 +54,22 @@ router.addHandler(Label.listing, async (context) => {
 
   const items = await page.$$('article');
 
-  if (!items) {
-    log.warning(`Coupon List not found ${request.url}`);
+  // pre-pressing hooks here to avoid unnecessary requests
+  try {
+    await preProcess(
+      {
+        AnomalyCheckHandler: {
+          items,
+        },
+        IndexPageHandler: {
+          indexPageSelectors: request.userData.pageSelectors,
+        },
+      },
+      context
+    );
+  } catch (error: any) {
+    log.warning(`Pre-Processing Error : ${error.message}`);
+    return;
   }
 
   const merchantElement = await page.$('.sle img');
@@ -75,20 +89,6 @@ router.addHandler(Label.listing, async (context) => {
 
   if (!merchantDomain) {
     log.info(`Domain not found ${request.url}`);
-  }
-  // pre-pressing hooks here to avoid unnecessary requests
-  try {
-    await preProcess(
-      {
-        AnomalyCheckHandler: {
-          items,
-        },
-      },
-      context
-    );
-  } catch (error: any) {
-    log.warning(`Pre-Processing Error : ${error.message}`);
-    return;
   }
 
   // Initialize variables

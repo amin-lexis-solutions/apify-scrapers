@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: 'sqTlYoKXhQOxcRI22',
+    apifyActorId: '6xBOlnSSnIatHemB1',
     domains: [
       {
         domain: 'promotionalcodes.org.uk',

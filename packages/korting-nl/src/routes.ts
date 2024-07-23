@@ -68,9 +68,24 @@ const processCoupon = async (context) => {
     return;
   }
 
-  const label = request.userData.label;
+  const items = $('article.offer_grid').toArray();
 
-  if (!label) return;
+  try {
+    await preProcess(
+      {
+        AnomalyCheckHandler: {
+          items,
+        },
+        IndexPageHandler: {
+          indexPageSelectors: request.userData.pageSelectors,
+        },
+      },
+      context
+    );
+  } catch (error: any) {
+    logError(`Pre-Processing Error : ${error.message}`);
+    return;
+  }
 
   const pageType = $('.rh-mini-sidebar').length ? 'listing' : 'detail';
 
@@ -80,22 +95,6 @@ const processCoupon = async (context) => {
 
   if (!merchantName) {
     logError('merchantName not found');
-    return;
-  }
-
-  const items = $('article.offer_grid').toArray();
-
-  try {
-    await preProcess(
-      {
-        AnomalyCheckHandler: {
-          items,
-        },
-      },
-      context
-    );
-  } catch (error: any) {
-    logError(`Pre-Processing Error : ${error.message}`);
     return;
   }
 

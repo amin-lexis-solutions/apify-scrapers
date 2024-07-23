@@ -6,7 +6,10 @@ import { router } from './routes';
 async function main() {
   await Actor.init();
 
-  const crawler = await preparePuppeteerScraper(router as any, {});
+  const crawler = await preparePuppeteerScraper(router as any, {
+    indexPageSelectors: ['#top-coupons'],
+    nonIndexPageSelectors: ['main #store-search'],
+  });
 
   await crawler.run();
   await Actor.exit();

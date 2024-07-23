@@ -55,15 +55,6 @@ router.addHandler(Label.listing, async (context) => {
     // Extracting request and body from context
     log.info(`Processing URL: ${request.url}`);
 
-    let merchantName = $('a.golink').attr('title');
-
-    if (!merchantName) {
-      logError('Unable to find merchant name');
-      return;
-    }
-
-    merchantName = merchantName?.trim()?.toLowerCase();
-
     // Extract valid coupons
     const items = $('div#coupon_list div.c_list > div[data-type]');
 
@@ -73,6 +64,9 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
@@ -80,6 +74,15 @@ router.addHandler(Label.listing, async (context) => {
       logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
+
+    let merchantName = $('a.golink').attr('title');
+
+    if (!merchantName) {
+      logError('Unable to find merchant name');
+      return;
+    }
+
+    merchantName = merchantName?.trim()?.toLowerCase();
 
     // Extract valid coupons
     const itemsWithCode: ItemHashMap = {};

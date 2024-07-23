@@ -48,26 +48,10 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   try {
-    const merchantName = $('#merchant-name').text().split('.')[0];
-
-    if (!merchantName) {
-      logError(`merchantName not found ${request.url}`);
-      return;
-    }
-
-    const merchantLogoElement = $('main img').attr('alt');
-    const merchantDomain = merchantLogoElement?.includes('.')
-      ? merchantLogoElement?.replace(' logo', '')
-      : null;
-
-    merchantDomain
-      ? log.info(`Merchant Name: ${merchantName} - Domain: ${merchantDomain}`)
-      : log.warning('merchantDomain not found');
-
-    const items = $('section ul li')
+    const items = $('section ul li.shrink-0')
       .toArray()
       .map((coupon) => {
-        const title = $(coupon).find('.font-semibold').text()?.trim();
+        const title = $(coupon).find('a .font-semibold')?.text()?.trim();
         const code = $(coupon)
           .find('.clipboard.border-dashed')
           ?.text()
@@ -84,6 +68,9 @@ router.addHandler(Label.listing, async (context) => {
             url: request.url,
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
@@ -91,6 +78,22 @@ router.addHandler(Label.listing, async (context) => {
       log.error(`Preprocess Error: ${error}`);
       return;
     }
+
+    const merchantName = $('#merchant-name').text().split('.')[0];
+
+    if (!merchantName) {
+      logError(`merchantName not found ${request.url}`);
+      return;
+    }
+
+    const merchantLogoElement = $('main img').attr('alt');
+    const merchantDomain = merchantLogoElement?.includes('.')
+      ? merchantLogoElement?.replace(' logo', '')
+      : null;
+
+    merchantDomain
+      ? log.info(`Merchant Name: ${merchantName} - Domain: ${merchantDomain}`)
+      : log.warning('merchantDomain not found');
 
     const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];

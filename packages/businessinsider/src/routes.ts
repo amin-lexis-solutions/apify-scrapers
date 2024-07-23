@@ -59,12 +59,34 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   try {
-    const jsonContent = await page.$eval(
-      'script[id="__NEXT_DATA__"]',
-      (script) => script?.textContent
+    const jsonContent = await page.evaluate(
+      () => document.querySelector('script[id="__NEXT_DATA__"]')?.textContent
     );
 
     const jsonData = JSON.parse(jsonContent || '{}');
+
+    const currentItems = jp.query(jsonData, '$..pageProps.vouchers')?.[0] || [];
+    const expiredItems =
+      jp.query(jsonData, '$..pageProps.expiredVouchers')?.[0] || [];
+    const items = [...currentItems, ...expiredItems];
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            url: request.url,
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error) {
+      log.error(`Preprocess Error: ${error}`);
+      return;
+    }
 
     const merchantName =
       jp.query(jsonData, '$..pageProps.retailer.name')[0] || null;
@@ -76,26 +98,6 @@ router.addHandler(Label.listing, async (context) => {
     const countryCode = jp.query(jsonData, '$..country')[0] || null;
 
     log.info(`Merchant Name: ${merchantName} - Domain: ${domain}`);
-
-    const currentItems = jp.query(jsonData, '$..pageProps.vouchers')[0] || [];
-    const expiredItems =
-      jp.query(jsonData, '$..pageProps.expiredVouchers')[0] || [];
-    const items = [...currentItems, ...expiredItems];
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            url: request.url,
-            items,
-          },
-        },
-        context
-      );
-    } catch (error) {
-      log.error(`Preprocess Error: ${error}`);
-      return;
-    }
 
     const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
@@ -130,19 +132,21 @@ router.addHandler(Label.listing, async (context) => {
 
     const nonExistingIds = await checkItemsIds(idsToCheck);
 
-    if (nonExistingIds.length > 0) {
-      for (const id of nonExistingIds) {
-        const result: ItemResult = itemsWithCode[id];
-        if (!result.itemUrl) continue;
-        await enqueueLinks({
-          urls: [result.itemUrl],
-          userData: {
-            ...request.userData,
-            label: Label.getCode,
-            validatorData: result.validator.getData(),
-          },
-        });
-      }
+    if (nonExistingIds.length == 0) return;
+
+    for (const id of nonExistingIds) {
+      const result: ItemResult = itemsWithCode[id];
+
+      if (!result.itemUrl) continue;
+
+      await enqueueLinks({
+        urls: [result.itemUrl],
+        userData: {
+          ...request.userData,
+          label: Label.getCode,
+          validatorData: result.validator.getData(),
+        },
+      });
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

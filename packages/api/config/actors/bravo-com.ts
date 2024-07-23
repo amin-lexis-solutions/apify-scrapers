@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: 'HouOLEugfPTadv50v',
+    apifyActorId: 'JY0hJ6gnF0ytuRQ1e',
     domains: [
       {
         domain: 'bravosconto.it',
