@@ -3,10 +3,10 @@ import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateCouponId,
-  CouponItemResult,
-  CouponHashMap,
-  checkCouponIds,
+  generateItemId,
+  ItemResult,
+  ItemHashMap,
+  checkItemsIds,
   logError,
 } from 'shared/helpers';
 
@@ -15,38 +15,34 @@ import { preProcess, postProcess } from 'shared/hooks';
 // Export the router function that determines which handler to use based on the request label
 export const router = createPuppeteerRouter();
 
-function processCouponItem(merchantName, merchantDomain, voucher, sourceUrl) {
+function processItem(merchantName, merchantDomain, item, sourceUrl) {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
-  const idInSite = voucher?.idInSite;
+  const idInSite = item?.idInSite;
   // Add required values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
-  validator.addValue('title', voucher.title);
+  validator.addValue('title', item.title);
   validator.addValue('idInSite', idInSite);
 
   // Add optional values to the validator
   validator.addValue('domain', merchantDomain);
-  validator.addValue('description', voucher.description);
-  validator.addValue('termsAndConditions', voucher.termsAndConditions);
-  validator.addValue('expiryDateAt', formatDateTime(voucher.endTime));
-  validator.addValue('startDateAt', formatDateTime(voucher.startTime));
-  validator.addValue('isExclusive', voucher.exclusiveVoucher);
-  validator.addValue('isExpired', voucher.isExpired);
+  validator.addValue('description', item.description);
+  validator.addValue('termsAndConditions', item.termsAndConditions);
+  validator.addValue('expiryDateAt', formatDateTime(item.endTime));
+  validator.addValue('startDateAt', formatDateTime(item.startTime));
+  validator.addValue('isExclusive', item.exclusiveVoucher);
+  validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateCouponId(
-    merchantName,
-    voucher.idPool,
-    sourceUrl
-  );
+  const generatedHash = generateItemId(merchantName, item.idPool, sourceUrl);
 
-  const hasCode = voucher?.type === 'code';
+  const hasCode = item?.type === 'code';
 
-  const couponUrl = voucher.couponUrl;
+  const itemUrl = item.itemUrl;
 
-  return { generatedHash, hasCode, couponUrl, validator };
+  return { generatedHash, hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {
@@ -73,11 +69,11 @@ router.addHandler(Label.listing, async (context) => {
               ?.firstChild?.textContent;
             const description = item.querySelector('p.wixui-rich-text__text')
               ?.textContent;
-            const couponUrl = item
+            const itemUrl = item
               .querySelector('a[data-testid=linkElement]')
               ?.getAttribute('href');
 
-            return { idInSite, title, description, merchantName, couponUrl };
+            return { idInSite, title, description, merchantName, itemUrl };
           }
         );
       });
@@ -108,7 +104,7 @@ router.addHandler(Label.listing, async (context) => {
         {
           AnomalyCheckHandler: {
             url: request.url,
-            coupons: allItems,
+            items: allItems,
           },
           IndexPageHandler: {
             indexPageSelectors: request.userData.pageSelectors,
@@ -121,7 +117,7 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const couponsWithCode: CouponHashMap = {};
+    const couponsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
 
     for (const item of allItems) {
@@ -138,7 +134,7 @@ router.addHandler(Label.listing, async (context) => {
         logError('idInSite not found in item');
         continue;
       }
-      const result: CouponItemResult = processCouponItem(
+      const result: ItemResult = processItem(
         item.merchantName,
         null,
         item,
@@ -165,13 +161,13 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Check if the coupons already exist in the database
-    const nonExistingIds = await checkCouponIds(idsToCheck);
+    const nonExistingIds = await checkItemsIds(idsToCheck);
     // If non-existing coupons are found, process and store their data
     if (nonExistingIds.length == 0) return;
 
     // Loop through each nonExistingIds and process it
     for (const id of nonExistingIds) {
-      const currentResult: CouponItemResult = couponsWithCode[id];
+      const currentResult: ItemResult = couponsWithCode[id];
       await postProcess(
         {
           SaveDataHandler: {

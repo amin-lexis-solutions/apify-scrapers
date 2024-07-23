@@ -8,7 +8,7 @@ async function main() {
 
   const crawler = await preparePuppeteerScraper(router as any, {
     indexPageSelectors: ['.E6jjcn .Zc7IjY'],
-    nonIndexPageSelectors: [':not(.wixui-repeater__item)'],
+    nonIndexPageSelectors: ['.gallery-item-common-info'],
   });
 
   await crawler.run();

@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: 'HkvtS5g9gpO9pfqoO',
+    apifyActorId: 'FqbDWz0KKZiWDDUHe',
     domains: [
       {
         domain: 'kodvpalto.ru',
