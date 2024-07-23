@@ -72,16 +72,6 @@ router.addHandler(Label.listing, async (context) => {
     const htmlContent = body instanceof Buffer ? body.toString() : body;
     const $ = cheerio.load(htmlContent);
 
-    const merchantName = (
-      $('div.storeHeader').attr('data-store-name') ||
-      $('.item-title h3').attr('data-label')
-    )?.toLowerCase();
-
-    if (!merchantName) {
-      logError('Unable to find merchant name');
-      return;
-    }
-
     // Refactor to use a loop for valid coupons
     const currentItems = $('ul.coupon-list.valid-coupons > li[data-id]');
     const expiredItems = $('ul.coupon-list.expired-coupons > li[data-id]');
@@ -93,11 +83,24 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
     } catch (error: any) {
       logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
+    const merchantName = (
+      $('div.storeHeader').attr('data-store-name') ||
+      $('.item-title h3').attr('data-label')
+    )?.toLowerCase();
+
+    if (!merchantName) {
+      logError('Unable to find merchant name');
       return;
     }
 

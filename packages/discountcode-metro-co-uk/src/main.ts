@@ -6,7 +6,13 @@ import { router } from 'shared/next-routes';
 async function main() {
   await Actor.init();
 
-  const crawler = await prepareCheerioScraper(router);
+  const crawler = await prepareCheerioScraper(router, {
+    indexPageSelectors: ["div[data-testid='vouchers-ui-voucher-card']"],
+    nonIndexPageSelectors: [
+      'div[data-testid=basic-carousel]',
+      "div[data-testid='header-main-1']",
+    ],
+  });
 
   await crawler.run();
   await Actor.exit();

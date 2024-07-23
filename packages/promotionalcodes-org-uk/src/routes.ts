@@ -59,6 +59,26 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
+    // Extract valid coupons
+    const items = $('div.offers > article').toArray();
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const merchantElem = $('span.categories.active').first();
 
     const merchantName = he.decode(
@@ -77,23 +97,6 @@ router.addHandler(Label.listing, async (context) => {
 
     if (!merchantDomain) {
       log.warning(`merchantDomain not found ${request.url}`);
-    }
-
-    // Extract valid coupons
-    const items = $('div.offers > article');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
     }
 
     const itemsWithCode: any = {};

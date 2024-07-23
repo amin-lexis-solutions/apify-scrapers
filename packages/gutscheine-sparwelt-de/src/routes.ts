@@ -50,18 +50,14 @@ router.addHandler(Label.listing, async (context) => {
       'div.voucher-teaser-list > div'
     );
 
-    if (items.length < 1) {
-      logError('No coupons found in the specified section');
-      return;
-    }
-
-    log.info(`Coupons count ${items.length}`);
-
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
             items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
           },
         },
         context
@@ -70,6 +66,8 @@ router.addHandler(Label.listing, async (context) => {
       logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
+
+    log.info(`Coupons count ${items.length}`);
 
     for (const item of items) {
       const itemId = item.getAttribute('data-ssr-vouchers-item');

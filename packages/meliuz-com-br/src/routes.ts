@@ -67,6 +67,26 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Listing ${request.url}`);
 
+    // Extract valid coupons
+    const items = $('div.cpn-list__items > div[data-offer-id]');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     // Extract the content of the meta tag
     const metaContent = $('meta[property="og:image:alt"]').attr('content');
 
@@ -78,23 +98,6 @@ router.addHandler(Label.listing, async (context) => {
     // Check if valid page
     if (!merchantName) {
       logError(`Not Merchant URL: ${request.url}`);
-      return;
-    }
-
-    // Extract valid coupons
-    const items = $('div.cpn-list__items > div[data-offer-id]');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
 

@@ -49,14 +49,6 @@ function processItem(item: any, $cheerio: cheerio.Root) {
 router.addHandler(Label.listing, async (context) => {
   const { request, $ } = context;
   try {
-    // Extract coupon list elements from the webpage
-    const domain = $('.stp_sub-header a._prevent_default').text()?.trim();
-
-    if (!domain) {
-      log.info('Domain not found');
-    }
-    // Extract the merchant name
-    const merchantName = domain?.split('.')?.[0];
     // Extract valid coupons
     const items = $('.couponcards-container .couponcard-container');
 
@@ -66,6 +58,9 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
@@ -73,6 +68,15 @@ router.addHandler(Label.listing, async (context) => {
       logError(`Pre-Processing Error : ${error.message}`);
       return;
     }
+    // Extract coupon list elements from the webpage
+    const domain = $('.stp_sub-header a._prevent_default').text()?.trim();
+
+    if (!domain) {
+      log.info('Domain not found');
+    }
+    // Extract the merchant name
+    const merchantName = domain?.split('.')?.[0];
+
     // Initialize variables
     const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];

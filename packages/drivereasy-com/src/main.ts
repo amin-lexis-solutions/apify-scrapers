@@ -7,7 +7,10 @@ import { router } from './routes';
 async function main() {
   await Actor.init();
 
-  const crawler = await preparePuppeteerScraper(router as any, {});
+  const crawler = await preparePuppeteerScraper(router as any, {
+    indexPageSelectors: ['.merchant_wrap'],
+    nonIndexPageSelectors: ['[class="glide glide--carousel"]', '.stores_list'],
+  });
 
   await crawler.run();
   await Actor.exit();

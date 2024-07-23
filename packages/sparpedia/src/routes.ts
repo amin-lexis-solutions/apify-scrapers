@@ -80,17 +80,6 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
-    const merchantElem = $('ol.mrk-breadcrumbs > li:last-child');
-
-    const merchantName = he.decode(
-      merchantElem ? merchantElem.text().trim() : ''
-    );
-
-    if (!merchantName) {
-      logError('Merchant name is missing');
-      return;
-    }
-
     // Extract valid coupons
     const currentItems = $(
       'div.current-shop-offers > div.offer-default.not-expired'
@@ -108,11 +97,25 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
     } catch (error: any) {
       logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
+    const merchantElem = $('ol.mrk-breadcrumbs > li:last-child');
+
+    const merchantName = he.decode(
+      merchantElem ? merchantElem.text().trim() : ''
+    );
+
+    if (!merchantName) {
+      logError('Merchant name is missing');
       return;
     }
 

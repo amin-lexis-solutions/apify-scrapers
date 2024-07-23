@@ -53,15 +53,7 @@ router.addHandler(Label.listing, async (context) => {
 
   try {
     log.info(`Listing ${request.url}`);
-    // Extract domain
-    const merchantDomain = $('.breadcrumb .active.section').text();
 
-    const merchantName = $('.header-content h1')?.text()?.split(' ')?.[0];
-    // Log error sentry if merchant name is not found
-    if (!merchantName) {
-      logError('merchantName not found');
-      return;
-    }
     // Extract coupons
     const items = $('.store-listing-item');
 
@@ -71,11 +63,24 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
     } catch (error: any) {
       logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
+    // Extract domain
+    const merchantDomain = $('.breadcrumb .active.section').text();
+
+    const merchantName = $('.header-content h1')?.text()?.split(' ')?.[0];
+    // Log error sentry if merchant name is not found
+    if (!merchantName) {
+      logError('merchantName not found');
       return;
     }
 

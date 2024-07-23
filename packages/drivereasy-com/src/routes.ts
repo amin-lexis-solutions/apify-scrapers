@@ -7,6 +7,7 @@ import {
   ItemResult,
   getMerchantDomainFromUrl,
   logError,
+  formatDateTime,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -66,24 +67,15 @@ router.addHandler(Label.listing, async (context) => {
     });
   }
 
-  async function getitemUrl(domain, id) {
-    return `https://www.drivereasy.com/coupons/${domain}?promoid=${id}`;
+  async function getItemUrl(merchantName, id) {
+    return `https://www.drivereasy.com/coupons/${merchantName.replace(
+      ' ',
+      '-'
+    )}?promoid=${id}`;
   }
 
   try {
     log.info(`Listing ${request.url}`);
-    await page.waitForSelector('.list_coupons li');
-
-    const domain = getMerchantDomainFromUrl(request.url);
-
-    const merchantName = await page.$eval('.m_logo img', (node) =>
-      node.getAttribute('alt')
-    );
-
-    if (!merchantName) {
-      logError('merchan name not found');
-      return;
-    }
 
     const items = await page.$$('.list_coupons li .offer_card');
 
@@ -93,6 +85,9 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
@@ -101,7 +96,16 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    // Extract items
+    const merchantDomain = getMerchantDomainFromUrl(request.url);
+
+    const merchantName = await page.$eval('.m_logo img', (node) =>
+      node.getAttribute('alt')
+    );
+
+    if (!merchantName) {
+      logError('merchan name not found');
+      return;
+    }
 
     const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
@@ -124,20 +128,22 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
-      const itemUrl = await getitemUrl(domain, idInSite);
+      const itemUrl = await getItemUrl(merchantName, idInSite);
       const expireDate = await extractExpireDate(element);
 
       const validator = new DataValidator();
       // Add required and optional values to the validator
       validator.addValue('sourceUrl', request.url);
       validator.addValue('merchantName', merchantName);
+      validator.addValue('domain', merchantDomain);
+
       validator.addValue('title', title);
       validator.addValue('idInSite', idInSite);
       validator.addValue('isExpired', false);
       validator.addValue('isShown', true);
 
       if (expireDate) {
-        validator.addValue('expiryDateAt', expireDate);
+        validator.addValue('expiryDateAt', formatDateTime(expireDate));
       }
 
       const generatedHash = generateItemId(merchantName, idInSite, request.url);
@@ -167,21 +173,23 @@ router.addHandler(Label.listing, async (context) => {
     // Call the API to check if the coupon exists
     const nonExistingIds = await checkItemsIds(idsToCheck);
 
-    if (nonExistingIds.length > 0) {
-      let currentResult: ItemResult;
+    if (nonExistingIds.length == 0) return;
 
-      for (const id of nonExistingIds) {
-        currentResult = itemsWithCode[id];
-        if (!currentResult.itemUrl) continue;
-        await enqueueLinks({
-          urls: [currentResult.itemUrl],
-          userData: {
-            label: Label.getCode,
-            validatorData: currentResult.validator.getData(),
-          },
-          forefront: true,
-        });
-      }
+    let currentResult: ItemResult;
+
+    for (const id of nonExistingIds) {
+      currentResult = itemsWithCode[id];
+
+      if (!currentResult.itemUrl) continue;
+      // Add the coupon URL to the request queue
+      await enqueueLinks({
+        urls: [currentResult.itemUrl],
+        userData: {
+          label: Label.getCode,
+          validatorData: currentResult.validator.getData(),
+        },
+        forefront: true,
+      });
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

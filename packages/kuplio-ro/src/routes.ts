@@ -97,13 +97,6 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
-    const merchantDomain = $('.contacts .details .link')
-      ?.attr('href')
-      ?.split('@')?.[1];
-
-    if (!merchantDomain) {
-      log.warning(`merchantDomain not found in sourceUrl ${request.url}`);
-    }
     // Extract valid coupons
     const items = $('div#couponContainer > div.coupon');
 
@@ -113,12 +106,23 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
     } catch (error: any) {
       logError(`Pre-Processing Error : ${error.message}`);
       return;
+    }
+
+    const merchantDomain = $('.contacts .details .link')
+      ?.attr('href')
+      ?.split('@')?.[1];
+
+    if (!merchantDomain) {
+      log.warning(`merchantDomain not found in sourceUrl ${request.url}`);
     }
 
     // Extract items

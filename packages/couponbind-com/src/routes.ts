@@ -68,19 +68,6 @@ router.addHandler(Label.listing, async (context) => {
   const { request, $, log } = context;
   try {
     log.info(`Listing ${request.url}`);
-    // Extract the merchant name
-    const merchantName = $('img.merchant-logo')?.attr('title') || '';
-    // Throw an error if merchant name is not found
-    if (!merchantName) {
-      logError(`merchantName not found ${request.url}`);
-      return;
-    }
-    // Extract coupon list elements from the webpage
-    const merchantDomain = getMerchantDomainFromUrl(request.url);
-
-    if (!merchantDomain) {
-      log.warning('Domain is missing!');
-    }
 
     const items = [
       ...$('.promo-container.code'),
@@ -94,12 +81,29 @@ router.addHandler(Label.listing, async (context) => {
           AnomalyCheckHandler: {
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
     } catch (error: any) {
       logError(`Pre-Processing Error : ${error.message}`);
       return;
+    }
+
+    // Extract the merchant name
+    const merchantName = $('img.merchant-logo')?.attr('title') || '';
+    // Throw an error if merchant name is not found
+    if (!merchantName) {
+      logError(`merchantName not found ${request.url}`);
+      return;
+    }
+    // Extract coupon list elements from the webpage
+    const merchantDomain = getMerchantDomainFromUrl(request.url);
+
+    if (!merchantDomain) {
+      log.warning('Domain is missing!');
     }
 
     // Initialize variables

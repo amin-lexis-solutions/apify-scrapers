@@ -96,6 +96,26 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
+    // Extract valid coupons
+    const items = $('div.rect_shape > div.company_vocuher');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const merchantNameEncoded = $('div.Breadcrumb > div.container_center')
       .contents()
       .filter((i, element) => {
@@ -122,22 +142,6 @@ router.addHandler(Label.listing, async (context) => {
 
     if (!merchantDomain) {
       log.warning('merchantDomain name is missing');
-    }
-    // Extract valid coupons
-    const items = $('div.rect_shape > div.company_vocuher');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
     }
 
     const itemsWithCode: ItemHashMap = {};

@@ -79,6 +79,25 @@ router.addHandler(Label.listing, async (context) => {
   try {
     log.info(`Processing URL: ${request.url}`);
 
+    const items = $('.coupon-list .coupon-wrapper');
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     const merchantElement = $('.bread .breadcrumb .active');
 
     if (!merchantElement) {
@@ -97,22 +116,6 @@ router.addHandler(Label.listing, async (context) => {
     const merchantDomain = merchantDomainElement
       .text()
       ?.match(/([a-zA-Z0-9]+)\.([a-z]+)/)?.[0];
-
-    const items = $('.coupon-list .coupon-wrapper');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
 
     const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];

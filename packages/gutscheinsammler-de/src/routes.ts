@@ -224,23 +224,18 @@ router.addHandler(Label.getCode, async (context) => {
     // Convert body to string if it's a Buffer
     const htmlContent = body instanceof Buffer ? body.toString() : body;
 
-    let code = '';
+    if (!htmlContent.includes('{')) {
+      return;
+    }
 
     // Attempt to parse the HTML content as JSON
     const parsedJson = JSON.parse(htmlContent);
 
-    // Extract the "o_c" value
-    if (
-      typeof parsedJson === 'object' &&
-      parsedJson !== null &&
-      'code' in parsedJson
-    ) {
-      code = parsedJson['code'].trim();
-      if (code) {
-        log.info(`Found code: ${code}\n    at: ${request.url}`);
-        validator.addValue('code', code);
-      }
-    }
+    const code = parsedJson?.code?.trim();
+
+    log.info(`Found code: ${code}\n    at: ${request.url}`);
+
+    validator.addValue('code', code);
 
     // Process and store the data
     await postProcess(

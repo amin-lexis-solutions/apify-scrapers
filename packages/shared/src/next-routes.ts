@@ -111,7 +111,7 @@ function processItem(
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, body, crawler, log } = context;
+  const { request, body, $, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -124,6 +124,26 @@ router.addHandler(Label.listing, async (context) => {
     // Extracting request and body from context
 
     log.info(`Processing URL: ${request.url}`);
+
+    const items = $(request.userData.pageSelectors?.indexSelector?.[0]); // next-routes - dynamic selectors
+
+    // pre-processing hooks  here to avoid unnecessary requests
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
 
     // Convert body to string if it's a Buffer
     const htmlContent = body instanceof Buffer ? body.toString() : body;
@@ -176,28 +196,13 @@ router.addHandler(Label.listing, async (context) => {
       is_expired: true,
     }));
 
-    const items = [...activetItems, ...expiredItem];
-
-    // pre-pressing hooks  here to avoid unnecessary requests
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
+    const Allitems = [...activetItems, ...expiredItem];
 
     const itemsWithCode: ItemHashMap = {};
     const idsToCheck: string[] = [];
     let result: ItemResult;
 
-    for (const item of items) {
+    for (const item of Allitems) {
       await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings
 
       if (!item?.idPool && !item?.idVoucher && !item?.idInSite) {

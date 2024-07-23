@@ -1,6 +1,7 @@
 {
   "extends": "@apify/tsconfig",
   "compilerOptions": {
+    "types": ["jest"],
     "paths": {
       "src/*": ["./src/*"],
       "shared/*": ["../shared/src/*"]

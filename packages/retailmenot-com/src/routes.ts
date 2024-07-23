@@ -21,6 +21,28 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   try {
+    // Find all valid coupons on the page
+    const items = await page.$$(
+      'div[data-name="offer_strip"] a[data-component-class="offer_strip"]'
+    );
+
+    try {
+      await preProcess(
+        {
+          AnomalyCheckHandler: {
+            items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      logError(`Pre-Processing Error : ${error.message}`);
+      return;
+    }
+
     // Extract merchant name from the page
     const merchantName = await page.$eval('main picture img', (logo) => {
       const content = logo.getAttribute('alt');
@@ -33,23 +55,6 @@ router.addHandler(Label.listing, async (context) => {
     }
     // Extract domain from the request URL
     const merchantDomain = getMerchantDomainFromUrl(request.url);
-
-    // Find all valid coupons on the page
-    const items = await page.$$('div[data-component-class="top_offers"] div');
-
-    try {
-      await preProcess(
-        {
-          AnomalyCheckHandler: {
-            items,
-          },
-        },
-        context
-      );
-    } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
-      return;
-    }
 
     // Extract items
     const itemsWithCode: ItemHashMap = {};
@@ -66,10 +71,12 @@ router.addHandler(Label.listing, async (context) => {
       // Initialize variables
       const isExpired = false;
 
-      // Extract unique ID for the coupon
-      const idInSite = await element.evaluate((node) =>
-        node?.querySelector('a')?.getAttribute('data-content-uuid')
-      );
+      // Extract idInSite from href link
+      const idInSite = await page.evaluate((node) => {
+        const href = node?.getAttribute('href');
+        const params = href ? new URLSearchParams(href) : null;
+        return params?.get('offer_uuid');
+      }, element);
 
       if (!idInSite) {
         logError(`idInSite not found in item`);
@@ -88,13 +95,13 @@ router.addHandler(Label.listing, async (context) => {
       const hasCode = !!elementCode;
 
       // Extract title of the coupon
-      const couponTitle = await element.evaluate((node) => {
-        const titleElement = node.querySelector('h3');
+      const couponTitle = await page.evaluate((node) => {
+        const titleElement = node?.querySelector('h3');
         return titleElement?.textContent?.replace('\n', '');
-      });
+      }, element);
 
       if (!couponTitle) {
-        logError(`couponTitle not found in item`);
+        logError(`title not found in item`);
         continue;
       }
 
@@ -140,21 +147,21 @@ router.addHandler(Label.listing, async (context) => {
     // Call the API to check if the coupon exists
     const nonExistingIds = await checkItemsIds(idsToCheck);
 
-    if (nonExistingIds.length > 0) {
-      let currentResult: ItemResult;
+    if (nonExistingIds.length == 0) return;
 
-      for (const id of nonExistingIds) {
-        currentResult = itemsWithCode[id];
-        if (!currentResult.itemUrl) continue;
-        await enqueueLinks({
-          urls: [currentResult.itemUrl],
-          userData: {
-            label: Label.getCode,
-            validatorData: currentResult.validator,
-          },
-          forefront: true,
-        });
-      }
+    for (const id of nonExistingIds) {
+      const currentResult: ItemResult = itemsWithCode[id];
+
+      if (!currentResult?.itemUrl) continue;
+      // Enqueue the coupon URL for further processing with appropriate label and validator data
+      await enqueueLinks({
+        urls: [currentResult?.itemUrl],
+        userData: {
+          label: Label.getCode,
+          validatorData: currentResult.validator,
+        },
+        forefront: true,
+      });
     }
   } finally {
     // We don't catch errors explicitly so that they are logged in Sentry,
