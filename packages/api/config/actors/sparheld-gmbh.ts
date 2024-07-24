@@ -1,4 +1,5 @@
 import { Locale } from '../locales';
+import path from 'path';
 
 export default [
   {
@@ -21,6 +22,6 @@ export default [
         locales: [Locale.sv_SE],
       },
     ],
-    name: 'sparheld-gmbh',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];

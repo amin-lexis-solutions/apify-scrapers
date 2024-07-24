@@ -1,4 +1,5 @@
 import { Locale } from '../locales';
+import path from 'path';
 
 export default [
   {
@@ -98,6 +99,6 @@ export default [
         },
       },
     ],
-    name: 'picodi-com',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];

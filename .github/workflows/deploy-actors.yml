@@ -40,3 +40,28 @@ jobs:
           api-token: ${{ secrets.APIFY_TOKEN }}
           base-url: ${{ secrets.BASE_URL }}
           api-secret: ${{ secrets.API_SECRET }}
+
+  check-shared-actors:
+    needs: deploy-actors
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: cd ./packages/api && pnpm install
+        env:
+          HUSKY: 0
+
+      - name: Deploy Shared Actors
+        env:
+          API_KEY_APIFY: ${{ secrets.API_KEY_APIFY }}
+        run: cd ./packages/api && pnpm run scripts:check-shared-actors

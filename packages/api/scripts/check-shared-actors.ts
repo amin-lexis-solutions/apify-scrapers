@@ -25,7 +25,7 @@ export const main = async () => {
       (actor: any) =>
         actor.id === source.apifyActorId &&
         actor.username === 'lexis-solutions' &&
-        actor.name === source.name
+        actor.name === source.name + '-scraper'
     );
     return sharedActor
       ? { apifyActorId: source.apifyActorId, name: source.name, shared: '✅' }
@@ -34,8 +34,13 @@ export const main = async () => {
 
   console.log('Shared actors:');
   console.table(sharedActors);
+
+  if (sharedActors.some((actor) => actor.shared === '❌')) {
+    throw new Error('Some actors are not shared');
+  }
 };
 
 main().catch((err) => {
   console.error(err);
+  process.exit(1);
 });

@@ -1,7 +1,6 @@
 import { Locale } from '../locales';
+import path from 'path';
 
-// this actor locales are tricky, because the site is in english
-// but the coupons  are for US, UK, EU and other countries
 export default [
   {
     apifyActorId: 'c3cBBONbb7vmcsyu8',
@@ -11,6 +10,6 @@ export default [
         locales: [Locale.en_US],
       },
     ],
-    name: 'dealspotr-com',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];

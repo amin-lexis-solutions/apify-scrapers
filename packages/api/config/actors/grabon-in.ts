@@ -1,4 +1,5 @@
 import { Locale } from '../locales';
+import path from 'path';
 
 export default [
   {
@@ -9,6 +10,6 @@ export default [
         locales: [Locale.en_IN],
       },
     ],
-    name: 'grabon-in',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];

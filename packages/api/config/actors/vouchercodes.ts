@@ -1,4 +1,5 @@
 import { Locale } from '../locales';
+import path from 'path';
 
 export default [
   {
@@ -33,6 +34,6 @@ export default [
         locales: [Locale.en_AE],
       },
     ],
-    name: 'vouchercodes',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];

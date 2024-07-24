@@ -1,4 +1,5 @@
 import { Locale } from '../locales';
+import path from 'path';
 
 export default [
   {
@@ -37,6 +38,6 @@ export default [
         locales: [Locale.de_AT],
       },
     ],
-    name: 'save-up',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];

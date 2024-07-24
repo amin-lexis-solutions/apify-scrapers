@@ -1,4 +1,5 @@
 import { Locale } from '../locales';
+import path from 'path';
 
 export default [
   {
@@ -65,6 +66,6 @@ export default [
         locales: [Locale.cs_CZ],
       },
     ],
-    name: 'bravo',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];

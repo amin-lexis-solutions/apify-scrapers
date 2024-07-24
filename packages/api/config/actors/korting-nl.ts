@@ -1,4 +1,5 @@
 import { Locale } from '../locales';
+import path from 'path';
 
 export default [
   {
@@ -9,6 +10,6 @@ export default [
         locales: [Locale.nl_NL],
       },
     ],
-    name: 'korting-nl',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];

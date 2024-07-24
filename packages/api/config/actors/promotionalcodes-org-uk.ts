@@ -1,4 +1,5 @@
 import { Locale } from '../locales';
+import path from 'path';
 
 export default [
   {
@@ -9,6 +10,6 @@ export default [
         locales: [Locale.en_GB],
       },
     ],
-    name: 'promotionalcodes-org-uk',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];

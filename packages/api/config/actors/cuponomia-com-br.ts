@@ -1,4 +1,5 @@
 import { Locale } from '../locales';
+import path from 'path';
 
 // this site have 3 other locales chile, colombia and mexico
 export default [
@@ -10,6 +11,6 @@ export default [
         locales: [Locale.pt_BR],
       },
     ],
-    name: 'cuponomia-com-br',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];

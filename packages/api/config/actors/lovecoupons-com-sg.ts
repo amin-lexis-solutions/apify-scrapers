@@ -1,4 +1,5 @@
 import { Locale } from '../locales';
+import path from 'path';
 
 export default [
   {
@@ -64,6 +65,6 @@ export default [
       { domain: 'lovecoupons.uy', locales: [Locale.es_UY] },
       { domain: 'lovecoupons.com.ph', locales: [Locale.en_PH] },
     ],
-    name: 'lovecoupons',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];

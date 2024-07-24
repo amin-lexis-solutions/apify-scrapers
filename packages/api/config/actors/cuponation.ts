@@ -1,4 +1,5 @@
 import { Locale } from '../locales';
+import path from 'path';
 
 export default [
   {
@@ -29,6 +30,6 @@ export default [
         locales: [Locale.fi_FI],
       },
     ],
-    name: 'cuponation',
+    name: path.basename(__filename, path.extname(__filename)),
   },
 ];
