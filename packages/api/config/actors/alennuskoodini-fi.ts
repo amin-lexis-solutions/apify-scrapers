@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: null,
+    apifyActorId: 'AkedhfuK0vxsN8XJa',
     domains: [
       {
         domain: 'alennuskoodini.fi',

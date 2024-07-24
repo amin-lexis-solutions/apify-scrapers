@@ -30,6 +30,7 @@
     "scripts:tests": "ts-node -r tsconfig-paths/register  scripts/automated-tests.ts",
     "scripts:sync-merchants-data": "ts-node -r tsconfig-paths/register scripts/sync-merchants-data.ts",
     "scripts:match-merchants-and-target-pages": "ts-node -r tsconfig-paths/register scripts/match-merchants-and-target-pages.ts",
+    "scripts:check-shared-actors": "ts-node -r tsconfig-paths/register scripts/check-shared-actors.ts",
     "schedule:actors": "./node_modules/.bin/ts-node -r tsconfig-paths/register  ./src/crons/schedule-actors.ts",
     "schedule:find-serp": "./node_modules/.bin/ts-node -r tsconfig-paths/register ./src/crons/schedule-find-serp.ts",
     "schedule:find-serp-for-custom-malaysian-domains": "./node_modules/.bin/ts-node -r tsconfig-paths/register ./src/crons/schedule-find-serp-for-custom-malaysian-domains.ts",

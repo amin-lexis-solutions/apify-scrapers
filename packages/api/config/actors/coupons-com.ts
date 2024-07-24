@@ -2,7 +2,7 @@ import { Locale } from '../locales';
 
 export default [
   {
-    apifyActorId: null,
+    apifyActorId: 'Ly5F1hpAp3slg7dsR',
     domains: [
       {
         domain: 'coupons.com',
