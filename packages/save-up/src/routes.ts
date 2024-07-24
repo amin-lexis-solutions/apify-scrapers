@@ -111,7 +111,7 @@ router.addHandler(Label.listing, async (context) => {
       const title = $cheerio('h2')?.text()?.trim();
 
       if (!title) {
-        logError('Voucher title is missing');
+        log.warning('Voucher title is missing');
         continue;
       }
 

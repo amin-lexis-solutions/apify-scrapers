@@ -12,8 +12,8 @@ async function main() {
       "div[data-testid='VouchersListItem']",
     ],
     nonIndexPageSelectors: [
-      'section[data-testid="CategoriesOverviewGrid"]',
-      '[data-testid="StoresSection"]',
+      '[data-testid="CategoriesOverviewGrid"]',
+      '[data-testid=StoresSection]',
     ],
   });
 

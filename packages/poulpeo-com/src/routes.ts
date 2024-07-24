@@ -103,7 +103,7 @@ router.addHandler(Label.listing, async (context) => {
       );
 
       if (!title) {
-        logError(`not couponTitle found in item`);
+        log.warning(`not couponTitle found in item`);
         continue;
       }
 
@@ -115,7 +115,7 @@ router.addHandler(Label.listing, async (context) => {
       }, element);
 
       if (!idInSite) {
-        logError(`not idInSite found in item`);
+        log.warning(`not idInSite found in item`);
         continue;
       }
 

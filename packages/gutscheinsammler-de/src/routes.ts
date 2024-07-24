@@ -70,33 +70,8 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Processing URL: ${request.url}`);
 
-    const merchantName = $('.ShopSummary_title__U9dPv')
-      .text()
-      ?.replace(' Coupons', '');
-
-    if (!merchantName) {
-      logError(`merchantName not found in URL: ${request.url}`);
-      return;
-    }
-
-    const merchantDomainLink = $(
-      'div[data-testid="ShopDetails"] .ShopDetailsList_link__ZYqnc'
-    )
-      .first()
-      .text();
-
-    const merchantDomain = merchantDomainLink
-      ? getMerchantDomainFromUrl(merchantDomainLink)
-      : null;
-
-    if (!merchantDomain) {
-      log.warning(`merchantDomain not found ${request.url}`);
-    }
-
     // Extract valid coupons
-    const activedItems = $(
-      'section[data-testid=ActiveVouchers] div[data-testid=VouchersListItem]'
-    );
+    const activedItems = $('section div[data-testid=VouchersListItem]');
     const expiredItems = $(
       "section[data-testid='ExpiredVouchers'] div[data-testid='VouchersListItem']"
     );
@@ -118,6 +93,29 @@ router.addHandler(Label.listing, async (context) => {
     } catch (error: any) {
       logError(`Pre-Processing Error : ${error.message}`);
       return;
+    }
+
+    const merchantName =
+      $('.ShopSummary_title__U9dPv').text()?.replace(' Coupons', '') ||
+      $('.CategoryPageLayout_title__4L6N5').text()?.replace('Gutscheine', '');
+
+    if (!merchantName) {
+      logError(`merchantName not found in URL: ${request.url}`);
+      return;
+    }
+
+    const merchantDomainLink = $(
+      'div[data-testid="ShopDetails"] .ShopDetailsList_link__ZYqnc'
+    )
+      .first()
+      .text();
+
+    const merchantDomain = merchantDomainLink
+      ? getMerchantDomainFromUrl(merchantDomainLink)
+      : null;
+
+    if (!merchantDomain) {
+      log.warning(`merchantDomain not found ${request.url}`);
     }
 
     const itemsWithCode: ItemHashMap = {};
@@ -224,18 +222,23 @@ router.addHandler(Label.getCode, async (context) => {
     // Convert body to string if it's a Buffer
     const htmlContent = body instanceof Buffer ? body.toString() : body;
 
-    if (!htmlContent.includes('{')) {
-      return;
-    }
+    let code = '';
 
     // Attempt to parse the HTML content as JSON
     const parsedJson = JSON.parse(htmlContent);
 
-    const code = parsedJson?.code?.trim();
-
-    log.info(`Found code: ${code}\n    at: ${request.url}`);
-
-    validator.addValue('code', code);
+    // Extract the "o_c" value
+    if (
+      typeof parsedJson === 'object' &&
+      parsedJson !== null &&
+      'code' in parsedJson
+    ) {
+      code = parsedJson['code'].trim();
+      if (code) {
+        log.info(`Found code: ${code}\n    at: ${request.url}`);
+        validator.addValue('code', code);
+      }
+    }
 
     // Process and store the data
     await postProcess(

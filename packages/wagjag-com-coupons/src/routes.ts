@@ -129,7 +129,7 @@ router.addHandler(Label.listing, async (context) => {
         ?.match(/\d+$/)?.[0];
 
       if (!idInSite) {
-        logError(`Element data-promotion-id attr is missing in item`);
+        log.warning(`Element data-promotion-id attr is missing in item`);
         continue;
       }
 

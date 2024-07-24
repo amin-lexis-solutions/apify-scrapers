@@ -100,7 +100,7 @@ router.addHandler(Label.listing, async (context) => {
 
     for (const item of items) {
       if (!item.title) {
-        logError('title not found in item');
+        log.warning('title not found in item');
         continue;
       }
       const result: ItemResult = processItem(

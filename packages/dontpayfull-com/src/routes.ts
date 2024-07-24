@@ -8,7 +8,7 @@ import {
   getMerchantDomainFromUrl,
   logError,
 } from 'shared/helpers';
-import { createPuppeteerRouter } from 'crawlee';
+import { createPuppeteerRouter, sleep } from 'crawlee';
 import { postProcess, preProcess } from 'shared/hooks';
 import { ElementHandle } from 'puppeteer';
 
@@ -179,9 +179,7 @@ router.addHandler(Label.getCode, async (context) => {
   if (request.userData.label !== Label.getCode) return;
 
   try {
-    await page.waitForTimeout(5000); // Wait for 5 seconds
-
-    await page.waitForSelector('.floating-box-content');
+    await sleep(500); // delay popup shows code
 
     log.info(`GetCode ${request.url}`);
     // Retrieve validatorData from request's userData
