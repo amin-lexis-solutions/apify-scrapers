@@ -20,7 +20,7 @@ const findTargets = async () => {
     payload['limitDomainsPerLocale'] = 10;
   }
 
-  fetch(`${process.env.BASE_URL}/targets/find-n-locales`, {
+  fetch(`${process.env.BASE_URL}targets/find-n-locales`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

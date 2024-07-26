@@ -27,7 +27,7 @@ function normalizeString(s: string): string {
 
 export async function fetchSentryUrl() {
   try {
-    const response = await axios.get(`${process.env.BASE_URL}/sentry/dsn`);
+    const response = await axios.get(`${process.env.BASE_URL}sentry/dsn`);
     console.log('Sentry URL:', response.data.url);
     return response.data.url as string;
   } finally {
@@ -40,7 +40,7 @@ export async function checkItemsIds(ids: any[]): Promise<any[]> {
   try {
     // Send a POST request to the API to check if the coupon IDs exist
     const response = await axios.post(
-      `${process.env.BASE_URL}/items/match-ids`,
+      `${process.env.BASE_URL}items/match-ids`,
       { ids: ids }
     );
 
@@ -179,7 +179,7 @@ export async function checkExistingItemsAnomaly(
 
   try {
     const response = await axios.post(
-      `${process.env.BASE_URL}/items/anomaly-detector`,
+      `${process.env.BASE_URL}items/anomaly-detector`,
       {
         sourceUrl,
         couponsCount: count,

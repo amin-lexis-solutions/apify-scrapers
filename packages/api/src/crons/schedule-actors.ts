@@ -13,7 +13,7 @@ export const runActors = async () => {
     return;
   }
 
-  fetch(`${process.env.BASE_URL}/targets/run`, {
+  fetch(`${process.env.BASE_URL}targets/run`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -15,7 +15,7 @@ const findTargets = async (locale: string) => {
       return;
     }
 
-    fetch(`${process.env.BASE_URL}/targets/find-for-urls-and-locale`, {
+    fetch(`${process.env.BASE_URL}targets/find-for-urls-and-locale`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
