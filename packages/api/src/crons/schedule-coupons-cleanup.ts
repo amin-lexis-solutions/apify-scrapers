@@ -3,7 +3,7 @@ import { prisma } from '../lib/prisma';
 import dayjs from 'dayjs';
 
 // Function to delete coupons older than 6 weeks
-const deleteCoupons = async () => {
+const deleteCouponStats = async () => {
   const olderThan = dayjs().subtract(6, 'weeks').toDate();
 
   const deleted = await prisma.couponStats.deleteMany({
@@ -14,7 +14,7 @@ const deleteCoupons = async () => {
     },
   });
 
-  console.log(`Deleted ${deleted.count} coupons older than 30 days`);
+  console.log(`Deleted ${deleted.count} coupon stats older than 6 weeks.`);
 };
 
 // Function to find and mark expired coupons
@@ -40,7 +40,7 @@ const markExpiredCoupons = async () => {
 };
 
 export async function main() {
-  await deleteCoupons();
+  await deleteCouponStats();
   await markExpiredCoupons();
 }
 

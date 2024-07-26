@@ -21,8 +21,10 @@ export const runActors = async () => {
     },
     body: JSON.stringify({ maxConcurrency }),
   })
-    .then((data) => {
+    .then(async (data) => {
       if (data.status != 200) {
+        const responseBody = await data.text();
+        console.log(`Response Body: ${responseBody}`);
         throw new Error(`Failed to run actors with status ${data.status}`);
       }
       console.log(

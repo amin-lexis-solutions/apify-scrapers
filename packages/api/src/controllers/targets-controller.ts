@@ -267,6 +267,7 @@ export class TargetsController {
             targetPageId: page.id,
             targetPageUrl: page.url,
             verifyLocale: page.verified_locale,
+            merchantId: page.merchantId,
           },
         }));
 

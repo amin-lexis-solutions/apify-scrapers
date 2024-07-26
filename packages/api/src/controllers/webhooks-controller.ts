@@ -256,6 +256,21 @@ export class WebhooksController {
           ? item.metadata.verifyLocale
           : getLocaleFromUrl(item.sourceUrl);
 
+        const merchantId = item.metadata.merchantId || null;
+
+        if (!merchantId) {
+          Sentry.captureException(
+            `merchantId not found for coupon ${item.id}. Source URL: ${item.sourceUrl}`,
+            { extra: { item } }
+          );
+        }
+
+        if (merchantId && !existingRecord?.merchantId) {
+          updateData.merchant_relation = {
+            connect: { id: merchantId },
+          };
+        }
+
         if (locale) {
           updateData.locale_relation = {
             connect: { locale },
@@ -300,6 +315,15 @@ export class WebhooksController {
       );
     }
 
+    const merchantId = item.metadata.merchantId || null;
+
+    if (!merchantId) {
+      Sentry.captureException(
+        `merchantId not found for coupon ${id}. Source URL: ${sourceUrl}`,
+        { extra: { item } }
+      );
+    }
+
     const locale = item.metadata.verifyLocale
       ? item.metadata.verifyLocale
       : getLocaleFromUrl(item.sourceUrl);
@@ -315,6 +339,7 @@ export class WebhooksController {
       id,
       apifyActorId,
       locale,
+      merchantId,
       idInSite: item.idInSite,
       domain: item.domain || null,
       merchantName: item.merchantName,

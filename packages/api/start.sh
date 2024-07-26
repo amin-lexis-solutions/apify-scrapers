@@ -11,6 +11,12 @@ printenv >> /app/packages/api/.env
 # Start the cron service
 service cron start
 
+# Ensure the cron service is running
+if ! service cron status; then
+    echo "Failed to start the cron service."
+    exit 1
+fi
+
 # Perform database migrations and handle potential failures
 if ! DATABASE_URL=$DATABASE_URL_NON_POOLED yarn prisma:migrate; then
     echo "Failed to migrate the database."

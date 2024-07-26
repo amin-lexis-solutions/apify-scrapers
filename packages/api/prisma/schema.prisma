@@ -28,6 +28,7 @@ model Coupon {
   idInSite           String
   domain             String?
   merchantName       String
+  merchantId         String?
   title              String
   description        String?
   termsAndConditions String?
@@ -49,6 +50,8 @@ model Coupon {
   source_relation Source       @relation(fields: [apifyActorId], references: [apifyActorId])
 
   locale_relation TargetLocale @relation(fields: [locale], references: [locale], onDelete: Cascade)
+
+  merchant_relation Merchant? @relation(fields: [merchantId], references: [id])
 
   @@index([apifyActorId])
   @@index([locale])
@@ -169,6 +172,7 @@ model Merchant {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @default(now())
   targetPages    TargetPage[]
+  coupons        Coupon[]
 
   @@unique([locale, oberst_id])
 

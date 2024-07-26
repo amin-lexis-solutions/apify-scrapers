@@ -52,12 +52,24 @@ export class CouponsController {
       isExclusive,
       isExpired,
       shouldBeFake,
+      show_disabled_merchants,
     } = params;
 
     const where: Prisma.CouponWhereInput = {};
 
+    // Ensure that only items with a merchantId are returned
+    where.merchantId = { not: null };
+
     if (merchantName) {
       where.merchantName = merchantName;
+    }
+
+    // Return only items with a active merchant
+    if (
+      show_disabled_merchants === undefined ||
+      show_disabled_merchants === false
+    ) {
+      where.merchant_relation = { disabledAt: null };
     }
 
     if (isShown !== undefined) {
@@ -88,10 +100,8 @@ export class CouponsController {
       where.code = type === 'code' ? { not: null } : { equals: null };
     }
 
-    const domain = merchantDomain;
-
-    if (domain) {
-      where.domain = domain;
+    if (merchantDomain) {
+      where.domain = merchantDomain;
     }
 
     if (sourceDomain) {
@@ -111,9 +121,19 @@ export class CouponsController {
         skip: offset,
         take: pageSize,
         where: where,
+        orderBy: { lastSeenAt: 'desc' },
         include: {
           source_relation: {
             select: { name: true, isActive: true, apifyActorId: true },
+          },
+          merchant_relation: {
+            select: {
+              id: true,
+              name: true,
+              domain: true,
+              locale: true,
+              disabledAt: true,
+            },
           },
         },
       }),

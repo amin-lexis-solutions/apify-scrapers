@@ -52,6 +52,10 @@ export class ListRequestBody {
 
   @IsBoolean()
   @IsOptional()
+  show_disabled_merchants?: boolean;
+
+  @IsBoolean()
+  @IsOptional()
   archived?: boolean;
 
   @IsBoolean()
