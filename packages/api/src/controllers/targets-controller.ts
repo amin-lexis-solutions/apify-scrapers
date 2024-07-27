@@ -5,7 +5,7 @@ import { apify } from '../lib/apify';
 import { getMerchantsForLocale } from '../lib/oberst-api';
 import { CostLimit } from '../middlewares/api-middleware';
 import { prisma } from '../lib/prisma';
-import { getWebhookUrl, availableActorRuns } from '../utils/utils';
+import { availableActorRuns } from '../utils/utils';
 import {
   RunNLocalesBody,
   FindTargetPagesBody,
@@ -209,6 +209,7 @@ export class TargetsController {
     const counts: any = [];
     for (const source of sources) {
       const availableRuns = await availableActorRuns();
+      console.log('Available runs:', availableRuns);
       if (maxConcurrency <= actorsStarted || availableRuns <= actorsStarted) {
         console.log(
           `Reached the limit of ${actorsStarted} actors started. Skipping the rest of the sources.`
@@ -285,7 +286,7 @@ export class TargetsController {
                     'ACTOR.RUN.TIMED_OUT',
                     'ACTOR.RUN.ABORTED',
                   ],
-                  requestUrl: getWebhookUrl('/webhooks/coupons'),
+                  requestUrl: `${process.env.BASE_URL}webhooks/coupons`,
                   payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}} }`,
                   headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
                 },
@@ -413,7 +414,7 @@ export class TargetsController {
                   'ACTOR.RUN.TIMED_OUT',
                   'ACTOR.RUN.ABORTED',
                 ],
-                requestUrl: getWebhookUrl('/webhooks/serp'),
+                requestUrl: `${process.env.BASE_URL}webhooks/serp`,
                 payloadTemplate: `{"localeId":"${targetLocale.id}","resource":{{resource}},"eventData":{{eventData}},"removeDuplicates":false}`,
                 headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
               },
@@ -477,7 +478,7 @@ async function findSerpForLocaleAndMerchants(
                 'ACTOR.RUN.TIMED_OUT',
                 'ACTOR.RUN.ABORTED',
               ],
-              requestUrl: getWebhookUrl('/webhooks/serp'),
+              requestUrl: `${process.env.BASE_URL}webhooks/serp`,
               payloadTemplate: `{"localeId":"${locale.id}","resource":{{resource}},"eventData":{{eventData}}}`,
               headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
             },

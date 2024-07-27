@@ -2,7 +2,6 @@ import * as Sentry from '@sentry/node';
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { StandardResponse, RunTestBody } from '../utils/validators';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
-import { getWebhookUrl } from '@api/utils/utils';
 import { testSpec } from '../test/actors/specs/dynamicTemplate.spec';
 import path from 'path';
 import { readFileSync } from 'fs';
@@ -97,7 +96,7 @@ export class TestsController {
                   'ACTOR.RUN.TIMED_OUT',
                   'ACTOR.RUN.ABORTED',
                 ],
-                requestUrl: getWebhookUrl('/webhooks/tests'),
+                requestUrl: `${process.env.BASE_URL}webhooks/tests`,
                 payloadTemplate: `{"actorId":"${actorId}","resource":{{resource}},"eventData":{{eventData}}}`,
                 headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
               },

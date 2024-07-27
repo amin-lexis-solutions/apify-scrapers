@@ -30,34 +30,32 @@ const updateCouponsBatch = async (
 ): Promise<CouponUpdateStats> => {
   const batchStats: CouponUpdateStats = { ...initialStats };
 
-  await Promise.all(
-    coupons.map(async (coupon) => {
-      const targetPage = await prisma.targetPage.findFirst({
-        where: { url: coupon.sourceUrl },
-        include: { merchant: true },
+  for (const coupon of coupons) {
+    const targetPage = await prisma.targetPage.findFirst({
+      where: { url: coupon.sourceUrl },
+      include: { merchant: true },
+    });
+
+    if (targetPage?.merchant) {
+      const updatedCoupon = await prisma.coupon.update({
+        where: { id: coupon.id },
+        data: {
+          merchantId: targetPage.merchant.id,
+          locale: targetPage.merchant.locale || coupon.locale,
+          merchantName: targetPage.merchant.name || coupon.merchantName,
+          domain: targetPage.merchant.domain || coupon.domain,
+        },
       });
 
-      if (targetPage?.merchant) {
-        const updatedCoupon = await prisma.coupon.update({
-          where: { id: coupon.id },
-          data: {
-            merchantId: targetPage.merchant.id,
-            locale: targetPage.merchant.locale || coupon.locale,
-            merchantName: targetPage.merchant.name || coupon.merchantName,
-            domain: targetPage.merchant.domain || coupon.domain,
-          },
-        });
-
-        // Increment stats based on the changes made
-        if (updatedCoupon.locale !== coupon.locale) batchStats.localeFixed++;
-        if (updatedCoupon.merchantName !== coupon.merchantName)
-          batchStats.merchantFixed++;
-        if (updatedCoupon.domain !== coupon.domain) batchStats.domainFixed++;
-        if (updatedCoupon.merchantId) batchStats.merchantIdLinked++;
-        batchStats.totalProcessed++;
-      }
-    })
-  );
+      // Increment stats based on the changes made
+      if (updatedCoupon.locale !== coupon.locale) batchStats.localeFixed++;
+      if (updatedCoupon.merchantName !== coupon.merchantName)
+        batchStats.merchantFixed++;
+      if (updatedCoupon.domain !== coupon.domain) batchStats.domainFixed++;
+      if (updatedCoupon.merchantId) batchStats.merchantIdLinked++;
+      batchStats.totalProcessed++;
+    }
+  }
 
   return batchStats;
 };
