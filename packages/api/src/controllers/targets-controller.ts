@@ -214,10 +214,14 @@ export class TargetsController {
       }
 
       const availableRuns = await availableActorRuns();
+      const availableRunsMessage = `There are server resources for ${availableRuns} more actor runs.`;
 
-      console.log(
-        `There are server resources for ${availableRuns} more actor runs.`
-      );
+      if (availableRuns == 0) {
+        console.log(availableRunsMessage + ' Aborting. Try again later.');
+        break;
+      }
+
+      console.log(availableRunsMessage);
 
       const sourceDomains = source.domains.map((domain) => domain.domain);
 
