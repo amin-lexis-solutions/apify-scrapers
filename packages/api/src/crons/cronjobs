@@ -1,17 +1,22 @@
 # Debug Cron
-* * * * * echo "Cron is working" > /tmp/cron_debug.log 2>&1
+ * * * * * echo "Cron is working" > /tmp/cron_debug.log 2>&1
 
 # Schedule actors every 30 minutes
-0,30 * * * * root cd /app/packages/api && yarn schedule:actors > /tmp/cron_actors.log 2>&1
+*/30 * * * *  /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-actors.js  > /tmp/cron_actors.log 2>&1
 
-# Schedule SERP once a month
-0,10,20,30,40,50 0-8 1 * * root cd /app/packages/api && yarn schedule:find-serp > /tmp/cron_serp.log 2>&1
+# Schedule SERP finding every 10 minutes from midnight to 8 AM on Mondays and Thursdays
+*/10 0-8 * * 1,4 /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-find-serp.js > /tmp/cron_serp.log 2>&1
+
+# Run specific SERP finding tasks once a week on Mondays
+# 0 0 * * 1 /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-find-serp-for-custom-malaysian-domains.js > /tmp/cron_malaysian.log 2>&1
+# 0 0 * * 1 /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-find-serp-for-custom-domains.js   > /tmp/cron_ch.log 2>&1
+# 0 0 * * 1 /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-find-serp-for-cuponation-domains.js > /tmp/cron_cuponation.log 2>&1
 
 # Run tests every Monday
-# */10 * * * 1 root cd /app/packages/api && yarn schedule:tests > /tmp/cron_tests.log 2>&1
+*/10 * * * 1 /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-tests.js > /tmp/cron_tests.log 2>&1
 
 # Cleanup old data daily at 4:30 AM
-30 4 * * * root cd /app/packages/api && yarn schedule:periodic-coupons-cleanup > /tmp/cron_cleanup.log 2>&1
+30 4 * * * /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-coupons-cleanup.js > /tmp/cron_cleanup.log 2>&1
 
 # Sync Merchant data every 6 hours
-0 0,6,12,18 * * * root cd /app/packages/api && yarn scripts:sync-merchants-data > /tmp/cron_sync.log 2>&1
+0 0,6,12,18 * * * /usr/local/bin/node /app/packages/api/dist/api/scripts/sync-merchants-data.js > /tmp/cron_sync.log 2>&1
