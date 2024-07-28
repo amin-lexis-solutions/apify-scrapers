@@ -37,7 +37,7 @@ jobs:
         uses: ./.github/actions/deploy-actors
         with:
           max_concurrent_runs: 5
-          api-token: ${{ secrets.APIFY_TOKEN }}
+          api-token: ${{ secrets.APIFY_ORG_TOKEN_LEXIS }}
           base-url: ${{ secrets.BASE_URL }}
           api-secret: ${{ secrets.API_SECRET }}
 
@@ -63,5 +63,5 @@ jobs:
 
       - name: Deploy Shared Actors
         env:
-          API_KEY_APIFY: ${{ secrets.API_KEY_APIFY }}
+          APIFY_ORG_TOKEN_OBERST: ${{ secrets.APIFY_ORG_TOKEN_OBERST }}
         run: cd ./packages/api && pnpm run scripts:check-shared-actors

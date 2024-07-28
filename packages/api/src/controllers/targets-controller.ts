@@ -210,7 +210,7 @@ export class TargetsController {
     for (const source of sources) {
       const availableRuns = await availableActorRuns();
       console.log('Available runs:', availableRuns);
-      if (maxConcurrency <= actorsStarted || availableRuns <= actorsStarted) {
+      if (maxConcurrency <= actorsStarted || availableRuns < actorsStarted) {
         console.log(
           `Reached the limit of ${actorsStarted} actors started. Skipping the rest of the sources.`
         );

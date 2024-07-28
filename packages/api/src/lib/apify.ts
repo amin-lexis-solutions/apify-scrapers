@@ -1,7 +1,7 @@
 import { ApifyClient } from 'apify-client';
 
 export const apify = new ApifyClient({
-  token: process.env.API_KEY_APIFY,
+  token: process.env.APIFY_ORG_TOKEN_OBERST,
   timeoutSecs: 5 * 60,
 });
 

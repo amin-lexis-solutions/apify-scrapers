@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 
 dotenv.config();
 
-const APIFY_GET_ALL_RUNS_URL = `https://api.apify.com/v2/actor-runs?token=${process.env.API_KEY_APIFY}&desc=true`;
+const APIFY_GET_ALL_RUNS_URL = `https://api.apify.com/v2/actor-runs?token=${process.env.APIFY_ORG_TOKEN_OBERST}&desc=true`;
 
 const FINISHED_STATUSES = new Set(['SUCCEEDED', 'TIMED_OUT']);
 

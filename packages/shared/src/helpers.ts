@@ -6,8 +6,6 @@ import axios from 'axios';
 import { DataValidator } from './data-validator';
 import { Dataset, log } from 'apify';
 
-// CI triggers
-
 export type ItemResult = {
   generatedHash: string;
   hasCode: boolean;

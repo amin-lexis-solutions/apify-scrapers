@@ -1,8 +1,8 @@
 #!/bin/bash
- 
+
 # Set the maximum number of concurrent deployments (based on the Apify plan memory limit)
 MAX_CONCURRENT_RUNS=${MAX_CONCURRENT_RUNS}
-APIFY_GET_ALL_RUNS_URL="https://api.apify.com/v2/actor-runs?token=${APIFY_TOKEN}&status=RUNNING"
+APIFY_GET_ALL_RUNS_URL="https://api.apify.com/v2/actor-runs?token=${APIFY_ORG_TOKEN_LEXIS}&status=RUNNING"
 
 if [ -z "$MAX_CONCURRENT_RUNS" ]; then
     echo "MAX_CONCURRENT_RUNS is not set, stopping the deployment"

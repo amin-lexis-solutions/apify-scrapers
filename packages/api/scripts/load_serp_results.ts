@@ -130,7 +130,7 @@ export const main = async () => {
     } else {
       // Fetch data from API if file does not exist
       const response = await fetch(
-        `https://api.apify.com/v2/actor-runs/${runId}/dataset/items?token=${process.env.API_KEY_APIFY}&clean=true&format=json&view=organic_results`,
+        `https://api.apify.com/v2/actor-runs/${runId}/dataset/items?token=${process.env.APIFY_ORG_TOKEN_OBERST}&clean=true&format=json&view=organic_results`,
         {
           method: 'GET',
           headers: { 'Content-Type': 'application/json' },

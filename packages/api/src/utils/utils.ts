@@ -233,7 +233,7 @@ export async function availableActorRuns(): Promise<number> {
   try {
     const RAM_GB_PER_ACTOR = 4;
     const MAX_CONCURRENT_RUNS = Number(process.env.MAX_CONCURRENT_RUNS);
-    const APIFY_GET_ALL_RUNS_URL = `https://api.apify.com/v2/users/me/limits?token=${process.env.API_KEY_APIFY}`;
+    const APIFY_GET_ALL_RUNS_URL = `https://api.apify.com/v2/users/me/limits?token=${process.env.APIFY_ORG_TOKEN_OBERST}`;
 
     const response = await fetch(APIFY_GET_ALL_RUNS_URL, {
       method: 'GET',

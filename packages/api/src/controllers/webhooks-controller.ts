@@ -134,7 +134,7 @@ export class WebhooksController {
   private async fetchScrapedData(datasetId: string, runId: string) {
     try {
       const response = await fetch(
-        `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&token=${process.env.API_KEY_APIFY}`
+        `https://api.apify.com/v2/datasets/${datasetId}/items?clean=true&format=json&token=${process.env.APIFY_ORG_TOKEN_OBERST}`
       );
       const data = await response.json();
 

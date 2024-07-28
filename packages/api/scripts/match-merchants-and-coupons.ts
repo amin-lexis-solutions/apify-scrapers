@@ -3,26 +3,22 @@
 import { PrismaClient } from '@prisma/client';
 import ProgressBar from 'progress';
 import dotenv from 'dotenv';
+import { Semaphore } from 'async-mutex';
+import { exit } from 'process';
 
 dotenv.config();
 
 const prisma = new PrismaClient();
-const BATCH_SIZE = 5000;
+const BATCH_SIZE = 1000;
+const MAX_CONCURRENT_CONNECTIONS = 5;
+const semaphore = new Semaphore(MAX_CONCURRENT_CONNECTIONS);
 
 interface CouponUpdateStats {
   totalProcessed: number;
-  localeFixed: number;
-  merchantFixed: number;
-  domainFixed: number;
-  merchantIdLinked: number;
 }
 
 const initialStats: CouponUpdateStats = {
   totalProcessed: 0,
-  localeFixed: 0,
-  merchantFixed: 0,
-  domainFixed: 0,
-  merchantIdLinked: 0,
 };
 
 const updateCouponsBatch = async (
@@ -30,32 +26,41 @@ const updateCouponsBatch = async (
 ): Promise<CouponUpdateStats> => {
   const batchStats: CouponUpdateStats = { ...initialStats };
 
-  for (const coupon of coupons) {
-    const targetPage = await prisma.targetPage.findFirst({
-      where: { url: coupon.sourceUrl },
-      include: { merchant: true },
-    });
+  // Step 1: Fetch all targetPage records
+  const sourceUrls = coupons.map((coupon) => coupon.sourceUrl);
+  const targetPages = await prisma.targetPage.findMany({
+    where: { url: { in: sourceUrls } },
+    include: { merchant: true },
+  });
 
-    if (targetPage?.merchant) {
-      const updatedCoupon = await prisma.coupon.update({
-        where: { id: coupon.id },
-        data: {
-          merchantId: targetPage.merchant.id,
-          locale: targetPage.merchant.locale || coupon.locale,
-          merchantName: targetPage.merchant.name || coupon.merchantName,
-          domain: targetPage.merchant.domain || coupon.domain,
-        },
-      });
+  // Step 2: Create a Map for fast lookup
+  const targetPageMap = new Map(targetPages.map((tp) => [tp.url, tp]));
 
-      // Increment stats based on the changes made
-      if (updatedCoupon.locale !== coupon.locale) batchStats.localeFixed++;
-      if (updatedCoupon.merchantName !== coupon.merchantName)
-        batchStats.merchantFixed++;
-      if (updatedCoupon.domain !== coupon.domain) batchStats.domainFixed++;
-      if (updatedCoupon.merchantId) batchStats.merchantIdLinked++;
-      batchStats.totalProcessed++;
+  // Step 3: Update coupons in a loop with concurrency control
+  const updatePromises = coupons.map(async (coupon) => {
+    const [, release] = await semaphore.acquire();
+    try {
+      const targetPage = targetPageMap.get(coupon.sourceUrl);
+
+      if (targetPage?.merchant) {
+        const couponsCount = await prisma.coupon.updateMany({
+          where: { sourceUrl: coupon.sourceUrl },
+          data: {
+            merchantId: targetPage.merchant.id,
+            locale: targetPage.merchant.locale || coupon.locale,
+            merchantName: targetPage.merchant.name || coupon.merchantName,
+            domain: targetPage.merchant.domain || coupon.domain,
+          },
+        });
+
+        batchStats.totalProcessed += couponsCount.count;
+      }
+    } finally {
+      release();
     }
-  }
+  });
+
+  await Promise.all(updatePromises);
 
   return batchStats;
 };
@@ -63,8 +68,12 @@ const updateCouponsBatch = async (
 const main = async () => {
   try {
     let startFrom = 0;
-    const totalCoupons = await prisma.coupon.count();
-    console.log(`Total coupons to update: ${totalCoupons}`);
+    const totalCoupons = await prisma.coupon
+      .findMany({
+        distinct: ['sourceUrl'],
+      })
+      .then((coupons) => coupons.length);
+    console.log(`Total unique source to update: ${totalCoupons}`);
     const bar = new ProgressBar('Processing [:bar] :percent :etas', {
       total: Math.ceil(totalCoupons / BATCH_SIZE),
       width: 25,
@@ -93,6 +102,8 @@ const main = async () => {
 
       bar.tick();
       startFrom += BATCH_SIZE;
+      // if bar is complete, break the loop
+      if (bar.complete) break;
     }
 
     console.log('All coupons processed. Displaying update statistics:');
@@ -102,6 +113,7 @@ const main = async () => {
     process.exit(1);
   } finally {
     await prisma.$disconnect();
+    exit(0);
   }
 };
 

@@ -19,5 +19,5 @@ jobs:
 
       - name: Run script that verifies all actors are shared
         env:
-          APIFY_TOKEN: ${{ secrets.APIFY_TOKEN }}
+          APIFY_ORG_TOKEN_LEXIS: ${{ secrets.APIFY_ORG_TOKEN_LEXIS }}
         run: chmod +x ./scripts/shared-apify-actors.sh && ./scripts/shared-apify-actors.sh

@@ -25,14 +25,14 @@ runs:
     - name: Authenticate with Apify using API token
       shell: bash
       env:
-        APIFY_TOKEN: ${{ inputs.api-token }}
-      run: npx apify login --token $APIFY_TOKEN
+        APIFY_ORG_TOKEN_LEXIS: ${{ inputs.api-token }}
+      run: npx apify login --token $APIFY_ORG_TOKEN_LEXIS
 
     - name: Deploy Modified Packages
       shell: bash
       env:
         BASE_URL: ${{ inputs.base-url }}
-        APIFY_TOKEN: ${{ inputs.api-token }}
+        APIFY_ORG_TOKEN_LEXIS: ${{ inputs.api-token }}
         MAX_CONCURRENT_RUNS: ${{ inputs.max_concurrent_runs }}
         API_SECRET: ${{ inputs.api-secret }}
       run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh

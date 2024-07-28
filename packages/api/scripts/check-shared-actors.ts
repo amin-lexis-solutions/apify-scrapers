@@ -5,7 +5,7 @@ dotenv.config();
 
 // write script that check shared actors between on apify account and actors in the sources data
 
-const APIFY_GET_ALL_ACTORS_URL = `https://api.apify.com/v2/acts?token=${process.env.API_KEY_APIFY}&desc=true`;
+const APIFY_GET_ALL_ACTORS_URL = `https://api.apify.com/v2/acts?token=${process.env.APIFY_ORG_TOKEN_OBERST}&desc=true`;
 
 export const main = async () => {
   const response = await fetch(APIFY_GET_ALL_ACTORS_URL, {
