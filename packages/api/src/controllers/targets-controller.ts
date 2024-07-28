@@ -206,9 +206,7 @@ export class TargetsController {
 
     const counts: any = [];
     for (const source of sources) {
-      const availableRuns = await availableActorRuns();
-      console.log('Available runs:', availableRuns);
-      if (maxConcurrency <= actorsStarted || availableRuns < actorsStarted) {
+      if (actorRunsCountToStart <= actorRunsStarted) {
         console.log(
           `Already started ${actorRunsStarted} actor runs. The limit was ${actorRunsCountToStart}. Stopping...`
         );
