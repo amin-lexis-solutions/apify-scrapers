@@ -181,30 +181,28 @@ export class TargetsController {
     @Body() body: RunTargetPagesBody
   ): Promise<StandardResponse> {
     const { maxConcurrency } = body;
-    console.log(
-      `Will attempt to schedule ${maxConcurrency} sources (maps to actor) for scraping.`
-    );
+    const actorRunsCountToStart = maxConcurrency;
+
+    console.log(`The API will try to schedule ${maxConcurrency} actor runs.`);
 
     // Find sources that have not been scraped today or have never been scraped
     const sources = await prisma.source.findMany({
       where: {
         isActive: true,
-        // OR: [
-        //   { lastRunAt: null },
-        //   { lastRunAt: { lt: dayjs().startOf('day').toDate() } },
-        // ],
+        OR: [
+          { lastRunAt: null },
+          { lastRunAt: { lt: dayjs().startOf('day').toDate() } },
+        ],
       },
       include: {
         domains: true,
       },
-      // take: maxConcurrency,
+      orderBy: { name: 'desc' },
     });
 
-    console.log(
-      `Found ${sources.length} sources that have not been scraped today or have never been scraped.`
-    );
+    console.log(`There are ${sources.length} sources (actors) not run today.`);
 
-    let actorsStarted = 0;
+    let actorRunsStarted = 0;
 
     const counts: any = [];
     for (const source of sources) {
@@ -212,10 +210,16 @@ export class TargetsController {
       console.log('Available runs:', availableRuns);
       if (maxConcurrency <= actorsStarted || availableRuns < actorsStarted) {
         console.log(
-          `Reached the limit of ${actorsStarted} actors started. Skipping the rest of the sources.`
+          `Already started ${actorRunsStarted} actor runs. The limit was ${actorRunsCountToStart}. Stopping...`
         );
         break;
       }
+
+      const availableRuns = await availableActorRuns();
+
+      console.log(
+        `There are server resources for ${availableRuns} more actor runs.`
+      );
 
       const sourceDomains = source.domains.map((domain) => domain.domain);
 
@@ -241,25 +245,51 @@ export class TargetsController {
         },
       });
 
+      const sourceIdentification = `${source.name} with Apify actor ID ${source.apifyActorId}`;
+
       if (pages.length === 0) {
         console.log(
-          `There are no fresh target pages for domain ${source.name}. Skipping coupon scraping for actor ${source.apifyActorId}`
+          `There are no target pages for scrape by ${sourceIdentification}. We will try again tomorrow.`
         );
+
+        await prisma.source.update({
+          where: { id: source.id },
+          data: { lastRunAt: new Date() },
+        });
+
         continue;
       }
 
-      console.log(
-        `Starting Apify actor ${source.apifyActorId} with ${pages.length} start URLs for source (domain) ${source.name}. Will be chunking the start URLs in groups of 1000.`
+      const startUrlsPerActorRun = 1_000;
+      const actorRunsCountNeededForSource = Math.ceil(
+        pages.length / startUrlsPerActorRun
       );
 
+      if (availableRuns < actorRunsCountNeededForSource) {
+        console.log(
+          `Source ${sourceIdentification} needs ${actorRunsCountNeededForSource} actor runs to scrape fully` +
+            ` but we only have ${availableRuns} available. Skipping...`
+        );
+
+        continue;
+      }
+
+      if (pages.length > startUrlsPerActorRun) {
+        console.log(
+          `Starting ${sourceIdentification} for ${pages.length} start URLs.` +
+            `Will be chunking the start URLs in groups of ${startUrlsPerActorRun}.`
+        );
+      }
+
+      // can we really be sure that the locale of the first page is the locale for all target pages?
+      // what if a source has multiple domains with different locales?
       const localeId = pages[0]?.localeId;
 
-      const chunkSize = 1_000;
-      for (let i = 0; i < pages.length; i += chunkSize) {
-        const pagesChunk = pages.slice(i, i + chunkSize);
+      for (let i = 0; i < pages.length; i += startUrlsPerActorRun) {
+        const pagesChunk = pages.slice(i, i + startUrlsPerActorRun);
 
         console.log(
-          `Init Apify actor ${source.apifyActorId} with ${pagesChunk.length} start URLs for source (domain) ${source.name}.`
+          `Scheduling an actor run for ${sourceIdentification} with ${pagesChunk.length} start URLs.`
         );
 
         const startUrls = pagesChunk.map((page) => ({
@@ -276,7 +306,7 @@ export class TargetsController {
 
         try {
           await apify.actor(source.apifyActorId).start(
-            { startUrls: startUrls },
+            { startUrls },
             {
               webhooks: [
                 {
@@ -294,7 +324,7 @@ export class TargetsController {
             }
           );
 
-          actorsStarted++;
+          actorRunsStarted++;
 
           await prisma.targetPage.updateMany({
             where: {
@@ -303,9 +333,8 @@ export class TargetsController {
             data: { lastApifyRunAt: new Date() },
           });
         } catch (e) {
-          console.error(
-            `Failed to start actor ${source.apifyActorId} with ${startUrls.length} start URLs for source ${source.name} and locale ${localeId}`
-          );
+          const errorMessage = `Failed to start ${sourceIdentification} with ${startUrls.length} start URLs`;
+          console.error(errorMessage);
           // add data to Sentry capture exception and message
           Sentry.captureException(e, {
             extra: {
@@ -315,9 +344,7 @@ export class TargetsController {
               startUrls: startUrls,
             },
           });
-          Sentry.captureMessage(
-            `Failed to start actor ${source.apifyActorId} with ${startUrls.length} start URLs for source ${source.name} and locale ${localeId}`
-          );
+          Sentry.captureMessage(errorMessage);
           continue;
         }
       }
