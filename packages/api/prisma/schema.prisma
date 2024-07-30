@@ -41,6 +41,7 @@ model Coupon {
   isExclusive        Boolean?
   firstSeenAt        DateTime       @default(now())
   lastSeenAt         DateTime       @default(now())
+  lastCrawledAt      DateTime?
   archivedAt         DateTime?
   shouldBeFake       Boolean?
   locale             String

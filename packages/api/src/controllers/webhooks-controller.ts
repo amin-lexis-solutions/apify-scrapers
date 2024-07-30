@@ -223,7 +223,11 @@ export class WebhooksController {
     now: Date,
     apifyActorId: string
   ) {
-    const updateData: Prisma.CouponUpdateInput = { lastSeenAt: now };
+    const updateData: Prisma.CouponUpdateInput = {
+      lastSeenAt: now,
+      lastCrawledAt: now,
+    };
+
     let archivedAt = null;
     let archivedReason:
       | Prisma.NullableEnumArchiveReasonFieldUpdateOperationsInput
@@ -355,8 +359,9 @@ export class WebhooksController {
       isExclusive: item.isExclusive || null,
       firstSeenAt: now,
       lastSeenAt: now,
-      archivedAt: archivedAt,
-      archivedReason: archivedReason || null,
+      lastCrawledAt: now,
+      archivedAt,
+      archivedReason,
       shouldBeFake: item.code ? !isValidCouponCode(item.code) : null,
     };
   }
