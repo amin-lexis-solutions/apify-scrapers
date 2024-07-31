@@ -36,11 +36,12 @@ model Coupon {
   code               String?
   startDateAt        DateTime?      @db.Date
   sourceUrl          String
-  isShown            Boolean?
+  isShown            Boolean        @default(false)
   isExpired          Boolean?
   isExclusive        Boolean?
   firstSeenAt        DateTime       @default(now())
   lastSeenAt         DateTime       @default(now())
+  lastCrawledAt      DateTime?
   archivedAt         DateTime?
   shouldBeFake       Boolean?
   locale             String
@@ -56,6 +57,7 @@ model Coupon {
   @@index([apifyActorId])
   @@index([locale])
   @@index([archivedAt])
+  @@index([isShown])
   @@index([domain])
   @@index([code])
 }
@@ -86,8 +88,8 @@ model ProcessedRun {
   apifyActorId        String?
   localeId            String?
   actorRunId          String    @unique
-  finishedAt          DateTime  @default(now())
-  processedAt         DateTime?
+  startedAt           DateTime  @default(now())
+  endedAt             DateTime?
   status              String
   resultCount         Int       @default(0)
   createdCount        Int       @default(0)

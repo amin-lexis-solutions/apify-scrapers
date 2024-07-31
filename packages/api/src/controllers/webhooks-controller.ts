@@ -53,12 +53,13 @@ export class WebhooksController {
   ): Promise<StandardResponse> {
     const { defaultDatasetId, status, usageTotalUsd } = webhookData.resource;
     const { actorRunId, actorId: apifyActorId } = webhookData.eventData;
-
+    const startedAt = new Date();
     const run = await prisma.processedRun.create({
       data: {
         apifyActorId,
         actorRunId,
         status,
+        startedAt,
       },
     });
 
@@ -113,9 +114,38 @@ export class WebhooksController {
           resultCount: scrapedData.length,
           errorCount: errors.length,
           processingErrors: errors,
-          processedAt: new Date(),
+          endedAt: new Date(),
         },
       });
+
+      try {
+        const requests = await getActorRunRequests(actorRunId);
+        if (requests && requests.length > 0) {
+          const sourceUrls: any = requests.map((r: any) => r.loadedUrl);
+          const coupons = await prisma.coupon.updateMany({
+            where: {
+              sourceUrl: { in: sourceUrls },
+              lastSeenAt: {
+                lt: startedAt,
+              },
+              isShown: true,
+            },
+            data: {
+              isShown: false,
+              archivedAt: new Date(),
+              archivedReason: $Enums.ArchiveReason.removed,
+            },
+          });
+          console.log(
+            `Archived ${coupons.count} coupons for actor run ${actorRunId}`
+          );
+        }
+      } catch (error) {
+        Sentry.captureException(
+          `Error isShown: false / coupons for actor run ${actorRunId}`,
+          { extra: { error } }
+        );
+      }
 
       // Send Sentry notification
       this.sendSentryNotification(
@@ -223,7 +253,11 @@ export class WebhooksController {
     now: Date,
     apifyActorId: string
   ) {
-    const updateData: Prisma.CouponUpdateInput = { lastSeenAt: now };
+    const updateData: Prisma.CouponUpdateInput = {
+      lastSeenAt: now,
+      lastCrawledAt: now,
+    };
+
     let archivedAt = null;
     let archivedReason:
       | Prisma.NullableEnumArchiveReasonFieldUpdateOperationsInput
@@ -236,9 +270,11 @@ export class WebhooksController {
           if (value) {
             archivedAt = now;
             archivedReason = 'expired';
+            updateData.isShown = false;
           } else if (existingRecord?.isExpired) {
             archivedAt = null;
             archivedReason = 'unexpired';
+            updateData.isShown = true;
           }
         }
 
@@ -250,6 +286,7 @@ export class WebhooksController {
         ) {
           archivedAt = null;
           archivedReason = 'unexpired';
+          updateData.isShown = true;
         }
 
         const locale = item.metadata.verifyLocale
@@ -350,13 +387,14 @@ export class WebhooksController {
       code: item.code || null,
       startDateAt: validDateOrNull(item.startDateAt) || null,
       sourceUrl: sourceUrl,
-      isShown: item.isShown || null,
+      isShown: true,
       isExpired: item.isExpired || null,
       isExclusive: item.isExclusive || null,
       firstSeenAt: now,
       lastSeenAt: now,
-      archivedAt: archivedAt,
-      archivedReason: archivedReason || null,
+      lastCrawledAt: now,
+      archivedAt,
+      archivedReason,
       shouldBeFake: item.code ? !isValidCouponCode(item.code) : null,
     };
   }
@@ -607,6 +645,13 @@ export class WebhooksController {
         true
       );
     }
+    const run = await prisma.processedRun.create({
+      data: {
+        localeId,
+        actorRunId,
+        status,
+      },
+    });
 
     const data: ApifyGoogleSearchResult[] = await fetch(
       `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?clean=true&format=json&view=organic_results`
@@ -643,14 +688,12 @@ export class WebhooksController {
       }
     }
 
-    await prisma.processedRun.create({
+    await prisma.processedRun.update({
+      where: { id: run.id },
       data: {
-        localeId,
-        actorRunId,
-        status,
         resultCount: filteredData.length,
         createdCount: validData.length,
-        processedAt: new Date(),
+        endedAt: new Date(),
         costInUsdMicroCents: getGoogleActorPriceInUsdMicroCents(
           filteredData.length
         ),
@@ -759,3 +802,23 @@ export class WebhooksController {
     return new StandardResponse(`Test data processed successfully.`, false);
   }
 }
+
+const getActorRunRequests = async (runId: string) => {
+  const response = await fetch(
+    `https://api.apify.com/v2/actor-runs/${runId}/request-queue/requests?token=${process.env.APIFY_ORG_TOKEN_OBERST}`,
+    {
+      method: 'GET',
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Error fetching input: ${response.statusText}`);
+  }
+
+  const input = await response.json();
+
+  if (input && input.data && input.data.items && input.data.items.length > 0)
+    return input.data.items;
+
+  return [];
+};

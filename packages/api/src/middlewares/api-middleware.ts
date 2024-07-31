@@ -25,7 +25,7 @@ export function CostLimit() {
           costInUsdMicroCents: true,
         },
         where: {
-          finishedAt: {
+          startedAt: {
             gte: today,
           },
         },
