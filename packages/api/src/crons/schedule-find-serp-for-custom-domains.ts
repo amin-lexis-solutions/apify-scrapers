@@ -2,7 +2,7 @@
 import dotenv from 'dotenv';
 
 import { Locale } from '../../config/locales';
-import { availableActorRuns } from '../utils/utils';
+import { availableActorRuns, getEndpointBaseUrl } from '../utils/utils';
 
 dotenv.config();
 
@@ -15,7 +15,7 @@ const findTargets = async (locale: string) => {
       return;
     }
 
-    fetch(`${process.env.BASE_URL}targets/find-for-urls-and-locale`, {
+    fetch(`${getEndpointBaseUrl()}targets/find-for-urls-and-locale`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

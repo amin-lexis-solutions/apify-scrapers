@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import dotenv from 'dotenv';
-import { availableActorRuns } from '../utils/utils';
+import { availableActorRuns, getEndpointBaseUrl } from '../utils/utils';
 
 dotenv.config();
 
@@ -20,7 +20,7 @@ const findTargets = async () => {
     payload['limitDomainsPerLocale'] = 10;
   }
 
-  fetch(`${process.env.BASE_URL}targets/find-n-locales`, {
+  fetch(`${getEndpointBaseUrl()}targets/find-n-locales`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import dotenv from 'dotenv';
 import path from 'path';
-import { availableActorRuns } from '../utils/utils';
+import { availableActorRuns, getEndpointBaseUrl } from '../utils/utils';
 
 dotenv.config({ path: path.resolve(__dirname, '.env.cron') });
 
@@ -14,7 +14,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env.cron') });
       return;
     }
 
-    fetch(`${process.env.BASE_URL}tests/run`, {
+    fetch(`${getEndpointBaseUrl()}tests/run`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

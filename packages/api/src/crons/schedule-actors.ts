@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import dotenv from 'dotenv';
-import { availableActorRuns } from '../utils/utils';
+import { availableActorRuns, getEndpointBaseUrl } from '../utils/utils';
 import fetch from 'node-fetch';
 
 dotenv.config();
@@ -13,7 +13,7 @@ export const runActors = async () => {
     return;
   }
 
-  fetch(`${process.env.BASE_URL}targets/run`, {
+  fetch(`${getEndpointBaseUrl()}targets/run`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

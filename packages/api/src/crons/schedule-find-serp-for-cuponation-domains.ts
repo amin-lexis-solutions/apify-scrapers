@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import dotenv from 'dotenv';
-import { availableActorRuns } from '../utils/utils';
+import { availableActorRuns, getEndpointBaseUrl } from '../utils/utils';
 
 dotenv.config();
 
@@ -12,7 +12,7 @@ const findTargets = async () => {
     return;
   }
 
-  fetch(`${process.env.BASE_URL}targets/find-for-urls-and-locale`, {
+  fetch(`${getEndpointBaseUrl()}targets/find-for-urls-and-locale`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
