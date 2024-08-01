@@ -16,6 +16,7 @@ type Item = {
   idInSite: string | undefined;
   title: string;
   description: string;
+  merchantName: string;
 };
 
 export async function sitemapHandler(requestQueue: RequestQueue, context) {
@@ -64,25 +65,6 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
   try {
     log.info(`Processing URL: ${request.url}`);
 
-    // Extract merchant name and domain using Puppeteer
-    const merchantName = await page.evaluate(() => {
-      const storeLogoElement: HTMLImageElement = document.querySelector(
-        'main.main-shop > div.header-shop-ctnr > div.container > div.header-shop-logo-ctnr > img'
-      ) as HTMLImageElement;
-      return storeLogoElement ? storeLogoElement.alt.trim() : null;
-    });
-
-    if (!merchantName) {
-      logError('Merchant name not found');
-      return;
-    }
-
-    const domain = new URL(request.url).pathname.replace(/^\//, '');
-
-    if (!domain) {
-      log.warning('Domain information not found');
-    }
-
     // Extract coupons and offers using Puppeteer
     const items: Item[] = await page.evaluate(() => {
       const itemElements = Array.from(
@@ -97,6 +79,10 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
         const isExclusive = !!el.querySelector(
           'div.card-body span.exclu-offer'
         );
+
+        const merchantName = el
+          .querySelector('.shop-offer-logo-ctnr img')
+          ?.getAttribute('alt');
 
         const idInSite = el.id.trim().replace('c-', '');
 
@@ -114,6 +100,11 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
           return;
         }
 
+        if (!merchantName) {
+          logError('Merchant name not found item');
+          return;
+        }
+
         const descrRaw =
           el.querySelector('div.card-body div.shop-offer-desc > div.details')
             ?.innerHTML || '';
@@ -121,7 +112,14 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
           .replace(/<span class="read-less">.*?<\/span>/s, '')
           .trim();
 
-        return { isExpired, isExclusive, idInSite, title, description };
+        return {
+          isExpired,
+          isExclusive,
+          idInSite,
+          title,
+          description,
+          merchantName,
+        };
       });
     });
 
@@ -139,6 +137,11 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
       return;
     }
 
+    const domain = new URL(request.url).pathname.replace(/^\//, '');
+
+    if (!domain) {
+      log.warning('Domain information not found');
+    }
     // Process each voucher
     for (const item of items) {
       await sleep(1000); // Sleep for x seconds between requests to avoid rate limitings
@@ -148,7 +151,7 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
 
       // Add required values to the validator
       validator.addValue('sourceUrl', request.url);
-      validator.addValue('merchantName', merchantName);
+      validator.addValue('merchantName', item.merchantName);
       validator.addValue('title', item.title);
       validator.addValue('idInSite', item.idInSite);
 
@@ -189,64 +192,77 @@ export async function codeHandler(requestQueue: RequestQueue, context) {
 
   if (request.userData.label !== Label.getCode) return;
 
-  // wait for the page to fully load
-  await page.waitForSelector('#modalDiscount');
+  async function waitForModal(selector: string, timeout: number) {
+    try {
+      await page.waitForSelector(selector, { timeout, visible: true });
+    } catch (e) {
+      log.warning(`${selector} HTML element timeout - ${e}`);
+    }
+  }
 
-  const showOfferElement = await page.$('.show-the-code button');
-  if (showOfferElement) {
-    await showOfferElement.click();
-    await page.reload({ waitUntil: 'load' });
-    await page.waitForSelector('#modalDiscount');
+  async function handleShowOfferElement(showOfferElement) {
+    try {
+      await showOfferElement.click();
+      await page.reload({ waitUntil: 'load' });
+      await waitForModal('#modalDiscount', 50000);
+    } catch (e) {
+      log.warning(`Error handling show offer element - ${e}`);
+    }
+  }
+
+  async function validateCode() {
+    try {
+      const validatorData = request.userData.validatorData;
+      const validator = new DataValidator();
+      validator.loadData(validatorData);
+
+      const code = await extractCode();
+      if (code) {
+        validator.addValue('code', code);
+        log.info(`Found code: ${code}\n    at: ${request.url}`);
+      } else {
+        log.warning(`No visible code found at: ${request.url}`);
+      }
+
+      await postProcess({ SaveDataHandler: { validator } }, context);
+    } catch (error) {
+      log.warning(`Error during code processing at ${request.url}:`, error);
+    }
+  }
+
+  async function extractCode(): Promise<string | null> {
+    try {
+      const code = await page.evaluate(() => {
+        const codeInput: HTMLInputElement = document.querySelector(
+          'input#code'
+        ) as HTMLInputElement;
+        return codeInput ? codeInput.value.trim() : null;
+      });
+
+      if (code && /^[*]+$/.test(code)) {
+        log.info('Code is only asterisks, ignoring it.');
+        return null;
+      }
+
+      return code;
+    } catch (e) {
+      log.warning('Error extracting code:', e);
+      return null;
+    }
   }
 
   try {
-    // Sleep for x seconds between requests to avoid rate limitings
-    await sleep(1000);
+    await waitForModal('#modalDiscount', 50000);
+    const showOfferElement = await page.$('.show-the-code button');
 
-    // Retrieve validatorData from request's userData
-    const validatorData = request.userData.validatorData;
-
-    // Create a new DataValidator instance and load the data
-    const validator = new DataValidator();
-    validator.loadData(validatorData);
-
-    // Check for the presence of the modal body
-
-    // Extract the code if present
-    let code = await page.evaluate(() => {
-      const codeInput: HTMLInputElement = document.querySelector(
-        'input#code'
-      ) as HTMLInputElement;
-      if (codeInput) {
-        return codeInput.value.trim();
-      }
-      return null; // Return null if code is not present
-    });
-
-    if (code) {
-      if (/^[*]+$/.test(code)) {
-        log.info('Code is only asterisks, ignoring it.');
-        code = null;
-      }
-      if (code) validator.addValue('code', code);
-      log.info(`Found code: ${code}\n    at: ${request.url}`);
-    } else {
-      log.warning(`No visible code found at: ${request.url}`);
+    if (showOfferElement) {
+      await handleShowOfferElement(showOfferElement);
     }
 
-    // Process and store the data
-    await postProcess(
-      {
-        SaveDataHandler: {
-          validator,
-        },
-      },
-      context
-    );
+    await validateCode();
   } catch (error) {
-    // Handle any errors that occurred during the handler execution
-    log.error(
-      `An error occurred while processing the URL ${request.url}:`,
+    log.warning(
+      `An error occurred while processing GetCode handler ${request.url}:`,
       error
     );
   }

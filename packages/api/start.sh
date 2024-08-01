@@ -1,12 +1,15 @@
 #!/bin/bash
 
-# Setup for handling cron jobs within Docker
-cp /app/packages/api/src/crons/cronjobs /etc/cron.d/
-chmod 0644 /etc/cron.d/cronjobs
-crontab /etc/cron.d/cronjobs
-
 # Export environment variables to ensure availability for cron jobs
-printenv >> /app/packages/api/.env
+printenv > /app/packages/api/.env
+
+# load environment variables to ensure availability for cron jobs
+grep -F -f <(cut -d= -f1 /app/packages/api/.env.example) /app/packages/api/.env > /etc/cron.d/cronjobs
+
+# Add cron jobs to the cron service
+cat /app/packages/api/src/crons/cronjobs >> /etc/cron.d/cronjobs
+chmod 0644 /etc/cron.d/cronjobs
+crontab /etc/cron.d/cronjobs # Load cron jobs into the cron service
 
 # Start the cron service
 service cron start

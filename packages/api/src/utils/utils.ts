@@ -297,3 +297,10 @@ export function findMerchantBySearchTerm(searchTerm: string, merchants: any[]) {
   }
   return null;
 }
+
+export function getEndpointBaseUrl(): string {
+  const port = process.env.PORT || 3000;
+  return process.env.NODE_ENV === 'production'
+    ? `http://localhost:${port}/`
+    : process.env.BASE_URL || '';
+}

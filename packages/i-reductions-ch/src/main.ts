@@ -1,6 +1,6 @@
 // For more information, see https://crawlee.dev/
 import { Actor } from 'apify';
-import { PuppeteerCrawler } from 'crawlee';
+import { PuppeteerCrawler, sleep } from 'crawlee';
 import { Label, sitemapHandler, listingHandler, codeHandler } from './routes';
 
 const FACEBOOK_BROWSER_USER_AGENT =
@@ -22,9 +22,10 @@ async function main() {
       metadata: { locale: 'fr_CH', targetPageId: '', localeId: '' },
     },
   ];
-  const proxyConfiguration = await Actor.createProxyConfiguration(
-    input?.proxyConfiguration
-  );
+  const proxyConfiguration = await Actor.createProxyConfiguration({
+    groups: ['RESIDENTIAL'],
+    countryCode: 'CH',
+  });
 
   let effectiveTestLimit = 0;
   if (typeof input?.testLimit === 'number' && input?.testLimit > 0) {
@@ -33,10 +34,20 @@ async function main() {
 
   const crawler = new PuppeteerCrawler({
     proxyConfiguration: proxyConfiguration as any,
+    maxConcurrency: 2, // Concurrency on target page
+    maxRequestRetries: 2, // website blocks after 2 retries
+    sessionPoolOptions: {
+      blockedStatusCodes: [429], // Request blocked code - session will be mark as retired
+      sessionOptions: {
+        maxUsageCount: 10, // Session should be used only a limited amount of times.
+      },
+      maxPoolSize: 1000, // 1000 sessions are rotated.
+    },
     launchContext: {
       userAgent: FACEBOOK_BROWSER_USER_AGENT,
       launchOptions: {
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        headless: true,
       },
     },
     preNavigationHooks: [
@@ -64,6 +75,9 @@ async function main() {
     ],
     requestHandler: async (context) => {
       const { request } = context;
+
+      await sleep(Math.random() * 5000); // Random delay between 0 to 5 seconds
+
       switch (request.userData.label) {
         case Label.sitemap:
           await sitemapHandler(requestQueue, context);
