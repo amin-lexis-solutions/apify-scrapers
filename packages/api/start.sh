@@ -4,7 +4,7 @@
 printenv > /app/packages/api/.env
 
 # load environment variables to ensure availability for cron jobs
-grep -F -f <(cut -d= -f1 /app/packages/api/.env.example) /app/packages/api/.env > /etc/cron.d/cronjobs
+grep -E "^($(cut -d= -f1 /app/packages/api/.env.example | paste -sd '|' -))=" /app/packages/api/.env > /etc/cron.d/cronjobs
 
 # Add cron jobs to the cron service
 cat /app/packages/api/src/crons/cronjobs >> /etc/cron.d/cronjobs
