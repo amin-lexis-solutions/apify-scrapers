@@ -7,7 +7,7 @@ dotenv.config({ path: path.resolve(__dirname, '.env.cron') });
 
 (async () => {
   try {
-    const maxConcurrency = await availableActorRuns();
+    const maxConcurrency = Math.min(await availableActorRuns(), 5);
 
     if (maxConcurrency < 1) {
       console.log('Max concurrency reached, skipping actors run');

@@ -5,7 +5,7 @@ import { availableActorRuns, getEndpointBaseUrl } from '../utils/utils';
 dotenv.config();
 
 const findTargets = async () => {
-  const maxConcurrency = await availableActorRuns();
+  const maxConcurrency = Math.min(await availableActorRuns(), 5);
 
   if (maxConcurrency < 1) {
     console.log('Max concurrency reached, skipping actors run');

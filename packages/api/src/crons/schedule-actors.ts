@@ -6,7 +6,7 @@ import fetch from 'node-fetch';
 dotenv.config();
 
 export const runActors = async () => {
-  const maxConcurrency = await availableActorRuns();
+  const maxConcurrency = Math.min(await availableActorRuns(), 5);
 
   if (maxConcurrency < 1) {
     console.log('Max concurrency reached, skipping actors run');
