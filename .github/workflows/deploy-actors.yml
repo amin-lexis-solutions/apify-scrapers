@@ -64,4 +64,4 @@ jobs:
       - name: Deploy Shared Actors
         env:
           APIFY_ORG_TOKEN_OBERST: ${{ secrets.APIFY_ORG_TOKEN_OBERST }}
-        run: cd ./packages/api && pnpm run scripts:check-shared-actors
+        run: cd ./packages/api && pnpm run scripts:verify-runnable-actors-are-shared-with-oberst
