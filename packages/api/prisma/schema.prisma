@@ -28,7 +28,7 @@ model Coupon {
   idInSite           String
   domain             String?
   merchantName       String
-  merchantId         String?
+  merchantId         String
   title              String
   description        String?
   termsAndConditions String?
@@ -52,7 +52,7 @@ model Coupon {
 
   locale_relation TargetLocale @relation(fields: [locale], references: [locale], onDelete: Cascade)
 
-  merchant_relation Merchant? @relation(fields: [merchantId], references: [id])
+  merchant_relation Merchant @relation(fields: [merchantId], references: [id])
 
   @@index([apifyActorId])
   @@index([locale])
