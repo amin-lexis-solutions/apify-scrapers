@@ -57,9 +57,6 @@ export class CouponsController {
 
     const where: Prisma.CouponWhereInput = {};
 
-    // Ensure that only items with a merchantId are returned
-    where.merchantId = { not: null };
-
     if (merchantName) {
       where.merchantName = merchantName;
     }
