@@ -1,5 +1,5 @@
 import cheerio from 'cheerio';
-import { createCheerioRouter, KeyValueStore } from 'crawlee';
+import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
 import {
@@ -191,21 +191,10 @@ router.addHandler(Label.listing, async (context) => {
       }
     }
 
-    // Open a named key-value store
-    const store = await KeyValueStore.open('coupons');
-
-    const itemsWithCodes = await store.getValue('coupons');
-
-    // convert unknown type to object
-    const existingRequests = itemsWithCodes || {};
-
     // merge the new requests with the existing ones
     const mergedRequests = {
-      ...existingRequests,
       ...itemsWithCode,
     };
-
-    await store.setValue('coupons', mergedRequests);
 
     const queue = crawler.requestQueue;
 
