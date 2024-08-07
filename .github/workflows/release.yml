@@ -1,0 +1,48 @@
+name: Create Sentry Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          latest_tag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo "Latest tag: $latest_tag"
+          echo "::set-output name=latest_tag::$latest_tag"
+
+      - name: Set up Sentry CLI
+        run: |
+          curl -sL https://sentry.io/get-cli/ | bash
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Create Sentry Release
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: "oberst-bv-ar"
+          SENTRY_PROJECT: "api-scrappers"
+          VERSION: ${{ steps.get_latest_tag.outputs.latest_tag }}
+        run: |
+          echo "Creating Sentry release for version: $VERSION"
+          sentry-cli releases new -p $SENTRY_PROJECT $VERSION
+          sentry-cli releases set-commits --auto $VERSION
+          sentry-cli releases finalize $VERSION
+
+      - name: Notify Sentry of Deployment
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: "oberst-bv"
+          SENTRY_PROJECT: "apify-scrapers"
+          VERSION: ${{ steps.get_latest_tag.outputs.latest_tag }}
+        run: |
+          echo "Notifying Sentry of deployment for version: $VERSION"
+          sentry-cli releases deploys $VERSION new -e production
