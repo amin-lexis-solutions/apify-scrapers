@@ -1,3 +1,4 @@
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
@@ -8,7 +9,6 @@ import {
   ItemResult,
   ItemHashMap,
   getMerchantDomainFromUrl,
-  logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -71,7 +71,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -103,7 +103,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -122,7 +122,7 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     if (!merchantName) {
-      logError('Unable to find merchant name');
+      logger.error('Unable to find merchant name');
       return;
     }
 
@@ -152,7 +152,7 @@ router.addHandler(Label.listing, async (context) => {
       const title = $cheerioElement('h3').first().text().trim();
 
       if (!title) {
-        logError('title not found in item');
+        logger.error('title not found in item');
         continue;
       }
 
@@ -161,7 +161,7 @@ router.addHandler(Label.listing, async (context) => {
       ).first();
 
       if (!elementButtonLink) {
-        logError('ID not found in item');
+        logger.error('ID not found in item');
         continue;
       }
 

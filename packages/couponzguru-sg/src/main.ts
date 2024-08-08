@@ -1,5 +1,5 @@
 // For more information, see https://crawlee.dev/
-import 'shared/sentry-init';
+import { logger } from 'shared/logger';
 import { Actor } from 'apify';
 import { prepareCheerioScraper } from 'shared/actor-utils';
 import { router } from './routes';
@@ -11,6 +11,16 @@ async function main() {
     nonIndexPageSelectors: ['.alphabet-item'],
   });
   await crawler.run();
-  await Actor.exit();
 }
-main();
+Actor.on('aborting', () => {
+  logger.publish();
+});
+
+main()
+  .catch((error) => {
+    logger.error('Actor failed', { error });
+  })
+  .finally(async () => {
+    await logger.publish();
+    await Actor.exit();
+  });

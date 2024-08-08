@@ -1,12 +1,12 @@
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
+import { logger } from 'shared/logger';
 import {
   generateItemId,
   ItemHashMap,
   checkItemsIds,
   ItemResult,
   getMerchantDomainFromUrl,
-  logError,
 } from 'shared/helpers';
 import { createPuppeteerRouter, sleep } from 'crawlee';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -81,7 +81,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -91,7 +91,7 @@ router.addHandler(Label.listing, async (context) => {
     );
     // Throw an error if merchant name is not found
     if (!merchantName) {
-      logError(`merchantName not found sourceUrl ${request.url}`);
+      logger.error(`merchantName not found sourceUrl ${request.url}`);
       return;
     }
     // Extract coupon list elements from the webpage
@@ -113,7 +113,7 @@ router.addHandler(Label.listing, async (context) => {
       );
 
       if (!title) {
-        logError(`coupon title not found`);
+        logger.error(`coupon title not found`);
         continue;
       }
 
@@ -122,7 +122,7 @@ router.addHandler(Label.listing, async (context) => {
       );
       // // Throw an error if ID is not found
       if (!idInSite) {
-        logError(`idInSite not found`);
+        logger.error(`idInSite not found`);
         continue;
       }
 
@@ -152,7 +152,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

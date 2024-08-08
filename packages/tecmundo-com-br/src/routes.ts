@@ -1,4 +1,5 @@
 import { createCheerioRouter, log } from 'crawlee';
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
@@ -10,7 +11,6 @@ import {
   ItemResult,
   ItemHashMap,
   getMerchantDomainFromUrl,
-  logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -74,7 +74,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -98,7 +98,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -111,7 +111,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = merchantLink.attr('data-shop');
 
     if (!merchantName) {
-      logError('Merchant name is missing');
+      logger.error('Merchant name is missing');
       return;
     }
 
@@ -131,7 +131,7 @@ router.addHandler(Label.listing, async (context) => {
       const idInSite = $cheerioElement('*').first().attr('data-coupon-id');
 
       if (!idInSite) {
-        logError('Element data-promotion-id attr is missing');
+        logger.error('Element data-promotion-id attr is missing');
         continue;
       }
 
@@ -139,7 +139,7 @@ router.addHandler(Label.listing, async (context) => {
       const title = $cheerioElement('h3').first()?.text()?.trim();
 
       if (!title) {
-        logError('title not found in item');
+        logger.error('title not found in item');
         continue;
       }
 

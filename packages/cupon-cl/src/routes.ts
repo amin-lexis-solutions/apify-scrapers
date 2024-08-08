@@ -1,5 +1,6 @@
 import { createPuppeteerRouter } from 'crawlee';
 import { Label } from 'shared/actor-utils';
+import { logger } from 'shared/logger';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
@@ -8,7 +9,6 @@ import {
   ItemResult,
   ItemHashMap,
   checkItemsIds,
-  logError,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -72,7 +72,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error) {
-      logError(`Preprocess Error: ${error}`);
+      logger.error(`Preprocess Error: ${error}`);
       return;
     }
 
@@ -83,7 +83,7 @@ router.addHandler(Label.listing, async (context) => {
     });
 
     if (!merchantName) {
-      logError(`Merchant name not found ${request.url}`);
+      logger.error(`Merchant name not found ${request.url}`);
       return;
     }
 
@@ -103,7 +103,7 @@ router.addHandler(Label.listing, async (context) => {
       }, itemHandle);
 
       if (!title) {
-        logError('Coupon title not found in item');
+        logger.error('Coupon title not found in item');
         continue;
       }
 
@@ -114,7 +114,7 @@ router.addHandler(Label.listing, async (context) => {
       }, itemHandle);
 
       if (!idInSite) {
-        logError('idInSite not found in item');
+        logger.error('idInSite not found in item');
         continue;
       }
 

@@ -1,4 +1,5 @@
 import { createPuppeteerRouter } from 'crawlee';
+import { logger } from 'shared/logger';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
@@ -8,7 +9,6 @@ import {
   formatDateTime,
   generateItemId,
   getMerchantDomainFromUrl,
-  logError,
 } from 'shared/helpers';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -61,14 +61,14 @@ router.addHandler(Label.listing, async (context) => {
     );
 
     if (!nextDataElement) {
-      logError(`nextData element no found in url`);
+      logger.error(`nextData element no found in url`);
       return;
     }
 
     const nextData = JSON.parse(nextDataElement);
 
     if (!nextData || !nextData?.props) {
-      logError(`nextData props no found in ${request.url}`);
+      logger.error(`nextData props no found in ${request.url}`);
       return;
     }
 
@@ -79,7 +79,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = pageProps?.retailer?.name;
 
     if (!merchantName) {
-      logError(`merchantName not found JSON nextData - ${request.url}`);
+      logger.error(`merchantName not found JSON nextData - ${request.url}`);
       return;
     }
 
@@ -118,7 +118,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -128,12 +128,12 @@ router.addHandler(Label.listing, async (context) => {
 
     for (const item of items) {
       if (!item.idPool) {
-        logError(`idInSite no found in item`);
+        logger.error(`idInSite no found in item`);
         continue;
       }
 
       if (!item.title) {
-        logError(`title no found in item`);
+        logger.error(`title no found in item`);
         continue;
       }
 
@@ -163,7 +163,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

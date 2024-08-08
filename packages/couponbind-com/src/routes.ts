@@ -1,4 +1,5 @@
 import { createCheerioRouter } from 'crawlee';
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
@@ -8,7 +9,6 @@ import {
   ItemResult,
   ItemHashMap,
   getMerchantDomainFromUrl,
-  logError,
 } from 'shared/helpers';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -88,7 +88,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -96,7 +96,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = $('img.merchant-logo')?.attr('title') || '';
     // Throw an error if merchant name is not found
     if (!merchantName) {
-      logError(`merchantName not found ${request.url}`);
+      logger.error(`merchantName not found ${request.url}`);
       return;
     }
     // Extract coupon list elements from the webpage
@@ -119,14 +119,14 @@ router.addHandler(Label.listing, async (context) => {
 
       // Logs if ID is not found
       if (!title) {
-        logError('Title not found in item');
+        logger.error('Title not found in item');
         continue;
       }
 
       const idInSite = $cheerioElement('*')?.attr('data-cid');
       // Throw an error if ID is not found
       if (!idInSite) {
-        logError('idInSite not found in item');
+        logger.error('idInSite not found in item');
         continue;
       }
 
@@ -157,7 +157,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }
@@ -182,7 +182,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

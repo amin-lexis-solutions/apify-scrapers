@@ -1,12 +1,12 @@
 import * as cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
+import { logger } from 'shared/logger';
 import {
   checkItemsIds,
   ItemHashMap,
   ItemResult,
   generateHash,
-  logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -79,14 +79,14 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
     const merchantNameElem = $('div.breadcrumbs span.breadcrumb_last');
 
     if (!merchantNameElem) {
-      logError('Unable to find merchant name element');
+      logger.error('Unable to find merchant name element');
       return;
     }
 
@@ -141,7 +141,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

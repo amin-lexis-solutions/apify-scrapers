@@ -1,7 +1,8 @@
 import { createCheerioRouter } from 'crawlee';
 import { parse } from 'node-html-parser';
 import { DataValidator } from 'shared/data-validator';
-import { getMerchantDomainFromUrl, logError, sleep } from 'shared/helpers';
+import { logger } from 'shared/logger';
+import { getMerchantDomainFromUrl, sleep } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -42,7 +43,7 @@ router.addHandler(Label.listing, async (context) => {
     );
 
     if (!sectionWithItems) {
-      logError('No coupons found');
+      logger.error('No coupons found');
       return;
     }
 
@@ -63,7 +64,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -73,7 +74,7 @@ router.addHandler(Label.listing, async (context) => {
       const itemId = item.getAttribute('data-ssr-vouchers-item');
 
       if (!itemId) {
-        logError('Item ID not found in div HTML tag.');
+        logger.error('Item ID not found in div HTML tag.');
         continue;
       }
 

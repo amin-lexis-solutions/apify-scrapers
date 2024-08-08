@@ -1,4 +1,5 @@
 import { createCheerioRouter, log } from 'crawlee';
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { DataValidator } from 'shared/data-validator';
 import {
@@ -6,7 +7,6 @@ import {
   ItemHashMap,
   ItemResult,
   generateHash,
-  logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -56,7 +56,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -97,14 +97,14 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
     const merchantName = getMerchantName();
 
     if (!merchantName) {
-      logError(`Unable to find merchant name element ${request.url}`);
+      logger.error(`Unable to find merchant name element ${request.url}`);
       return;
     }
 
@@ -128,14 +128,14 @@ router.addHandler(Label.listing, async (context) => {
       const title = $cheerio('h3.voucher__heading').first()?.text()?.trim();
 
       if (!title) {
-        logError(`titleElement not found in item`);
+        logger.error(`titleElement not found in item`);
         continue;
       }
 
       const idInSite = $cheerio('.voucher__btn ').first().attr('data-id');
 
       if (!idInSite) {
-        logError('idInSite not found in item');
+        logger.error('idInSite not found in item');
         continue;
       }
 
@@ -165,7 +165,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

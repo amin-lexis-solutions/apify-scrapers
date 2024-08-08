@@ -1,3 +1,4 @@
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { createCheerioRouter, log } from 'crawlee';
 import * as he from 'he';
@@ -9,7 +10,6 @@ import {
   checkItemsIds,
   ItemResult,
   ItemHashMap,
-  logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -87,7 +87,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -111,7 +111,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -141,14 +141,14 @@ router.addHandler(Label.listing, async (context) => {
         : null;
 
       if (!merchantName) {
-        logError('Merchant name not found in item');
+        logger.error('Merchant name not found in item');
         continue;
       }
 
       const idInSite = $cheerio('*').first().attr('data-id')?.trim();
 
       if (!idInSite) {
-        logError('idInSite not found in item');
+        logger.error('idInSite not found in item');
         continue;
       }
 
@@ -156,7 +156,7 @@ router.addHandler(Label.listing, async (context) => {
       const titleElement = $cheerio('.Offer h3.Outlink').first();
 
       if (!titleElement) {
-        logError('Title not found in item');
+        logger.error('Title not found in item');
         continue;
       }
 
@@ -188,7 +188,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

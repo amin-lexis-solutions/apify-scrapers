@@ -1,4 +1,5 @@
 import { createCheerioRouter, log } from 'crawlee';
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { DataValidator } from 'shared/data-validator';
 import {
@@ -6,7 +7,6 @@ import {
   checkItemsIds,
   ItemResult,
   ItemHashMap,
-  logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -65,7 +65,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
     // Extract coupon list elements from the webpage
@@ -88,14 +88,14 @@ router.addHandler(Label.listing, async (context) => {
       const title = $cheerio('.cc-body-desc-title h2')?.text();
 
       if (!title) {
-        logError('title not found in item');
+        logger.error('title not found in item');
         continue;
       }
 
       const idInSite = $cheerio('*').attr('data-coupon-id');
 
       if (!idInSite) {
-        logError('idInSite not found in item');
+        logger.error('idInSite not found in item');
         continue;
       }
 
@@ -127,7 +127,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

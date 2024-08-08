@@ -1,5 +1,6 @@
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
+import { logger } from 'shared/logger';
 import {
   processAndStoreData,
   sleep,
@@ -8,7 +9,6 @@ import {
   checkItemsIds,
   ItemResult,
   ItemHashMap,
-  logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -123,7 +123,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -150,7 +150,7 @@ router.addHandler(Label.listing, async (context) => {
     });
 
     if (!jsonData) {
-      logError(
+      logger.error(
         `No matching script tag found or JSON parsing failed: ${request.url}`
       );
       return;
@@ -195,7 +195,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -209,12 +209,12 @@ router.addHandler(Label.listing, async (context) => {
       const title = offerNode?.title;
 
       if (!title) {
-        logError('idInSite not found');
+        logger.error('idInSite not found');
         continue;
       }
 
       if (!offerNode.voucher.id.split(':')[3]) {
-        logError('idInSite not found in item');
+        logger.error('idInSite not found in item');
         continue;
       }
 
@@ -241,7 +241,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

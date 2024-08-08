@@ -1,3 +1,4 @@
+import { logger } from 'shared/logger';
 import { createCheerioRouter } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
@@ -8,7 +9,6 @@ import {
   ItemResult,
   ItemHashMap,
   checkItemsIds,
-  logError,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -65,12 +65,12 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error) {
-      logError(`Preprocess Error: ${error}`);
+      logger.error(`Preprocess Error: ${request.url}`, error);
       return;
     }
 
     if (!itemScript) {
-      logError(`itemScript not found in page - ${request.url}`);
+      logger.error(`itemScript not found in page - ${request.url}`);
       return;
     }
 
@@ -79,7 +79,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = itemsJSON?.name;
 
     if (!merchantName) {
-      logError(`MerchantName not found ${request.url}`);
+      logger.error(`MerchantName not found ${request.url}`);
       return;
     }
 
@@ -101,7 +101,7 @@ router.addHandler(Label.listing, async (context) => {
     const idsToCheck: string[] = [];
     for (const item of items) {
       if (!item?.name) {
-        logError('Coupon title not found in item');
+        logger.error('Coupon title not found in item');
         continue;
       }
       const result: ItemResult = processItem(
@@ -122,7 +122,7 @@ router.addHandler(Label.listing, async (context) => {
             context
           );
         } catch (error) {
-          log.error(`Postprocess Error: ${error}`);
+          logger.error(`Postprocess Error: ${error}`);
         }
         continue;
       }
@@ -190,7 +190,7 @@ router.addHandler(Label.getCode, async (context) => {
         context
       );
     } catch (error) {
-      log.error(`Postprocess Error: ${error}`);
+      logger.error(`Postprocess Error: ${error}`);
       return;
     }
   } finally {

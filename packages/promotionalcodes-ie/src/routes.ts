@@ -1,13 +1,13 @@
 import { createCheerioRouter } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
+import { logger } from 'shared/logger';
 import {
   formatDateTime,
   generateItemId,
   ItemResult,
   ItemHashMap,
   checkItemsIds,
-  logError,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -82,7 +82,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = $('#merchant-name').text().split('.')[0];
 
     if (!merchantName) {
-      logError(`merchantName not found ${request.url}`);
+      logger.error(`merchantName not found ${request.url}`);
       return;
     }
 

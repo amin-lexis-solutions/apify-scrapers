@@ -1,3 +1,4 @@
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
@@ -8,7 +9,6 @@ import {
   ItemResult,
   ItemHashMap,
   formatDateTime,
-  logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -154,7 +154,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -187,13 +187,13 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
     // Check if valid page
     if (!$('div#coupon-header img.ek').length) {
-      logError(`Not Merchant URL: ${request.url}`);
+      logger.error(`Not Merchant URL: ${request.url}`);
       return;
     }
 
@@ -202,7 +202,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = merchantLogoImg?.attr('alt')?.trim();
 
     if (!merchantLogoImg) {
-      logError('Unable to find merchant name');
+      logger.error('Unable to find merchant name');
       return;
     }
 
@@ -213,7 +213,7 @@ router.addHandler(Label.listing, async (context) => {
       : null;
 
     if (!merchantDomain) {
-      logError(`merchantDomain not found ${request.url}`);
+      logger.error(`merchantDomain not found ${request.url}`);
       return;
     }
 
@@ -227,7 +227,7 @@ router.addHandler(Label.listing, async (context) => {
       const title = $cheerio('p').first()?.text()?.trim();
 
       if (!title) {
-        logError('title not found in item');
+        logger.error('title not found in item');
         continue;
       }
 
@@ -256,7 +256,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

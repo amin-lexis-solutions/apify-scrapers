@@ -1,4 +1,5 @@
 import { createCheerioRouter } from 'crawlee';
+import { logger } from 'shared/logger';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
@@ -6,7 +7,6 @@ import {
   ItemResult,
   checkItemsIds,
   generateItemId,
-  logError,
 } from 'shared/helpers';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -50,7 +50,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = $('#merchant-rating img').attr('alt')?.toLowerCase();
 
     if (!merchantName) {
-      logError(`Not merchantName found in sourceUrl ${request.url}`);
+      logger.error(`Not merchantName found in sourceUrl ${request.url}`);
       return;
     }
 
@@ -81,7 +81,7 @@ router.addHandler(Label.listing, async (context) => {
       const title = $(item).find('.h3')?.text();
 
       if (!title) {
-        logError('title not found in item');
+        logger.error('title not found in item');
         continue;
       }
 
@@ -93,7 +93,7 @@ router.addHandler(Label.listing, async (context) => {
         ?.split('-')?.[1];
 
       if (!idInSite) {
-        logError('IdInSite not found in item');
+        logger.error('IdInSite not found in item');
         continue;
       }
 

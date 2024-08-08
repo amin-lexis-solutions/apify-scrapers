@@ -2,12 +2,12 @@ import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { ElementHandle } from 'puppeteer';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
+import { logger } from 'shared/logger';
 import {
   ItemHashMap,
   ItemResult,
   checkItemsIds,
   generateHash,
-  logError,
 } from 'shared/helpers';
 import { preProcess, postProcess } from 'shared/hooks';
 
@@ -79,7 +79,7 @@ router.addHandler(Label.listing, async (context) => {
   );
 
   if (!merchantName) {
-    logError('merchantName not found');
+    logger.error('merchantName not found');
     return;
   }
 
@@ -103,7 +103,7 @@ router.addHandler(Label.listing, async (context) => {
     );
 
     if (!idInSite) {
-      logError(`idInSite not found in item`);
+      logger.error(`idInSite not found in item`);
       continue;
     }
     const title = await itemHandle.$eval(
@@ -112,7 +112,7 @@ router.addHandler(Label.listing, async (context) => {
     );
 
     if (!title) {
-      logError(`Domtitleain not found in item`);
+      logger.error(`Domtitleain not found in item`);
       continue;
     }
 

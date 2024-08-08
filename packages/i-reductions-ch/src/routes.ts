@@ -1,6 +1,6 @@
 import { RequestQueue } from 'apify'; // Import types from Apify SDK
 import { DataValidator } from 'shared/data-validator';
-import { logError } from 'shared/helpers';
+import { logger } from 'shared/logger';
 import { sleep } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -87,7 +87,7 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
         const idInSite = el.id.trim().replace('c-', '');
 
         if (!idInSite) {
-          logError(`1idInSite not found`);
+          logger.error(`1idInSite not found`);
           return;
         }
 
@@ -96,12 +96,12 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
           ?.textContent?.trim();
 
         if (!title) {
-          logError(`title not found`);
+          logger.error(`title not found`);
           return;
         }
 
         if (!merchantName) {
-          logError('Merchant name not found item');
+          logger.error('Merchant name not found item');
           return;
         }
 
@@ -133,7 +133,7 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -179,7 +179,7 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
       );
     }
   } catch (error) {
-    logError(`An error occurred while processing the URL ${request.url}:`);
+    logger.error(`An error occurred while processing the URL ${request.url}:`);
     return;
   }
 }

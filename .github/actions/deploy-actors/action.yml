@@ -14,6 +14,9 @@ inputs:
   max_concurrent_runs:
     description: 'Maximum number of actors to runs concurrently'
     required: true
+  sentry-dsn-actors:
+    description: 'Sentry DSN for actors'
+    required: true
 
 runs:
   using: 'composite'
@@ -35,4 +38,5 @@ runs:
         APIFY_ORG_TOKEN_LEXIS: ${{ inputs.api-token }}
         MAX_CONCURRENT_RUNS: ${{ inputs.max_concurrent_runs }}
         API_SECRET: ${{ inputs.api-secret }}
+        SENTRY_DSN_ACTORS: ${{ inputs.sentry-dsn-actors }}
       run: chmod +x ./scripts/deploy.sh && ./scripts/deploy.sh

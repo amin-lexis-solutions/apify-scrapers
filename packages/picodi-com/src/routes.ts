@@ -1,3 +1,4 @@
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
@@ -7,7 +8,6 @@ import {
   generateItemId,
   checkItemsIds,
   ItemResult,
-  logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -98,7 +98,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -125,7 +125,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -134,7 +134,7 @@ router.addHandler(Label.listing, async (context) => {
       $('.hero-shop__img').attr('alt')?.replace('voucher code', '');
 
     if (!merchantName) {
-      logError(`Not Merchant Name found ${request.url}`);
+      logger.error(`Not Merchant Name found ${request.url}`);
       return;
     }
 
@@ -148,7 +148,7 @@ router.addHandler(Label.listing, async (context) => {
       const idInSite = $cheerio('*').first().attr('data-offer-id');
 
       if (!idInSite) {
-        logError('not idInSite found in item');
+        logger.error('not idInSite found in item');
         continue;
       }
 
@@ -156,7 +156,7 @@ router.addHandler(Label.listing, async (context) => {
       const title = $cheerio('div.of__content > h3')?.first()?.text()?.trim();
 
       if (!title) {
-        logError('title not found in item');
+        logger.error('title not found in item');
         continue;
       }
 
@@ -186,7 +186,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

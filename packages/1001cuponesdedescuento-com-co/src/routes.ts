@@ -1,3 +1,4 @@
+import { logger } from 'shared/logger';
 import { createCheerioRouter } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
@@ -8,7 +9,6 @@ import {
   ItemResult,
   ItemHashMap,
   checkItemsIds,
-  logError,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -69,7 +69,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error) {
-      logError(`Preprocess Error: ${error}`);
+      logger.error(`Preprocess Error: ${error}`);
       return;
     }
 
@@ -93,7 +93,7 @@ router.addHandler(Label.listing, async (context) => {
         ?.trim();
 
       if (!merchantName) {
-        logError(`MerchantName not found ${request.url}`);
+        logger.error(`MerchantName not found ${request.url}`);
         continue;
       }
 
@@ -102,14 +102,14 @@ router.addHandler(Label.listing, async (context) => {
       const title = $(item).find('.__desc-title h3').text();
 
       if (!title) {
-        logError('Coupon title not found in item');
+        logger.error('Coupon title not found in item');
         continue;
       }
 
       const idInSite = $(item).find('.__desc.offercontent').attr('data-id');
 
       if (!idInSite) {
-        logError('idInSite not found in item');
+        logger.error('idInSite not found in item');
         continue;
       }
 

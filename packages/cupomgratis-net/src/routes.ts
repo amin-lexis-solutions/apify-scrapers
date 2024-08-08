@@ -1,8 +1,8 @@
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import {
-  logError,
   generateHash,
   ItemHashMap,
   ItemResult,
@@ -56,7 +56,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -84,13 +84,13 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
     // Check if the breadcrumbs element exists to validate the page
     if ($('#core_main_breadcrumbs_left > li').length === 0) {
-      logError(`Not a valid page: ${request.url}`);
+      logger.error(`Not a valid page: ${request.url}`);
       return;
     }
 
@@ -101,7 +101,7 @@ router.addHandler(Label.listing, async (context) => {
       .trim();
 
     if (!merchantName) {
-      logError(`Unable to find merchant name ${request.url}`);
+      logger.error(`Unable to find merchant name ${request.url}`);
       return;
     }
 
@@ -115,14 +115,14 @@ router.addHandler(Label.listing, async (context) => {
       const idInSite = $cheerio('*').first().attr('id')?.split('_').pop();
 
       if (!idInSite) {
-        logError('idInSite not found in item');
+        logger.error('idInSite not found in item');
         return;
       }
 
       const title = $cheerio('h3').first().text().trim();
 
       if (!title) {
-        logError('Coupon title not found in item');
+        logger.error('Coupon title not found in item');
         return;
       }
 
@@ -151,7 +151,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

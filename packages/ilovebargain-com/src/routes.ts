@@ -1,4 +1,5 @@
 import { createCheerioRouter } from 'crawlee';
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 
 import { DataValidator } from 'shared/data-validator';
@@ -8,7 +9,6 @@ import {
   ItemHashMap,
   checkItemsIds,
   ItemResult,
-  logError,
 } from 'shared/helpers';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -20,7 +20,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
   try {
@@ -37,7 +37,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -46,7 +46,7 @@ router.addHandler(Label.listing, async (context) => {
       const id = $(item).attr('data-cid');
 
       if (!id) {
-        logError(`idInsite not found in item`);
+        logger.error(`idInsite not found in item`);
         continue;
       }
       // Construct item URL
@@ -76,7 +76,7 @@ router.addHandler(Label.details, async (context) => {
   if (request.userData.label !== Label.details) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -92,7 +92,7 @@ router.addHandler(Label.details, async (context) => {
   const merchantName: any = $('.img-holder a img')?.attr('alt');
 
   if (!merchantName) {
-    logError(`merchantName not found ${request.url}`);
+    logger.error(`merchantName not found ${request.url}`);
     return;
   }
   // Extract validCoupons
@@ -108,14 +108,14 @@ router.addHandler(Label.details, async (context) => {
       ?.split('Discount')?.[0];
 
     if (!title) {
-      logError(`title not found in item`);
+      logger.error(`title not found in item`);
       continue;
     }
     const desc = $cheerio('.-description')?.text()?.trim();
     const idInSite = $cheerio('*')?.attr('data-cid');
 
     if (!idInSite) {
-      logError(`idInSite not found in item`);
+      logger.error(`idInSite not found in item`);
       continue;
     }
 
@@ -162,7 +162,7 @@ router.addHandler(Label.details, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Post-Processing Error : ${error.message}`);
+      logger.error(`Post-Processing Error : ${error.message}`, error);
       return;
     }
   }

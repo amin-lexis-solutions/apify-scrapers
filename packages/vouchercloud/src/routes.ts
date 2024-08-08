@@ -1,5 +1,6 @@
 import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
+import { logger } from 'shared/logger';
 import {
   sleep,
   generateItemId,
@@ -7,7 +8,6 @@ import {
   ItemResult,
   ItemHashMap,
   getMerchantDomainFromUrl,
-  logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -51,7 +51,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -64,7 +64,7 @@ router.addHandler(Label.listing, async (context) => {
     const propsJson = $('view-all-codes').attr('props');
 
     if (!propsJson) {
-      logError('view-all-codes props JSON is missing');
+      logger.error('view-all-codes props JSON is missing');
       return;
     }
 
@@ -73,7 +73,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = props.MerchantName;
 
     if (!merchantName) {
-      logError('Unable to find merchant name');
+      logger.error('Unable to find merchant name');
       return;
     }
 
@@ -102,7 +102,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -116,14 +116,14 @@ router.addHandler(Label.listing, async (context) => {
       const idInSite = element.OfferId.toString();
 
       if (!idInSite) {
-        logError(`not idInSite found in item`);
+        logger.error(`not idInSite found in item`);
         continue;
       }
 
       const title = element.OfferTitle;
 
       if (!title) {
-        logError(`not title found in item`);
+        logger.error(`not title found in item`);
         continue;
       }
 

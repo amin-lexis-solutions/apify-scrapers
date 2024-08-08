@@ -1,5 +1,6 @@
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from './data-validator';
+import { logger } from 'shared/logger';
 import {
   sleep,
   getMerchantDomainFromUrl,
@@ -8,7 +9,6 @@ import {
   ItemResult,
   ItemHashMap,
   formatDateTime,
-  logError,
 } from './helpers';
 import { preProcess, postProcess } from './hooks';
 import { Label, CUSTOM_HEADERS } from './actor-utils';
@@ -116,7 +116,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -141,7 +141,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -155,7 +155,7 @@ router.addHandler(Label.listing, async (context) => {
     const match = htmlContent.match(jsonPattern);
 
     if (!match || !match?.[1]) {
-      logError(`'JSON data not found ${request.url}`);
+      logger.error(`'JSON data not found ${request.url}`);
       return;
     }
 
@@ -163,7 +163,7 @@ router.addHandler(Label.listing, async (context) => {
     const pageProps = nextData.props.pageProps;
 
     if (!pageProps || !pageProps.retailer) {
-      logError('pageProps data is missing in the parsed JSON');
+      logger.error('pageProps data is missing in the parsed JSON');
       return;
     }
 
@@ -175,7 +175,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = pageProps.retailer.name;
 
     if (!merchantName) {
-      logError(`merchantName not found ${request.url}`);
+      logger.error(`merchantName not found ${request.url}`);
       return;
     }
 
@@ -206,12 +206,12 @@ router.addHandler(Label.listing, async (context) => {
       await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings
 
       if (!item?.idPool && !item?.idVoucher && !item?.idInSite) {
-        logError(`idInSite not found in item`);
+        logger.error(`idInSite not found in item`);
         continue;
       }
 
       if (!item.title) {
-        logError(`title not found in item`);
+        logger.error(`title not found in item`);
         continue;
       }
 

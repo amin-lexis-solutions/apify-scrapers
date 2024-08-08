@@ -1,3 +1,4 @@
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import * as he from 'he';
 import { createCheerioRouter, log } from 'crawlee';
@@ -9,7 +10,6 @@ import {
   ItemResult,
   ItemHashMap,
   getMerchantDomainFromUrl,
-  logError,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -82,7 +82,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -113,7 +113,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -131,7 +131,7 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     if (!merchantName) {
-      logError('Unable to find merchant name');
+      logger.error('Unable to find merchant name');
     }
 
     const merchantDomain = getMerchantDomainFromUrl(request.url);
@@ -155,7 +155,7 @@ router.addHandler(Label.listing, async (context) => {
         ?.trim();
 
       if (!title) {
-        logError('title not found in item');
+        logger.error('title not found in item');
         continue;
       }
 
@@ -164,7 +164,7 @@ router.addHandler(Label.listing, async (context) => {
         .attr('data-voucher-config-value');
 
       if (!configAttr) {
-        logError('Attribute data-voucher-config-value not found in item');
+        logger.error('Attribute data-voucher-config-value not found in item');
         continue;
       }
 
@@ -173,7 +173,7 @@ router.addHandler(Label.listing, async (context) => {
       const idInSite = config?.id?.toString();
 
       if (!idInSite) {
-        logError('idInSite not found in item');
+        logger.error('idInSite not found in item');
         continue;
       }
 
@@ -204,7 +204,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

@@ -1,7 +1,8 @@
 import { createCheerioRouter, log } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { generateHash, logError } from 'shared/helpers';
+import { logger } from 'shared/logger';
+import { generateHash } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -19,7 +20,7 @@ const getMerchantName = ($, pageType) => {
   const merchantNameElement = $(selector);
 
   if (merchantNameElement.length === 0) {
-    logError('Merchant name is missing');
+    logger.error('Merchant name is missing');
     return;
   }
 
@@ -64,7 +65,7 @@ const processCoupon = async (context) => {
   const { request, $, crawler } = context;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -83,7 +84,7 @@ const processCoupon = async (context) => {
       context
     );
   } catch (error: any) {
-    logError(`Pre-Processing Error : ${error.message}`);
+    logger.error(`Pre-Processing Error : ${error.message}`, error);
     return;
   }
 
@@ -94,7 +95,7 @@ const processCoupon = async (context) => {
   const merchantName = getMerchantName($, pageType);
 
   if (!merchantName) {
-    logError('merchantName not found');
+    logger.error('merchantName not found');
     return;
   }
 
@@ -105,7 +106,7 @@ const processCoupon = async (context) => {
       const itemTitle = getItemTitle(element, pageType);
 
       if (!itemTitle) {
-        logError('Title not found');
+        logger.error('Title not found');
         return;
       }
 
@@ -136,7 +137,7 @@ const processCoupon = async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     });
@@ -173,7 +174,7 @@ const processCoupon = async (context) => {
       context
     );
   } catch (error: any) {
-    logError(`Post-Processing Error : ${error.message}`);
+    logger.error(`Post-Processing Error : ${error.message}`, error);
     return;
   }
 };

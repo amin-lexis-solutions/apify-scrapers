@@ -1,5 +1,6 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
+import { logger } from 'shared/logger';
 import {
   getMerchantDomainFromUrl,
   generateItemId,
@@ -7,7 +8,6 @@ import {
   ItemResult,
   ItemHashMap,
   formatDateTime,
-  logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -129,7 +129,7 @@ router.addHandler(Label.listing, async (context) => {
     let jsonData;
 
     if (!match || !match?.[1]) {
-      logError(`'JSON data not found ${request.url}`);
+      logger.error(`'JSON data not found ${request.url}`);
       return;
     }
 
@@ -139,7 +139,7 @@ router.addHandler(Label.listing, async (context) => {
     jsonData = jsonData.props.pageProps;
 
     if (!jsonData.retailer) {
-      logError('Retailer data is missing in the parsed JSON');
+      logger.error('Retailer data is missing in the parsed JSON');
       return;
     }
 
@@ -150,7 +150,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = jsonData.retailer.name;
 
     if (!merchantName) {
-      logError(`not merchantName found ${request.url}`);
+      logger.error(`not merchantName found ${request.url}`);
       return;
     }
     const merchantUrl = jsonData.retailer.merchant_url;
@@ -181,7 +181,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -214,7 +214,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

@@ -1,12 +1,12 @@
 import { createCheerioRouter } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
+import { logger } from 'shared/logger';
 import {
   formatDateTime,
   generateItemId,
   ItemResult,
   checkItemsIds,
-  logError,
   getMerchantDomainFromUrl,
 } from 'shared/helpers';
 
@@ -67,7 +67,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -101,7 +101,7 @@ router.addHandler(Label.details, async (context) => {
       ?.replace(' Codes', '');
 
     if (!merchantName) {
-      logError(`merchantName not found in page - ${request.url}`);
+      logger.error(`merchantName not found in page - ${request.url}`);
       return;
     }
 
@@ -130,14 +130,14 @@ router.addHandler(Label.details, async (context) => {
     const idInSite = $('.sku_wrapper span.sku').text().replaceAll('-', '');
 
     if (!idInSite) {
-      logError(`idInSite not found in page - ${request.url}`);
+      logger.error(`idInSite not found in page - ${request.url}`);
       return;
     }
 
     const title = $('.et_pb_module_inner h2').text();
 
     if (!title) {
-      logError(`title not found in page - ${request.url}`);
+      logger.error(`title not found in page - ${request.url}`);
       return;
     }
 
@@ -170,7 +170,7 @@ router.addHandler(Label.details, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Post-Processing Error : ${error.message}`);
+      logger.error(`Post-Processing Error : ${error.message}`, error);
       return;
     }
   } finally {

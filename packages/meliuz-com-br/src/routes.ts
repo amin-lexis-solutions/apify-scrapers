@@ -1,3 +1,4 @@
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import * as he from 'he';
 import { createCheerioRouter } from 'crawlee';
@@ -6,7 +7,6 @@ import {
   checkItemsIds,
   ItemHashMap,
   ItemResult,
-  logError,
   generateHash,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
@@ -58,7 +58,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -83,7 +83,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -97,7 +97,7 @@ router.addHandler(Label.listing, async (context) => {
 
     // Check if valid page
     if (!merchantName) {
-      logError(`Not Merchant URL: ${request.url}`);
+      logger.error(`Not Merchant URL: ${request.url}`);
       return;
     }
 
@@ -114,7 +114,7 @@ router.addHandler(Label.listing, async (context) => {
       const isExpired = !$cheerio('*').find('.expired-cpn-sec__label');
 
       if (!idInSite) {
-        logError('idInSite not found in item');
+        logger.error('idInSite not found in item');
         continue;
       }
 
@@ -122,7 +122,7 @@ router.addHandler(Label.listing, async (context) => {
       const titleElement = $cheerio('h3.offer-cpn__title').first();
 
       if (!titleElement) {
-        logError('title not found in item');
+        logger.error('title not found in item');
         continue;
       }
 
@@ -159,7 +159,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

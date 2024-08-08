@@ -1,12 +1,12 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
+import { logger } from 'shared/logger';
 import {
   generateItemId,
   ItemHashMap,
   checkItemsIds,
   ItemResult,
   getMerchantDomainFromUrl,
-  logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -39,7 +39,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -50,7 +50,7 @@ router.addHandler(Label.listing, async (context) => {
     });
     // Throw an error if merchantName is not found
     if (!merchantName) {
-      logError('merchan name not found');
+      logger.error('merchan name not found');
       return;
     }
     // Extract domain from the request URL
@@ -79,7 +79,7 @@ router.addHandler(Label.listing, async (context) => {
       }, element);
 
       if (!idInSite) {
-        logError(`idInSite not found in item`);
+        logger.error(`idInSite not found in item`);
         continue;
       }
 
@@ -101,7 +101,7 @@ router.addHandler(Label.listing, async (context) => {
       }, element);
 
       if (!couponTitle) {
-        logError(`title not found in item`);
+        logger.error(`title not found in item`);
         continue;
       }
 
@@ -140,7 +140,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

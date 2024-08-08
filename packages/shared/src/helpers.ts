@@ -204,11 +204,6 @@ export async function checkExistingItemsAnomaly(
   }
 }
 
-export function logError(exception: string) {
-  log.error(exception);
-  Sentry.captureException(exception);
-}
-
 /**
  * CheckIndexPageSelectors function
  * Verifies index and non index page.

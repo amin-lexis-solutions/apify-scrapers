@@ -1,10 +1,10 @@
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import {
   getMerchantDomainFromUrl,
   generateHash,
-  logError,
   checkItemsIds,
   ItemResult,
   ItemHashMap,
@@ -50,7 +50,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -77,7 +77,7 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
@@ -85,7 +85,7 @@ router.addHandler(Label.listing, async (context) => {
     const scriptContent = $('#schema-data-store').html();
 
     if (!scriptContent) {
-      logError('Not a valid merchant page - schema data missing');
+      logger.error('Not a valid merchant page - schema data missing');
       return;
     }
 
@@ -95,7 +95,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantDomain = getMerchantDomainFromUrl(request.url);
     // Check if valid page
     if (!merchantName) {
-      logError(`merchantName not found ${request.url}`);
+      logger.error(`merchantName not found ${request.url}`);
       return;
     }
 
@@ -114,7 +114,7 @@ router.addHandler(Label.listing, async (context) => {
           : $cheerio('h3').first();
 
       if (!titleElement) {
-        logError('title not found in item');
+        logger.error('title not found in item');
         continue;
       }
 
@@ -153,7 +153,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

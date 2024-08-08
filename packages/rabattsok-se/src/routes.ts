@@ -1,4 +1,5 @@
 import { createCheerioRouter } from 'crawlee';
+import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { DataValidator } from 'shared/data-validator';
 import {
@@ -6,7 +7,6 @@ import {
   ItemHashMap,
   ItemResult,
   generateHash,
-  logError,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -72,7 +72,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   if (!crawler.requestQueue) {
-    logError('Request queue is missing');
+    logger.error('Request queue is missing');
     return;
   }
 
@@ -94,14 +94,14 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
     const merchantElement = $('.bread .breadcrumb .active');
 
     if (!merchantElement) {
-      logError(`merchant name tag not found ${request.url}`);
+      logger.error(`merchant name tag not found ${request.url}`);
       return;
     }
 
@@ -127,14 +127,14 @@ router.addHandler(Label.listing, async (context) => {
       const title = $cheerio('.coupon-meta h3')?.text();
 
       if (!title) {
-        logError(`title not found in item`);
+        logger.error(`title not found in item`);
         continue;
       }
 
       const idInSite = $cheerio('.modal')?.attr('id')?.split('_id_')?.[1];
 
       if (!idInSite) {
-        logError('idInSite not found in item');
+        logger.error('idInSite not found in item');
         continue;
       }
 
@@ -164,7 +164,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }

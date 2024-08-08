@@ -1,11 +1,11 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
+import { logger } from 'shared/logger';
 import {
   generateItemId,
   ItemHashMap,
   checkItemsIds,
   ItemResult,
-  logError,
   formatDateTime,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
@@ -76,14 +76,14 @@ router.addHandler(Label.listing, async (context) => {
         context
       );
     } catch (error: any) {
-      logError(`Pre-Processing Error : ${error.message}`);
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
     const merchantName = await getMerchantName(page);
 
     if (!merchantName) {
-      logError('merchan name not found');
+      logger.error('merchan name not found');
       return;
     }
 
@@ -157,7 +157,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logError(`Post-Processing Error : ${error.message}`);
+        logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
     }
