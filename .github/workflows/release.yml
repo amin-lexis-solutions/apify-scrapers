@@ -20,29 +20,22 @@ jobs:
           echo "::set-output name=latest_tag::$latest_tag"
 
       - name: Set up Sentry CLI
-        run: |
-          curl -sL https://sentry.io/get-cli/ | bash
+        run: curl -sL https://sentry.io/get-cli/ | bash
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
-      - name: Create Sentry Release
+      - name: Create and Finalize Sentry Release
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: "oberst-bv-ar"
-          SENTRY_PROJECT: "api-scrappers"
           VERSION: ${{ steps.get_latest_tag.outputs.latest_tag }}
         run: |
-          echo "Creating Sentry release for version: $VERSION"
-          sentry-cli releases new -p $SENTRY_PROJECT $VERSION
-          sentry-cli releases set-commits --auto $VERSION
-          sentry-cli releases finalize $VERSION
-
-      - name: Notify Sentry of Deployment
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: "oberst-bv"
-          SENTRY_PROJECT: "apify-scrapers"
-          VERSION: ${{ steps.get_latest_tag.outputs.latest_tag }}
-        run: |
-          echo "Notifying Sentry of deployment for version: $VERSION"
-          sentry-cli releases deploys $VERSION new -e production
+          projects=("api-scrappers" "apify-scrapers-api")
+          for project in "${projects[@]}"; do
+            echo "Creating Sentry release for $project version: $VERSION"
+            sentry-cli releases new -p $project $VERSION
+            sentry-cli releases set-commits --auto $VERSION
+            sentry-cli releases finalize $VERSION
+            echo "Notifying Sentry of deployment for $project version: $VERSION"
+            sentry-cli releases deploys $VERSION new -e production
+          done
