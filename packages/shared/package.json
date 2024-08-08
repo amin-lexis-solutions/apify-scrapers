@@ -8,6 +8,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sentry/node": "^7.107.0"
+    "@sentry/node": "^7.107.0",
+    "@sentry/types": "^8.24.0"
   }
 }
