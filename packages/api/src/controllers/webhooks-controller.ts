@@ -60,29 +60,35 @@ export class WebhooksController {
         actorRunId,
         status,
         startedAt,
+        payload: JSON.stringify(webhookData),
       },
     });
 
     // Process data asynchronously to not block the response
     setTimeout(async () => {
       const scrapedData = await this.fetchScrapedData(defaultDatasetId, run.id);
-      if (!scrapedData) return;
 
       console.log(
-        `Processing ${scrapedData.length} coupons Actor ${actorRunId}`
+        `Processing ${scrapedData?.length} coupons Actor ${actorRunId}`
       );
 
       await prisma.processedRun.update({
         where: { id: run.id },
         data: {
-          resultCount: scrapedData.length,
+          resultCount: scrapedData?.length || 0,
           costInUsdMicroCents: Number(usageTotalUsd) * 1000000,
         },
       });
 
+      // if scrapedData  is  not array, log error and return
+      if (!Array.isArray(scrapedData) || scrapedData.length === 0) {
+        Sentry.captureException(
+          `No data was scraped for run ${run.id} from source ${apifyActorId}`
+        );
+        return;
+      }
       // Handle non-index pages
       const coupons = await this.handleNonIndexPages(scrapedData, actorRunId);
-
       // Process coupons
       const { couponStats, errors } = await this.processCoupons(
         coupons,
@@ -94,15 +100,6 @@ export class WebhooksController {
 
       // Check and handle non-existing coupons in page
       await this.checkNonExistingCouponsInPage(scrapedData);
-
-      if (errors.length > 0) {
-        Sentry.captureException(
-          `Errors occurred during processing run ${run.id} from source ${apifyActorId}`,
-          {
-            extra: { errors },
-          }
-        );
-      }
       // Update processed run
       await prisma.processedRun.update({
         where: { id: run.id },
@@ -146,6 +143,16 @@ export class WebhooksController {
           { extra: { error } }
         );
       }
+
+      // eslint-disable-next-line no-console
+      console.log('Processed run', run.id);
+      // eslint-disable-next-line no-console
+      console.table({
+        actorRunId,
+        ...couponStats,
+        errors: errors.length,
+        apify_dataset: scrapedData.length,
+      });
 
       // Send Sentry notification
       this.sendSentryNotification(
@@ -344,7 +351,7 @@ export class WebhooksController {
 
     if (
       sourceUrl !== item.metadata.targetPageUrl &&
-      item.metadata.targetPageUrl !== null
+      item.metadata.targetPageUrl !== undefined
     ) {
       sourceUrl = item.metadata.targetPageUrl;
       Sentry.captureMessage(
@@ -551,7 +558,10 @@ export class WebhooksController {
       });
 
       Sentry.captureException(
-        new Error(`Non-index pages detected on this actor run ${actorRunId}`),
+        new Error(
+          ` ${nonIndexPages.length}  Non-index pages detected on this actor run ${actorRunId}` +
+            `from ${scrapedData.length} results`
+        ),
         {
           extra: { nonIndexPages },
         }
@@ -575,8 +585,11 @@ export class WebhooksController {
       );
     }
     if (errors.length > 0) {
-      Sentry.captureMessage(
-        `Errors occurred during processing run ${runId} from source ${apifyActorId}`
+      Sentry.captureException(
+        `Errors occurred during processing run ${runId} from source ${apifyActorId}`,
+        {
+          extra: { errors },
+        }
       );
     }
     if (resultCount !== couponStats.createdCount + couponStats.updatedCount) {

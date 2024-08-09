@@ -49,6 +49,7 @@ export function removeDuplicateCoupons(data: any) {
   const dataArray = Object.values(data);
   return dataArray.reduce((acc: any[], item: any) => {
     const keyString =
+      item?.__url +
       item?.title +
       item?.idInSite +
       item?.sourceUrl +
