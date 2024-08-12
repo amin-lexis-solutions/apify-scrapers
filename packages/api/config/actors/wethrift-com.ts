@@ -8,6 +8,7 @@ export default [
       {
         domain: 'wethrift.com',
         locales: [Locale.en_US],
+        proxyCountryCode: 'US',
       },
     ],
     name: path.basename(__filename, path.extname(__filename)),

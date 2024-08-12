@@ -261,8 +261,8 @@ This file provides utility functions for initializing and configuring Cheerio an
    - `CUSTOM_HEADERS`: Predefined user-agent header for identification in web requests.
    - `Label`: Enumerated constants for classifying web pages into categories.
 3. **Utility Functions**:
-   - `getStartUrlsArray`:
-     - Converts an array of objects containing URLs into an array of strings for the start URLs.
+   - `buildRequestData`:
+     - Converts an array of objects containing URLs into an array of requestQueue for the start URLs.
 4. <strong>Crawler Preparation Functions</strong>:
    - `prepareCheerioScraper`:
      - Prepares a Cheerio-based crawler with custom configurations.

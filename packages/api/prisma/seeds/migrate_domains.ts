@@ -37,7 +37,10 @@ async function seedSources() {
       update: {
         name,
         domains: {
-          create: domainsToCreate.map((d: any) => ({ domain: d.domain })),
+          create: domainsToCreate.map((d: any) => ({
+            domain: d.domain,
+            proxyCountryCode: d?.proxyCountryCode,
+          })),
           deleteMany: { domain: { in: domainsToDelete } },
         },
       },
@@ -48,6 +51,7 @@ async function seedSources() {
           create: domains.map((d: any) => ({
             domain: d.domain,
             reliability: Reliability.reliable,
+            proxyCountryCode: d?.proxyCountryCode,
           })),
         },
       },

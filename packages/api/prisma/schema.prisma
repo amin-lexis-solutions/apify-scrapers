@@ -75,11 +75,12 @@ model Source {
 }
 
 model SourceDomain {
-  id           String      @id @default(uuid())
-  domain       String
-  reliability  Reliability @default(reliable)
-  source_relation       Source      @relation(fields: [apifyActorId], references: [apifyActorId])
-  apifyActorId String
+  id                String      @id @default(uuid())
+  domain            String
+  reliability       Reliability @default(reliable)
+  source_relation   Source      @relation(fields: [apifyActorId], references: [apifyActorId])
+  apifyActorId      String
+  proxyCountryCode  String? 
 }
 
 // Maps to a single Apify actor run

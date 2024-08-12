@@ -203,8 +203,8 @@ export class TargetsController {
     console.log(`There are ${sources.length} sources (actors) not run today.`);
 
     let actorRunsStarted = 0;
-
     const counts: any = [];
+
     for (const source of sources) {
       if (actorRunsCountToStart <= actorRunsStarted) {
         console.log(
@@ -226,30 +226,48 @@ export class TargetsController {
       const sourceDomains = source.domains.map((domain) => domain.domain);
 
       // Find the target pages for the source that have not been scraped in the  last 30 days
-      const pages = await prisma.targetPage.findMany({
-        where: {
-          AND: [
-            { domain: { in: sourceDomains } },
-            { disabledAt: null },
-            { merchant: { disabledAt: null } },
-            {
-              OR: [
-                { lastApifyRunAt: null },
-                {
-                  lastApifyRunAt: { lt: dayjs().startOf('day').toDate() },
-                },
-              ],
-            },
-          ],
-        },
-        include: {
-          locale: true,
-        },
-      });
+      const getPages = async (sourceDomains: string[]) => {
+        const pages = await prisma.targetPage.findMany({
+          where: {
+            AND: [
+              { domain: { in: sourceDomains } },
+              { disabledAt: null },
+              { merchant: { disabledAt: null } },
+              {
+                OR: [
+                  { lastApifyRunAt: null },
+                  {
+                    lastApifyRunAt: { lt: dayjs().startOf('day').toDate() },
+                  },
+                ],
+              },
+            ],
+          },
+          include: {
+            locale: true,
+          },
+        });
+        return pages;
+      };
+
+      const groupPagesByDomains = async (pages: any[]) => {
+        const pagesByDomains: any = {};
+
+        for (const page of pages) {
+          if (!pagesByDomains[page.domain]) {
+            pagesByDomains[page.domain] = [];
+          }
+          pagesByDomains[page.domain].push(page);
+        }
+        return pagesByDomains;
+      };
+
+      const pages = await getPages(sourceDomains);
+      const pagesByDomains = await groupPagesByDomains(pages);
 
       const sourceIdentification = `${source.name} with Apify actor ID ${source.apifyActorId}`;
 
-      if (pages.length === 0) {
+      if (!pages.length) {
         console.log(
           `There are no target pages for scrape by ${sourceIdentification}. We will try again tomorrow.`
         );
@@ -262,101 +280,114 @@ export class TargetsController {
         continue;
       }
 
-      const startUrlsPerActorRun = 1_000;
-      const actorRunsCountNeededForSource = Math.ceil(
-        pages.length / startUrlsPerActorRun
-      );
+      const startActor = async (pagesByDomains: Record<string, any[]>) => {
+        for (const [domain, pages] of Object.entries(pagesByDomains)) {
+          const startUrlsPerActorRun = 1_000;
 
-      if (availableRuns < actorRunsCountNeededForSource) {
-        console.log(
-          `Source ${sourceIdentification} needs ${actorRunsCountNeededForSource} actor runs to scrape fully` +
-            ` but we only have ${availableRuns} available. Skipping...`
-        );
-
-        continue;
-      }
-
-      if (pages.length > startUrlsPerActorRun) {
-        console.log(
-          `Starting ${sourceIdentification} for ${pages.length} start URLs.` +
-            `Will be chunking the start URLs in groups of ${startUrlsPerActorRun}.`
-        );
-      }
-
-      // can we really be sure that the locale of the first page is the locale for all target pages?
-      // what if a source has multiple domains with different locales?
-      const localeId = pages[0]?.localeId;
-
-      for (let i = 0; i < pages.length; i += startUrlsPerActorRun) {
-        const pagesChunk = pages.slice(i, i + startUrlsPerActorRun);
-
-        console.log(
-          `Scheduling an actor run for ${sourceIdentification} with ${pagesChunk.length} start URLs.`
-        );
-
-        const startUrls = pagesChunk.map((page) => ({
-          url: page.url,
-          metadata: {
-            targetPageId: page.id,
-            targetPageUrl: page.url,
-            verifyLocale: page.verified_locale,
-            merchantId: page.merchantId,
-          },
-        }));
-
-        const targetIds = pagesChunk.map((page) => page.id);
-
-        try {
-          await apify.actor(source.apifyActorId).start(
-            { startUrls },
-            {
-              webhooks: [
-                {
-                  eventTypes: [
-                    'ACTOR.RUN.SUCCEEDED',
-                    'ACTOR.RUN.FAILED',
-                    'ACTOR.RUN.TIMED_OUT',
-                    'ACTOR.RUN.ABORTED',
-                  ],
-                  requestUrl: `${process.env.BASE_URL}webhooks/coupons`,
-                  payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}} }`,
-                  headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
-                },
-              ],
-            }
+          const actorRunsCountNeededForSource = Math.ceil(
+            pages.length / startUrlsPerActorRun
           );
+          if (availableRuns < actorRunsCountNeededForSource) {
+            console.log(
+              `Source ${sourceIdentification} needs ${actorRunsCountNeededForSource} actor runs to scrape fully` +
+                ` but we only have ${availableRuns} available. Skipping...`
+            );
+            continue;
+          }
+          if (pages.length > startUrlsPerActorRun) {
+            console.log(
+              `Starting ${sourceIdentification} for ${pages.length} start URLs.` +
+                `Will be chunking the start URLs in groups of ${startUrlsPerActorRun}.`
+            );
+          }
 
-          actorRunsStarted++;
+          const localeId = pages[0]?.localeId;
 
-          await prisma.targetPage.updateMany({
-            where: {
-              id: { in: pagesChunk.map((page) => page.id) },
-            },
-            data: { lastApifyRunAt: new Date() },
+          const currentSourceData = source.domains.filter(
+            (item) => item.domain == domain
+          )?.[0];
+
+          const proxyConfiguration = currentSourceData?.proxyCountryCode
+            ? {
+                groups: ['RESIDENTIAL'],
+                countryCode: currentSourceData?.proxyCountryCode,
+              }
+            : null;
+
+          for (let i = 0; i < pages.length; i += startUrlsPerActorRun) {
+            const pagesChunk = pages.slice(i, i + startUrlsPerActorRun);
+
+            console.log(
+              `Scheduling an actor run for ${sourceIdentification} with ${pagesChunk.length} start URLs.`
+            );
+            const inputData = pagesChunk.map((data: any) => ({
+              url: data.url,
+              metadata: {
+                targetPageId: data.id,
+                targetPageUrl: data.url,
+                verifyLocale: data.verified_locale,
+                merchantId: data.merchantId,
+              },
+            }));
+
+            const targetIds = pagesChunk.map((data: any) => data.id);
+
+            try {
+              await apify.actor(source.apifyActorId).start(
+                // craweler input_schema properties
+                {
+                  startUrls: inputData,
+                  proxyConfiguration,
+                },
+                {
+                  webhooks: [
+                    {
+                      eventTypes: [
+                        'ACTOR.RUN.SUCCEEDED',
+                        'ACTOR.RUN.FAILED',
+                        'ACTOR.RUN.TIMED_OUT',
+                        'ACTOR.RUN.ABORTED',
+                      ],
+                      requestUrl: `${process.env.BASE_URL}webhooks/coupons`,
+                      payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}} }`,
+                      headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
+                    },
+                  ],
+                }
+              );
+              actorRunsStarted++;
+
+              await prisma.targetPage.updateMany({
+                where: {
+                  id: { in: pagesChunk.map((page: any) => page.id) },
+                },
+                data: { lastApifyRunAt: new Date() },
+              });
+            } catch (e) {
+              const errorMessage = `Failed to start ${sourceIdentification} with ${inputData.length} start URLs`;
+              console.error(errorMessage);
+              // add data to Sentry capture exception and message
+              Sentry.captureException(e, {
+                extra: {
+                  sourceId: source.id,
+                  localeId: localeId,
+                  targetIds: targetIds,
+                  startUrls: inputData,
+                },
+              });
+              Sentry.captureMessage(errorMessage);
+              continue;
+            }
+          }
+          await prisma.source.update({
+            where: { id: source.id },
+            data: { lastRunAt: new Date() },
           });
-        } catch (e) {
-          const errorMessage = `Failed to start ${sourceIdentification} with ${startUrls.length} start URLs`;
-          console.error(errorMessage);
-          // add data to Sentry capture exception and message
-          Sentry.captureException(e, {
-            extra: {
-              sourceId: source.id,
-              localeId: localeId,
-              targetIds: targetIds,
-              startUrls: startUrls,
-            },
-          });
-          Sentry.captureMessage(errorMessage);
-          continue;
+          counts.push(pages.length);
         }
-      }
+      };
 
-      await prisma.source.update({
-        where: { id: source.id },
-        data: { lastRunAt: new Date() },
-      });
-
-      counts.push(pages.length);
+      await startActor(pagesByDomains);
     }
 
     // Return the number of pages started for each source (actor)

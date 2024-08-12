@@ -8,6 +8,7 @@ export default [
       {
         domain: 'poulpeo.com',
         locales: [Locale.fr_FR],
+        proxyCountryCode: 'FR',
       },
     ],
     name: path.basename(__filename, path.extname(__filename)),

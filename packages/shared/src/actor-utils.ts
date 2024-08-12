@@ -22,17 +22,6 @@ type MainFunctionArgs = {
   nonIndexPageSelectors?: string[];
 };
 
-const getStartUrlsArray = (startUrls) => {
-  if (startUrls) {
-    return startUrls.map((item: { url: string; metadata?: any }) => {
-      return {
-        url: item.url,
-        metadata: item.metadata || {},
-      };
-    });
-  }
-};
-
 export const CUSTOM_HEADERS = {
   'User-Agent':
     'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/117.0',
@@ -45,21 +34,75 @@ export enum Label {
   'getCode' = 'GetCodePage',
 }
 
+const buildRequestData = async ({
+  startUrls,
+  pageSelectors,
+  customHeaders,
+}) => {
+  if (!startUrls) {
+    throw new Error(`StartUrls required`);
+  }
+
+  const queues: any[] = [];
+
+  for (const item of startUrls) {
+    queues.push({
+      url: item.url,
+      userData: {
+        ...item.metadata,
+        pageSelectors,
+        customHeaders,
+      },
+      label: Label.listing,
+    });
+  }
+  return queues;
+};
+
 export async function prepareCheerioScraper(
   router: RouterHandler<CheerioCrawlingContext<Input>>,
   args?: MainFunctionArgs
 ) {
   const input = await Actor.getInput<Input>();
+
+  let customHeaders = CUSTOM_HEADERS;
+  // If custom headers are provided, merge them with the default headers
+  if (args?.customHeaders) {
+    customHeaders = { ...customHeaders, ...args.customHeaders };
+  }
+
+  let pageSelectors = {};
+
+  if (args?.indexPageSelectors && args.nonIndexPageSelectors) {
+    pageSelectors = {
+      indexSelector: args?.indexPageSelectors,
+      nonIndexSelector: args?.nonIndexPageSelectors,
+    };
+  }
+
+  const startUrls = input?.startUrls;
+
+  const requestQueueData: any = startUrls
+    ? await buildRequestData({
+        startUrls,
+        pageSelectors,
+        customHeaders,
+      })
+    : [];
+
+  log.info(`Found ${startUrls?.length} start URLs`);
+
+  const requestQueue = await RequestQueue.open();
+
+  for (const request of requestQueueData) {
+    await requestQueue.addRequest({
+      ...request,
+    });
+  }
+
   const proxyConfiguration = await Actor.createProxyConfiguration(
     input?.proxyConfiguration
   );
-  const startUrls: any = input?.startUrls
-    ? getStartUrlsArray(input.startUrls)
-    : [];
-
-  log.info(`Found ${startUrls.length} start URLs`);
-
-  const requestQueue = await RequestQueue.open();
 
   const crawler = new CheerioCrawler({
     proxyConfiguration,
@@ -78,30 +121,6 @@ export async function prepareCheerioScraper(
     },
   });
 
-  let customHeaders = CUSTOM_HEADERS;
-  // If custom headers are provided, merge them with the default headers
-  if (args?.customHeaders) {
-    customHeaders = { ...customHeaders, ...args.customHeaders };
-  }
-
-  // Manually add each URL to the request queue
-
-  const userData = {
-    label: Label.listing,
-    pageSelectors: {
-      indexSelector: args?.indexPageSelectors,
-      nonIndexSelector: args?.nonIndexPageSelectors,
-    },
-  };
-
-  for (const { url, metadata } of startUrls) {
-    await crawler?.requestQueue?.addRequest({
-      url,
-      userData: { ...userData, ...metadata },
-      headers: customHeaders,
-    });
-  }
-
   return crawler;
 }
 
@@ -110,19 +129,48 @@ export async function preparePuppeteerScraper(
   args: MainFunctionArgs
 ) {
   const input = await Actor.getInput<Input>();
-  const proxyConfiguration = await Actor.createProxyConfiguration(
-    input?.proxyConfiguration
-  );
-  const startUrls: any = input?.startUrls
-    ? getStartUrlsArray(input.startUrls)
+
+  let customHeaders = CUSTOM_HEADERS;
+  // If custom headers are provided, merge them with the default headers
+  if (args?.customHeaders) {
+    customHeaders = { ...customHeaders, ...args.customHeaders };
+  }
+
+  let pageSelectors = {};
+
+  if (args?.indexPageSelectors && args.nonIndexPageSelectors) {
+    pageSelectors = {
+      indexSelector: args?.indexPageSelectors,
+      nonIndexSelector: args?.nonIndexPageSelectors,
+    };
+  }
+
+  const startUrls = input?.startUrls;
+
+  const requestQueueData: any = startUrls
+    ? await buildRequestData({
+        startUrls,
+        pageSelectors,
+        customHeaders,
+      })
     : [];
 
-  log.info(`Found ${startUrls.length} start URLs`);
+  log.info(`Found ${startUrls?.length} start URLs`);
 
   const requestQueue = await RequestQueue.open();
 
+  for (const request of requestQueueData) {
+    await requestQueue.addRequest({
+      ...request,
+    });
+  }
+
+  const proxyConfiguration = await Actor.createProxyConfiguration(
+    input?.proxyConfiguration
+  );
+
   const crawler = new PuppeteerCrawler({
-    proxyConfiguration: proxyConfiguration as any,
+    proxyConfiguration,
     headless: true,
     useSessionPool: true,
     navigationTimeoutSecs: 60,
@@ -144,28 +192,6 @@ export async function preparePuppeteerScraper(
       });
     },
   });
-
-  let customHeaders = CUSTOM_HEADERS;
-  // If custom headers are provided, merge them with the default headers
-  if (args.customHeaders) {
-    customHeaders = { ...customHeaders, ...args.customHeaders };
-  }
-
-  // Manually add each URL to the request queue
-  for (const { url, metadata } of startUrls) {
-    await crawler?.requestQueue?.addRequest({
-      url,
-      userData: {
-        label: Label.listing,
-        pageSelectors: {
-          indexSelector: args?.indexPageSelectors,
-          nonIndexSelector: args?.nonIndexPageSelectors,
-        },
-        ...metadata,
-      },
-      headers: customHeaders,
-    });
-  }
 
   return crawler;
 }

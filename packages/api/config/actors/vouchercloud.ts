@@ -8,6 +8,7 @@ export default [
       {
         domain: 'vouchercloud.de',
         locales: [Locale.de_DE],
+        proxyCountryCode: 'DE',
       },
       {
         domain: 'vouchercloud.com',
@@ -20,6 +21,7 @@ export default [
       {
         domain: 'vouchercloud.fr',
         locales: [Locale.fr_FR],
+        proxyCountryCode: 'FR',
       },
       {
         domain: 'voucher-cloud.com.au',
