@@ -191,6 +191,10 @@ export class FindTargetPagesBody {
   @IsString()
   @IsOptional()
   locale?: string;
+
+  @IsBoolean()
+  @IsOptional()
+  onlyUnScrapedMerchants?: boolean;
 }
 
 export class RunNLocalesBody {

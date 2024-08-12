@@ -658,63 +658,89 @@ export class WebhooksController {
         true
       );
     }
-    const run = await prisma.processedRun.create({
-      data: {
-        localeId,
+
+    setTimeout(async () => {
+      const run = await prisma.processedRun.create({
+        data: {
+          localeId,
+          actorRunId,
+          status,
+        },
+      });
+
+      const data: ApifyGoogleSearchResult[] = await fetch(
+        `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?clean=true&format=json&view=organic_results`
+      ).then((res) => res.json());
+
+      const filteredData = removeDuplicates
+        ? this.filterDuplicateDomains(data) // Remove duplicate domains
+        : data;
+
+      const merchants = await prisma.merchant.findMany({
+        where: {
+          locale_relation: { id: localeId },
+        },
+      });
+
+      const validData = this.prepareSerpData(
+        filteredData,
         actorRunId,
-        status,
-      },
-    });
+        localeId,
+        merchants
+      ); // Prepare the data for storage
 
-    const data: ApifyGoogleSearchResult[] = await fetch(
-      `https://api.apify.com/v2/datasets/${defaultDatasetId}/items?clean=true&format=json&view=organic_results`
-    ).then((res) => res.json());
+      const errors: Record<string, any>[] = [];
 
-    const filteredData = removeDuplicates
-      ? this.filterDuplicateDomains(data) // Remove duplicate domains
-      : data;
-
-    const merchants = await prisma.merchant.findMany({
-      where: {
-        locale_relation: { id: localeId },
-        OR: [{ disabledAt: null }, { disabledAt: { gt: new Date(startedAt) } }],
-      },
-    });
-
-    const validData = this.prepareSerpData(
-      filteredData,
-      actorRunId,
-      localeId,
-      merchants
-    ); // Prepare the data for storage
-
-    // Store the SERP data using upsert change localeId value
-    for (const item of validData) {
-      try {
-        await prisma.targetPage.upsert({
-          where: { url: item.url },
-          create: { ...item, lastApifyRunAt: null },
-          update: { ...item, updatedAt: new Date() },
-        });
-      } catch (e) {
-        console.error(`Error processing SERP data: ${e}`);
+      // Store the SERP data using upsert change localeId value
+      for (const item of validData) {
+        try {
+          await prisma.targetPage.upsert({
+            where: { url: item.url },
+            create: {
+              ...item,
+              lastApifyRunAt: null,
+            },
+            update: {
+              ...item,
+              lastApifyRunAt: startedAt,
+              updatedAt: new Date(),
+            },
+          });
+        } catch (e) {
+          errors.push({
+            index: validData.indexOf(item),
+            error: e,
+            data: item,
+          });
+        }
       }
-    }
 
-    await prisma.processedRun.update({
-      where: { id: run.id },
-      data: {
-        resultCount: filteredData.length,
-        createdCount: validData.length,
-        endedAt: new Date(),
-        costInUsdMicroCents: getGoogleActorPriceInUsdMicroCents(
-          filteredData.length
-        ),
-      },
-    });
+      await prisma.processedRun.update({
+        where: { id: run.id },
+        data: {
+          resultCount: filteredData.length,
+          createdCount: validData.length - errors.length || 0,
+          errorCount: errors.length,
+          processingErrors: errors,
+          endedAt: new Date(),
+          costInUsdMicroCents: getGoogleActorPriceInUsdMicroCents(
+            filteredData.length
+          ),
+        },
+      });
+
+      if (errors.length > 0) {
+        Sentry.captureException(
+          `Errors occurred during processing run ${run.id} from SERP actor`,
+          {
+            extra: { errors },
+          }
+        );
+      }
+    }, 0);
 
     return new StandardResponse(
-      `Data processed successfully. Created ${validData.length} / ${filteredData.length} new records.`,
+      'SERP data received successfully. Please check the logs for more details.',
       false
     );
   }
@@ -755,17 +781,18 @@ export class WebhooksController {
           merchants
         );
         const merchantId = merchant ? merchant.id : null;
+
         const data = {
           url: item.url,
           title: item.title,
           searchTerm: item.searchQuery.term,
           searchPosition: item.position,
           searchDomain: item.searchQuery.domain,
-          merchantId,
           apifyRunId: actorRunId,
           domain: new URL(item.url).hostname.replace('www.', ''),
-          localeId,
           verified_locale: null as string | null,
+          locale: { connect: { id: localeId } },
+          merchant: { connect: { id: merchantId } },
         };
 
         if (item.searchQuery.term.startsWith('site:')) {

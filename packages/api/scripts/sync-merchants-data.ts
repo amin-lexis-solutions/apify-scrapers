@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { prisma } from '../src/lib/prisma';
-import { getMerchantsForLocale } from '@api/lib/oberst-api';
+import { fetchMerchantByLocale } from '@api/lib/oberst-api';
 
 async function handleMerchants(locale: string) {
   const existingMerchants = await prisma.merchant.findMany({
@@ -17,7 +17,7 @@ async function handleMerchants(locale: string) {
 
   const existingMerchantNames = new Set(existingMerchants.map((m) => m.name));
 
-  const merchantsData = await getMerchantsForLocale(locale);
+  const merchantsData = await fetchMerchantByLocale(locale);
 
   for (const merchant of merchantsData) {
     await prisma.merchant.upsert({

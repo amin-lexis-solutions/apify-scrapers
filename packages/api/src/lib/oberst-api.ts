@@ -1,9 +1,13 @@
 import fetch from 'node-fetch';
+import env from 'dotenv';
+import { prisma } from '@api/lib/prisma';
+import dayjs from 'dayjs';
+env.config();
 
 type Merchant = {
   domain: string;
   name: string;
-  id: number;
+  id: number | bigint;
 };
 
 const API_URL =
@@ -13,7 +17,62 @@ if (!process.env.OBERST_API_KEY) {
   throw new Error('Env variable OBERST_API_KEY is not set');
 }
 
+export async function getUnScrapedMerchantByLocale(
+  locale: string
+): Promise<Merchant[]> {
+  const fourWeeksAgo = dayjs().subtract(4, 'weeks').toDate();
+
+  const merchants = await prisma.merchant.findMany({
+    where: {
+      disabledAt: null,
+      locale: locale,
+    },
+    select: {
+      oberst_id: true,
+      name: true,
+      domain: true,
+      _count: {
+        select: {
+          targetPages: {
+            where: {
+              updatedAt: {
+                gt: fourWeeksAgo,
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const filteredMerchants = merchants.filter(
+    (merchant) => merchant._count.targetPages === 0
+  );
+
+  return filteredMerchants.map((merchant) => ({
+    domain: merchant.domain,
+    name: merchant.name,
+    id: merchant.oberst_id,
+  }));
+}
+
 export async function getMerchantsForLocale(
+  locale: string
+): Promise<Merchant[]> {
+  const merchants = await prisma.merchant.findMany({
+    where: {
+      locale,
+    },
+  });
+
+  return merchants?.map((merchant) => ({
+    domain: merchant.domain,
+    name: merchant.name,
+    id: merchant.oberst_id,
+  })) as Merchant[] | [];
+}
+
+export async function fetchMerchantByLocale(
   locale: string,
   ensureNameIsPresent = true
 ): Promise<Merchant[]> {

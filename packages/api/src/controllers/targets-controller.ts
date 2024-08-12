@@ -2,7 +2,10 @@ import * as Sentry from '@sentry/node';
 import { Authorized, Body, JsonController, Post } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { apify } from '../lib/apify';
-import { getMerchantsForLocale } from '../lib/oberst-api';
+import {
+  getMerchantsForLocale,
+  getUnScrapedMerchantByLocale,
+} from '../lib/oberst-api';
 import { CostLimit } from '../middlewares/api-middleware';
 import { prisma } from '../lib/prisma';
 import { availableActorRuns } from '../utils/utils';
@@ -32,7 +35,7 @@ export class TargetsController {
   async findTargetPages(
     @Body() body: FindTargetPagesBody
   ): Promise<StandardResponse> {
-    const { limit, locale } = body;
+    const { limit, locale, onlyUnScrapedMerchants = false } = body;
 
     const locales = await prisma.targetLocale.findMany({
       where: { isActive: true, locale },
@@ -51,17 +54,19 @@ export class TargetsController {
 
     const counts = await Promise.all(
       locales.map(async (locale) => {
-        let domains = await getMerchantsForLocale(locale.locale);
-        domains = domains.slice(0, limit);
+        let merchants = onlyUnScrapedMerchants
+          ? await getUnScrapedMerchantByLocale(locale.locale)
+          : await getMerchantsForLocale(locale.locale);
+        merchants = merchants.slice(0, limit);
 
-        await findSerpForLocaleAndMerchants(locale, domains);
+        await findSerpForLocaleAndMerchants(locale, merchants);
 
         await prisma.targetLocale.update({
           where: { id: locale.id },
           data: { lastSerpRunAt: new Date() },
         });
 
-        return domains.length;
+        return merchants.length;
       })
     );
 
@@ -76,7 +81,7 @@ export class TargetsController {
 
   @Post('/find-n-locales')
   @OpenAPI({
-    summary: 'Find target pages for a specified numner of locales',
+    summary: 'Find target pages for a specified number of locales',
     description:
       'Provide a number of locales to find target pages for. Outdated locales will be searched first',
   })
@@ -108,7 +113,7 @@ export class TargetsController {
           isActive: true,
           lastSerpRunAt: {
             not: null,
-            lt: dayjs().subtract(2, 'weeks').toDate(),
+            lt: dayjs().subtract(4, 'weeks').toDate(),
           },
         },
         orderBy: { lastSerpRunAt: 'asc' },
