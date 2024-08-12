@@ -38,6 +38,7 @@
     "schedule:find-serp-for-cuponation-domains": "./node_modules/.bin/ts-node -r tsconfig-paths/register ./src/crons/schedule-find-serp-for-cuponation-domains.ts",
     "schedule:find-serp-for-custom-ch-domains": "./node_modules/.bin/ts-node -r tsconfig-paths/register ./src/crons/schedule-find-serp-for-custom-domains.ts",
     "schedule:tests": "./node_modules/.bin/ts-node -r tsconfig-paths/register ./src/crons/schedule-test.ts",
+    "schedule:refresh-unfinished-processed-runs": "./node_modules/.bin/ts-node -r tsconfig-paths/register ./src/crons/refresh-unfinished-processed-runs.ts",
     "schedule:periodic-coupons-cleanup": "./node_modules/.bin/ts-node -r tsconfig-paths/register ./src/crons/schedule-coupons-cleanup.ts"
   },
   "repository": {

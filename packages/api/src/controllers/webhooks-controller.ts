@@ -60,7 +60,7 @@ export class WebhooksController {
         actorRunId,
         status,
         startedAt,
-        payload: JSON.stringify(webhookData),
+        payload: webhookData as any,
       },
     });
 
