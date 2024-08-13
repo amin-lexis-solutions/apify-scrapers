@@ -18,7 +18,7 @@ async function seedSources() {
     data: { isActive: false },
   });
 
-  for (const { apifyActorId, domains, name } of activeSources) {
+  for (const { apifyActorId, domains, name, maxStartUrls } of activeSources) {
     const existingSource = await prisma.source.findUnique({
       where: { apifyActorId: apifyActorId },
       include: { domains: true },
@@ -36,6 +36,7 @@ async function seedSources() {
       where: { apifyActorId: apifyActorId },
       update: {
         name,
+        maxStartUrls: maxStartUrls || null,
         domains: {
           create: domainsToCreate.map((d: any) => ({
             domain: d.domain,

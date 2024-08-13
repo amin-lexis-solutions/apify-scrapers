@@ -28,6 +28,7 @@ export interface SOURCES_DATA {
   domains: any[];
   name: string;
   routes?: any[];
+  maxStartUrls?: number;
 }
 
 const validateSourcesData = (data: SOURCES_DATA[]) => {
@@ -55,6 +56,14 @@ const validateSourcesData = (data: SOURCES_DATA[]) => {
         domainWarnings.set(item.domain, 1);
       }
     });
+
+    if (item.maxStartUrls !== undefined) {
+      if (item.maxStartUrls <= 0 || item.maxStartUrls > 1000) {
+        throw new Error(
+          `Invalid maxStartUrls value: ${item.maxStartUrls} in ${item.name} actor. It should be between 1 and 1000.`
+        );
+      }
+    }
   });
 
   domainWarnings.forEach((count, domain) => {

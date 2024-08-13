@@ -287,7 +287,7 @@ export class TargetsController {
 
       const startActor = async (pagesByDomains: Record<string, any[]>) => {
         for (const [domain, pages] of Object.entries(pagesByDomains)) {
-          const startUrlsPerActorRun = 1_000;
+          const startUrlsPerActorRun = source.maxStartUrls || 1_000;
 
           const actorRunsCountNeededForSource = Math.ceil(
             pages.length / startUrlsPerActorRun

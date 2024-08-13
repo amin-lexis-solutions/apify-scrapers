@@ -72,6 +72,7 @@ model Source {
   lastRunAt    DateTime?
   coupons      Coupon[]
   runs         ProcessedRun[]
+  maxStartUrls Int?
 }
 
 model SourceDomain {
@@ -80,7 +81,7 @@ model SourceDomain {
   reliability       Reliability @default(reliable)
   source_relation   Source      @relation(fields: [apifyActorId], references: [apifyActorId])
   apifyActorId      String
-  proxyCountryCode  String? 
+  proxyCountryCode  String?
 }
 
 // Maps to a single Apify actor run
