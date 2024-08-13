@@ -49,6 +49,7 @@ async function processItem(item: any, $cheerio: cheerio.Root) {
   validator.addValue('domain', item.merchantDomain);
   validator.addValue('title', item.title);
   validator.addValue('idInSite', item.idInSite);
+  validator.addValue('description', item.description);
   validator.addValue('termsAndConditions', termsAndConditions);
   validator.addValue('isExpired', isExpired);
   validator.addValue('isShown', true);
@@ -141,11 +142,16 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
+      const description = $cheerio(
+        '.offer-list-item-description.is-hidden'
+      ).text();
+
       const item = {
         title,
         idInSite,
         merchantDomain,
         merchantName,
+        description,
         sourceUrl: request.url,
       };
 

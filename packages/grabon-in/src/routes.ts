@@ -19,19 +19,6 @@ async function processItem(item: any, $cheerioElement: cheerio.Root) {
 
   const code = $cheerioElement('span.visible-lg')?.first()?.text()?.trim();
 
-  // Extract the description
-  let description = '';
-  const descElement = $cheerioElement('div.open').first();
-
-  if (descElement.length > 0) {
-    description = descElement.text();
-    description = description
-      .trim() // Remove leading and trailing whitespace
-      .replace(/[ \t]+/g, ' ') // Replace multiple whitespace characters with a single space
-      .replace(/\n+/g, '\n') // Replace multiple newline characters with a single newline
-      .trim(); // Final trim to clean up any leading/trailing whitespace after replacements
-  }
-
   const validator = new DataValidator();
 
   // Add required and optional values to the validator
@@ -39,7 +26,7 @@ async function processItem(item: any, $cheerioElement: cheerio.Root) {
   validator.addValue('merchantName', item.merchantName);
   validator.addValue('title', item.title);
   validator.addValue('idInSite', item.idInSite);
-  validator.addValue('description', description);
+  validator.addValue('description', item.description);
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
@@ -124,10 +111,17 @@ router.addHandler(Label.listing, async (context) => {
         return;
       }
 
+      const description = $cheerio('*')
+        .find('.gcb-det')
+        ?.text()
+        ?.replace(/[ \t]+/g, ' ') // Replace multiple whitespace characters with a single space
+        ?.replace(/\n+/g, '\n');
+
       const item = {
         title,
         idInSite,
         merchantName,
+        description,
         sourceUrl: request.url,
       };
 

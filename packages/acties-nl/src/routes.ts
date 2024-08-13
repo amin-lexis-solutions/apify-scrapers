@@ -51,6 +51,8 @@ router.addHandler(Label.listing, async (context) => {
   const { request, page, enqueueLinks, log } = context;
   if (request.userData.label !== Label.listing) return;
 
+  await page.setJavaScriptEnabled(true);
+
   try {
     const currentItems = [
       ...(await page.$$('section.active article')),
@@ -132,6 +134,15 @@ router.addHandler(Label.listing, async (context) => {
         return node?.parentElement?.className.includes('expired');
       }, item);
 
+      const description = await page.evaluate((node) => {
+        return node?.querySelector('.offer-info .details')?.textContent?.trim();
+      }, item);
+
+      const termsAndConditions = await page.evaluate(
+        (node) => node?.querySelector('.offer-info .terms')?.textContent,
+        item
+      );
+
       const itemData = {
         title,
         idInSite,
@@ -139,6 +150,8 @@ router.addHandler(Label.listing, async (context) => {
         merchantName,
         hasCode,
         isExpired,
+        description,
+        termsAndConditions,
         sourceUrl: request.url,
       };
 

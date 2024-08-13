@@ -20,6 +20,8 @@ router.addHandler(Label.listing, async (context) => {
   // Check if the label in the request userData matches the label we're handling
   if (request.userData.label !== Label.listing) return;
 
+  await page.setJavaScriptEnabled(true);
+
   try {
     // Find all valid coupons on the page
     const items = await page.$$(
@@ -105,6 +107,19 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
+      const details = await page.evaluate(
+        (node) => node?.parentElement?.querySelector('details'),
+        element
+      );
+
+      await details?.click();
+
+      const description = await page.evaluate(
+        (node) =>
+          node?.parentElement?.querySelector('details div')?.textContent,
+        element
+      );
+
       // Construct coupon URL
       const itemUrl = `https://www.retailmenot.com/view/${merchantDomain}?u=${idInSite}&outclicked=true`;
 
@@ -113,6 +128,8 @@ router.addHandler(Label.listing, async (context) => {
       validator.addValue('domain', merchantDomain);
       validator.addValue('sourceUrl', request.url);
       validator.addValue('merchantName', merchantName);
+      validator.addValue('description', description);
+
       validator.addValue('title', couponTitle);
       validator.addValue('idInSite', idInSite);
       validator.addValue('isExpired', isExpired);

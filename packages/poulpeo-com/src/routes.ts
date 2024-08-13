@@ -197,9 +197,17 @@ router.addHandler(Label.getCode, async (context) => {
       document.querySelector('.coupon-panel #ic')?.getAttribute('value')
     );
 
+    const description = await page.evaluate(() => {
+      return document
+        .querySelector("[data-panel-name='Offer'] .items-center p")
+        ?.textContent?.trim();
+    });
+
     if (code) {
       validator.addValue('code', code);
     }
+
+    validator.addValue('description', description);
 
     await postProcess(
       {

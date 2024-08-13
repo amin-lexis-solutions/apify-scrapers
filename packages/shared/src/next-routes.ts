@@ -68,6 +68,17 @@ function processItem(
     item?.idInSite
   )?.toString();
 
+  const description =
+    item?.termsAndConditions?.text?.match(/<p>(.*)<\/p>/)?.[1] ||
+    item.description;
+
+  const termsAndConditions = item?.termsAndConditions?.captions?.length
+    ? item?.termsAndConditions?.captions
+        ?.map((el) => `${el?.key} ${el?.text}`)
+        ?.join()
+        .replaceAll(',', ' ')
+    : item?.termsAndConditions;
+
   // Add required values to the validator
   validator.addValue('sourceUrl', sourceUrl);
   validator.addValue('merchantName', merchantName);
@@ -76,8 +87,8 @@ function processItem(
 
   // Add optional values to the validator
   validator.addValue('domain', merchantDomain);
-  validator.addValue('description', item.description);
-  validator.addValue('termsAndConditions', item.termsAndConditions);
+  validator.addValue('description', description);
+  validator.addValue('termsAndConditions', termsAndConditions);
   validator.addValue('expiryDateAt', formatDateTime(item.endTime));
   validator.addValue('startDateAt', formatDateTime(item.startTime));
   validator.addValue('isExclusive', item.exclusiveVoucher);

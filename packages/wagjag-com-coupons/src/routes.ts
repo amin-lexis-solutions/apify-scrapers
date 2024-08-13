@@ -19,20 +19,6 @@ async function processItem(item: any, $cheerio: cheerio.Root) {
   const isExpired = !!elementClass?.includes('expired');
 
   const elemCode = $cheerio('div span.btn-peel__secret').first();
-  // Extract the description
-  let description = '';
-  const descElement = $cheerio(
-    'div.promotion-term-extra-tab__detail-content'
-  ).first();
-  if (descElement.length > 0) {
-    description = he
-      .decode(descElement.text())
-      .trim()
-      .split('\n')
-      .map((line) => line.trim())
-      .join('\n')
-      .replace('\n\n', '\n'); // remove extra spaces, but keep the meaningful line breaks
-  }
 
   const validator = new DataValidator();
 
@@ -42,7 +28,7 @@ async function processItem(item: any, $cheerio: cheerio.Root) {
   validator.addValue('domain', item.merchantDomain);
   validator.addValue('title', item.title);
   validator.addValue('idInSite', item.idInSite);
-  validator.addValue('description', description);
+  validator.addValue('description', item.description);
   validator.addValue('isExpired', isExpired);
   validator.addValue('isShown', true);
 
@@ -141,11 +127,16 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
+      const description = $cheerio(
+        `#promotion-details-pane-${idInSite}`
+      )?.text();
+
       const itemData = {
         title,
         idInSite,
         merchantName,
         merchantDomain,
+        description,
         sourceUrl: request.url,
       };
 

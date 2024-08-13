@@ -27,6 +27,7 @@ function processItem(item: any, $cheerioElement: cheerio.Root): ItemResult {
   validator.addValue('merchantName', item.merchantName);
   validator.addValue('domain', item.merchantDomain);
   validator.addValue('title', item.title);
+  validator.addValue('description', item.description);
   validator.addValue('idInSite', item.idInSite);
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
@@ -127,11 +128,14 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
+      const description = $cheerioElement('div.fs12').text().trim();
+
       const item = {
         title,
         idInSite,
         merchantName,
         merchantDomain,
+        description,
         sourceUrl: request.url,
       };
       // Since element is a native DOM element, wrap it with Cheerio to use jQuery-like methods

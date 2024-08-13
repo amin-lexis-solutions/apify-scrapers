@@ -24,6 +24,7 @@ async function processItem(item: any, $cheerioElement: cheerio.Root) {
   validator.addValue('sourceUrl', item.sourceUrl);
   validator.addValue('merchantName', item.merchantName);
   validator.addValue('title', item.title);
+  validator.addValue('description', item.description);
   validator.addValue('idInSite', item.idInSite);
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
@@ -117,10 +118,15 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
+      const description = $cheerio('*')
+        .find(`.coupon_word span.cpdesc.less`)
+        .text();
+
       const item = {
         title,
         merchantName,
         idInSite,
+        description,
         sourceUrl: request.url,
       };
 

@@ -35,6 +35,8 @@ async function processItem(item: any, $cheerio: cheerio.Root) {
   validator.addValue('sourceUrl', item.sourceUrl);
   validator.addValue('merchantName', item.merchantName);
   validator.addValue('title', item.title);
+  validator.addValue('description', item.description);
+
   validator.addValue('idInSite', item.idInSite);
   validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
@@ -133,11 +135,14 @@ router.addHandler(Label.listing, async (context) => {
           .replace(/[\s\t\r\n]+/g, ' ')
       );
 
+      const description = $cheerio('.cpn-layout__rules')?.text()?.trim();
+
       const itemData = {
         title,
         isExpired,
         idInSite,
         merchantName,
+        description,
         sourceUrl: request.url,
       };
 
