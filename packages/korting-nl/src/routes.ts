@@ -69,7 +69,7 @@ const processCoupon = async (context) => {
     return;
   }
 
-  const items = $('article.offer_grid').toArray();
+  const items = $('article.offer_grid');
 
   try {
     await preProcess(
@@ -100,6 +100,11 @@ const processCoupon = async (context) => {
   }
 
   if (pageType === 'listing') {
+    if (!items.length) {
+      logger.error(`No items found on the page`);
+      return;
+    }
+
     items.each(async (_, elem) => {
       const element = $(elem);
       const { hasCode, elemCode } = getCouponCode(element);
