@@ -1,83 +1,112 @@
 /* eslint-disable no-console */
+import ProgressBar from 'progress';
 import { prisma } from '../src/lib/prisma';
 import { fetchMerchantByLocale } from '@api/lib/oberst-api';
 
 async function handleMerchants(locale: string) {
-  const existingMerchants = await prisma.merchant.findMany({
-    where: {
-      locale_relation: {
-        locale: locale,
-      },
-    },
-  });
+  try {
+    const merchantsData = await fetchMerchantByLocale(locale);
 
-  console.log(
-    `Total existing merchants ${existingMerchants.length} - locale ${locale}`
-  );
+    const merchantIdsFromAPI = new Set(merchantsData.map((m) => m.id));
 
-  const existingMerchantNames = new Set(existingMerchants.map((m) => m.name));
-
-  const merchantsData = await fetchMerchantByLocale(locale);
-
-  for (const merchant of merchantsData) {
-    await prisma.merchant.upsert({
+    // Disable merchants not present in the fetched data
+    await prisma.merchant.updateMany({
       where: {
-        locale_oberst_id: {
-          locale: locale,
+        locale: locale,
+        oberst_id: {
+          notIn: Array.from(merchantIdsFromAPI),
+        },
+        disabledAt: null,
+      },
+      data: { disabledAt: new Date() },
+    });
+
+    // Re-enable or create merchants based on fetched data
+    for (const merchant of merchantsData) {
+      await prisma.merchant.upsert({
+        where: {
+          locale_oberst_id: {
+            locale: locale,
+            oberst_id: merchant.id,
+          },
+        },
+        update: {
+          disabledAt: null,
+          updatedAt: new Date(),
+        },
+        create: {
+          name: merchant.name,
+          domain: merchant.domain,
+          locale,
           oberst_id: merchant.id,
         },
-      },
-      update: {
-        disabledAt: null,
-        updatedAt: new Date(),
-      },
-      create: {
-        name: merchant.name,
-        domain: merchant.domain,
+      });
+    }
+
+    // Calculate stats after update
+    const totalMerchants = await prisma.merchant.count({
+      where: { locale },
+    });
+
+    const totalActiveMerchants = await prisma.merchant.count({
+      where: {
         locale,
-        oberst_id: merchant.id,
+        disabledAt: null,
       },
     });
-    existingMerchantNames.delete(merchant.name);
-  }
 
-  await prisma.merchant.updateMany({
-    where: {
+    return {
       locale,
-      disabledAt: null,
-      name: {
-        in: Array.from(existingMerchantNames),
-      },
-    },
-    data: {
-      disabledAt: new Date(),
-    },
-  });
-
-  return {
-    totalMerchants: merchantsData.length,
-    disabledMerchants: existingMerchantNames.size,
-  };
+      totalMerchants: totalMerchants,
+      active: totalActiveMerchants,
+      disabled: totalMerchants - totalActiveMerchants,
+    };
+  } catch (error) {
+    return {
+      locale,
+      error: `Processing failed: ${error}`,
+    };
+  }
 }
 
 async function main() {
   const locales = await prisma.targetLocale.findMany({
-    where: {
-      isActive: true,
-    },
-    select: {
-      locale: true,
-    },
+    where: { isActive: true },
+    select: { locale: true },
   });
 
-  console.log(`Total locales ${locales.length}`);
-  let totalMerchant = 0;
+  const progressBar = new ProgressBar(
+    'Processing :current/:total [:bar] :percent :etas',
+    {
+      total: locales.length,
+    }
+  );
+
+  const stats = [];
   for (const { locale } of locales) {
-    const { totalMerchants } = await handleMerchants(locale);
-    totalMerchant = totalMerchant + totalMerchants;
+    const results = await handleMerchants(locale);
+    stats.push(results);
+    progressBar.tick();
   }
 
-  console.log(`Total merchants ${totalMerchant}`);
+  const { totalMerchants, activeMerchants, disabledMerchants } = stats.reduce(
+    (acc, curr) => {
+      acc.totalMerchants += curr.totalMerchants || 0;
+      acc.activeMerchants += curr?.active || 0;
+      acc.disabledMerchants += curr?.disabled || 0;
+      return acc;
+    },
+    { totalMerchants: 0, activeMerchants: 0, disabledMerchants: 0 }
+  );
+
+  stats.push({
+    locale: 'Total',
+    totalMerchants,
+    active: activeMerchants,
+    disabled: disabledMerchants,
+  });
+
+  console.table(stats);
 }
 
 main()

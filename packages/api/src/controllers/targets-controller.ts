@@ -13,6 +13,7 @@ import {
   RunNLocalesBody,
   FindTargetPagesBody,
   RunTargetPagesBody,
+  FindForMerchantPagesBody,
   TargetLocaleBody,
   StandardResponse,
 } from '../utils/validators';
@@ -501,6 +502,85 @@ export class TargetsController {
     return new StandardResponse(
       `Target pages search started for ${locale} : ${queries.length} queries`,
       false
+    );
+  }
+
+  @Post('/find-target-pages-for-merchant-without-pages')
+  @OpenAPI({
+    summary: 'Find target pages for merchants without pages',
+    description:
+      'Find target pages for merchants that do not have any pages associated with them',
+  })
+  @ResponseSchema(StandardResponse)
+  async findForMerchantWithoutPages(
+    @Body() body: FindForMerchantPagesBody
+  ): Promise<StandardResponse> {
+    const { locale } = body;
+
+    // Construct query for active target locales
+    const targetLocaleWhere: any = { isActive: true };
+    if (locale) targetLocaleWhere.locale = locale;
+
+    // Fetch active target locales
+    const locales = await prisma.targetLocale.findMany({
+      where: targetLocaleWhere,
+    });
+
+    // Validate locales
+    const unusableLocale = locales.find(
+      (locale) => !locale.searchTemplate.includes('{{merchant_name}}')
+    );
+    if (unusableLocale) {
+      return new StandardResponse(
+        `Locale ${unusableLocale.locale} does not contain '{{merchant_name}}' in the search template. Aborting.`,
+        true
+      );
+    }
+
+    // Construct query for merchants without target pages
+    const merchantWhere: any = { disabledAt: null, targetPages: { none: {} } };
+    if (locale) merchantWhere.locale = locale;
+
+    // Fetch merchants without target pages
+    const merchants = await prisma.merchant.findMany({
+      where: merchantWhere,
+      select: { oberst_id: true, name: true, locale: true, domain: true },
+    });
+
+    // Group merchants by locale for faster access
+    const merchantsByLocale = merchants.reduce((acc, merchant) => {
+      if (!acc[merchant.locale]) {
+        acc[merchant.locale] = [];
+      }
+      acc[merchant.locale].push(merchant);
+      return acc;
+    }, {} as Record<string, typeof merchants>);
+
+    // Process each locale asynchronously
+    await Promise.all(
+      locales.map(async (locale) => {
+        const merchantsForLocale = merchantsByLocale[locale.locale] || [];
+        const merchantData = merchantsForLocale.map((merchant) => ({
+          domain: merchant.domain,
+          name: merchant.name,
+          oberst_id: merchant.oberst_id,
+        }));
+
+        await findSerpForLocaleAndMerchants(locale, merchantData);
+      })
+    );
+
+    // Aggregate results
+    const result = locales.reduce((acc, locale) => {
+      const lc = `${locale.languageCode}_${locale.countryCode}`;
+      acc[lc] = (merchantsByLocale[locale.locale] || []).length;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return new StandardResponse(
+      'Target pages search started for merchants without pages',
+      false,
+      result
     );
   }
 }

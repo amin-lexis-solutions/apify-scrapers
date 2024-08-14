@@ -197,6 +197,12 @@ export class FindTargetPagesBody {
   onlyUnScrapedMerchants?: boolean;
 }
 
+export class FindForMerchantPagesBody {
+  @IsString()
+  @IsOptional()
+  locale?: string;
+}
+
 export class RunNLocalesBody {
   @IsNumber()
   localesCount: number;

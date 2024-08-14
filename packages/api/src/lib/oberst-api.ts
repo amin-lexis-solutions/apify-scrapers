@@ -7,7 +7,7 @@ env.config();
 type Merchant = {
   domain: string;
   name: string;
-  id: number | bigint;
+  id: number;
 };
 
 const API_URL =
@@ -52,7 +52,7 @@ export async function getUnScrapedMerchantByLocale(
   return filteredMerchants.map((merchant) => ({
     domain: merchant.domain,
     name: merchant.name,
-    id: merchant.oberst_id,
+    id: merchant.oberst_id as any,
   }));
 }
 
@@ -88,17 +88,15 @@ export async function fetchMerchantByLocale(
   })
     .then((res) => res.json())
     .catch((err) => {
-      console.error('Error fetching merchants from Oberst API', err);
-      return [];
+      throw new Error(`Error fetching merchants for locale ${locale}: ${err}`);
     });
-
   if (ensureNameIsPresent) {
     return merchantMyResponse.map((merchant: any) => {
       if (!merchant.name || merchant.name === '') {
         return {
           domain: merchant.domain,
           name: merchant.domain,
-          id: merchant.id,
+          id: merchant.id as any,
         };
       }
       return {

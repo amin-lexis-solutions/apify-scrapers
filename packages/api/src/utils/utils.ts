@@ -294,13 +294,20 @@ export async function availableActorRuns(): Promise<number> {
   }
 }
 
-export function findMerchantBySearchTerm(searchTerm: string, merchants: any[]) {
-  for (const merchant of merchants) {
-    if (merchant.name && searchTerm.startsWith(merchant.name)) {
-      return merchant;
-    }
-  }
-  return null;
+export function findMerchantBySearchTerm(
+  searchTerm: string,
+  merchants: any[]
+): any {
+  // Sort merchants by name length in descending order
+  const sortedMerchants = merchants.sort(
+    (a, b) => b.name.length - a.name.length
+  );
+
+  // Return the first merchant whose name is a prefix of the searchTerm
+  return (
+    sortedMerchants.find((merchant) => searchTerm.startsWith(merchant.name)) ||
+    null
+  );
 }
 
 export function getEndpointBaseUrl(): string {

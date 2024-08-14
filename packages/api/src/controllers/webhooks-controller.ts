@@ -679,7 +679,9 @@ export class WebhooksController {
       const merchants = await prisma.merchant.findMany({
         where: {
           locale_relation: { id: localeId },
+          disabledAt: null,
         },
+        orderBy: { updatedAt: 'desc' },
       });
 
       const validData = this.prepareSerpData(
