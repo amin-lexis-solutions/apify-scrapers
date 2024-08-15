@@ -3,7 +3,7 @@ import path from 'path';
 
 export default [
   {
-    apifyActorId: 'LsNFUXSpGtQD7q0MR',
+    apifyActorId: 'OTWlCtkpCMIhYv2Dd',
     domains: [
       {
         domain: 'drivereasy.com',
