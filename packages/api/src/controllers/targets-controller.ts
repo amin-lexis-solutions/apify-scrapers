@@ -315,10 +315,13 @@ export class TargetsController {
 
           const proxyConfiguration = currentSourceData?.proxyCountryCode
             ? {
-                groups: ['RESIDENTIAL'],
-                countryCode: currentSourceData?.proxyCountryCode,
+                useApifyProxy: true,
+                apifyProxyGroups: ['RESIDENTIAL'],
+                apifyProxyCountry: currentSourceData?.proxyCountryCode,
               }
-            : null;
+            : {
+                useApifyProxy: true,
+              };
 
           for (let i = 0; i < pages.length; i += startUrlsPerActorRun) {
             const pagesChunk = pages.slice(i, i + startUrlsPerActorRun);
