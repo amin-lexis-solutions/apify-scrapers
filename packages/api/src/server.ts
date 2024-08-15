@@ -41,9 +41,9 @@ Sentry.init({
     nodeProfilingIntegration(),
   ],
   // Performance Monitoring
-  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  tracesSampleRate: 0.5, // Adjusted from 1 to 0.5 to reduce the amount of data sent
   // Set sampling rate for profiling - this is relative to tracesSampleRate
-  profilesSampleRate: 1.0,
+  profilesSampleRate: 0.2, // Reduce profiling rate to decrease performance impact
 });
 
 // The request handler must be the first middleware on the app

@@ -4,14 +4,35 @@ import {
   HttpError,
   Middleware,
 } from 'routing-controllers';
-
+import { Request, Response, NextFunction } from 'express';
 import { StandardResponse } from '../utils/validators';
 
 @Middleware({ type: 'after' })
 export class CustomErrorHandler implements ExpressErrorMiddlewareInterface {
-  error(error: any, request: any, response: any, next: (err?: any) => any) {
-    // Capture the error with Sentry
-    Sentry.captureException(error);
+  async error(
+    error: any,
+    request: Request,
+    response: Response,
+    next: NextFunction
+  ) {
+    if (process.env.NODE_ENV === 'production') {
+      const sanitize = (data: any) => {
+        // Sanitization logic remains the same
+        const sanitized = { ...data };
+        delete sanitized.password;
+        delete sanitized.secret;
+        return sanitized;
+      };
+
+      // Asynchronous Sentry capture
+      await Sentry.withScope(async (scope) => {
+        scope.setTag('method', request.method);
+        scope.setTag('path', request.path);
+        scope.setExtra('query', sanitize(request.query));
+        scope.setExtra('body', sanitize(request.body));
+        Sentry.captureException(error);
+      });
+    }
 
     // Log the error details, excluding sensitive information
     console.error('Error occurred:', {
@@ -24,21 +45,16 @@ export class CustomErrorHandler implements ExpressErrorMiddlewareInterface {
     });
 
     let responseMessage = error.message || 'An error occurred';
-    let httpCode = 500; // Default to 500 Internal Server Error
-
-    // Check if error is an instance of HttpError (routing-controllers)
-    if (error instanceof HttpError) {
-      httpCode = error.httpCode;
-
-      // For internal server errors, send a generic message to the client
-      if (error.httpCode === 500) {
-        responseMessage = 'Internal Server Error';
-      }
+    const httpCode = error instanceof HttpError ? error.httpCode : 500;
+    if (httpCode === 500) {
+      responseMessage = 'Internal Server Error';
     }
 
     // Standardized error response with appropriate message
     response.status(httpCode).json(new StandardResponse(responseMessage, true));
 
-    next(error);
+    if (!response.headersSent) {
+      next(error);
+    }
   }
 }
