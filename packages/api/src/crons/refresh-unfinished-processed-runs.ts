@@ -34,6 +34,10 @@ const processFailedRun = async (failedProcess: any) => {
     where: { id: failedProcess.id },
   });
 
+  if (!postData || Object.keys(postData).length === 0) {
+    throw new Error('Invalid payload data');
+  }
+
   if (!deleted) {
     throw new Error('Failed to delete processed run');
   }
@@ -73,6 +77,9 @@ const main = async () => {
         endedAt: null,
         startedAt: {
           lt: dayjs().subtract(1, 'hours').toDate(),
+        },
+        payload: {
+          not: {},
         },
       },
       take: 2,
