@@ -5,6 +5,7 @@ const fs = require('fs').promises;
 const { exec } = require('child_process');
 const path = require('path');
 const util = require('util');
+const fetch = require('node-fetch');
 
 const execAsync = util.promisify(exec);
 
@@ -87,7 +88,7 @@ const prepareActorFiles = async () => {
     ),
     fs.writeFile(
       path.join(actorDir, 'INPUT_SCHEMA.json'),
-      JSON.stringify(getActorInputSpec(actorId), null, 2)
+      JSON.stringify(await getActorInputSpec(actorId), null, 2)
     ),
     fs.writeFile(path.join(tempDir, 'Dockerfile'), dockerfile),
   ]);
@@ -148,6 +149,7 @@ function getActorSpec(actorId) {
     environmentVariables: {
       BASE_URL: process.env.BASE_URL,
       API_SECRET: process.env.API_SECRET,
+      SENTRY_DSN_ACTORS: process.env.SENTRY_DSN_ACTORS,
     },
     storages: {
       dataset: './output.json',
@@ -155,38 +157,65 @@ function getActorSpec(actorId) {
   };
 }
 
-function getActorInputSpec(actorId) {
-  return {
-    title: `${actorId} scraper`,
-    description: '',
-    type: 'object',
-    schemaVersion: 1,
-    properties: {
-      startUrls: {
-        sectionCaption: 'Basic configuration',
-        title: 'Start URLs',
-        type: 'array',
-        description:
-          'A static list of URLs to scrape. For details, see the Start URLs section in the README.',
-        prefill: [
-          {
-            url: 'https://apify.com',
-            metadata: {
-              locale: 'en_US',
-              targetPageId: 'test',
-              localeId: 'test',
-            },
-          },
-        ],
-        editor: 'requestListSources',
+/**
+ * Fetches the input specification for an source based on its identifier.
+ * This function assembles the scraping configuration, including start URLs
+ * fetched dynamically from an API, and sets up proxy configuration.
+ *
+ * @param {string} sourceName - The name of the source to fetch the input spec for.
+ * @returns {Object} The input specification schema for the actor.
+ */
+async function getActorInputSpec(sourceName) {
+  try {
+    // Configuration for the API request.
+    const BASE_URL = process.env.BASE_URL;
+    const API_SECRET = process.env.API_SECRET;
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${API_SECRET}`,
+    };
+
+    // Construct the URL and fetch options.
+    const url = `${BASE_URL}tests/get-sample-start-url-for-source-name?name=${sourceName}`;
+    const options = { method: 'GET', headers };
+
+    // Fetch the dynamic start URLs and handle the response.
+    const response = await fetch(url, options);
+    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+    const data = await response.json();
+    console.log('Received prefill data:', data);
+
+    const prefill = data.data?.startUrls || null;
+
+    if (!prefill) throw new Error('Failed to fetch prefill data.');
+
+    return {
+      title: `${actorId} scraper`,
+      description: 'Configuration for scraping activities.',
+      type: 'object',
+      schemaVersion: 1,
+      properties: {
+        startUrls: {
+          sectionCaption: 'Basic configuration',
+          title: 'Start URLs',
+          type: 'array',
+          description:
+            'A list of URLs from which the scraper will start processing.',
+          prefill,
+          editor: 'requestListSources',
+        },
+        proxyConfiguration: {
+          title: 'Proxy Configuration',
+          type: 'object',
+          description:
+            'Configuration details for the proxy used by the scraper.',
+          editor: 'proxy',
+        },
       },
-      proxyConfiguration: {
-        title: 'Proxy Configuration',
-        type: 'object',
-        description: 'Your proxy configuration from Apify',
-        editor: 'proxy',
-      },
-    },
-    required: ['startUrls'],
-  };
+      required: ['startUrls'],
+    };
+  } catch (error) {
+    throw new Error(`Failed to fetch prefill data: ${error}`);
+  }
 }

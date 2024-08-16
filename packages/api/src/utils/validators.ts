@@ -270,3 +270,12 @@ export class ReliabilityRequestBody {
   @IsBoolean()
   isReliable: boolean;
 }
+
+export class TestUrlsBody {
+  @IsString()
+  name: string;
+
+  @IsNumber()
+  @IsOptional()
+  startUrlCount?: number;
+}

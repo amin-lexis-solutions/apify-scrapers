@@ -1,6 +1,17 @@
 import * as Sentry from '@sentry/node';
-import { Authorized, Body, JsonController, Post } from 'routing-controllers';
-import { StandardResponse, RunTestBody } from '../utils/validators';
+import {
+  Authorized,
+  Body,
+  Get,
+  JsonController,
+  Post,
+  QueryParams,
+} from 'routing-controllers';
+import {
+  StandardResponse,
+  RunTestBody,
+  TestUrlsBody,
+} from '../utils/validators';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { testSpec } from '../test/actors/specs/dynamicTemplate.spec';
 import path from 'path';
@@ -124,5 +135,55 @@ export class TestsController {
     } catch (e) {
       console.log(e);
     }
+  }
+
+  @Get('/get-sample-start-url-for-source-name')
+  @OpenAPI({
+    summary: 'Get sample start URLs for source',
+    description:
+      'Returns the desired count of active target pages for a source. The data is meant to be used as start URLs when running actors.',
+  })
+  @ResponseSchema(StandardResponse)
+  async getStartUrls(@QueryParams() params: TestUrlsBody) {
+    const { name, startUrlCount = 3 } = params;
+    if (!name) {
+      return new StandardResponse('Actor name is required', true);
+    }
+
+    const actor = await prisma.source.findFirst({
+      where: { name },
+      include: { domains: true },
+    });
+
+    if (!actor || !actor?.domains) {
+      return new StandardResponse('Actor not found', true);
+    }
+
+    // Fetch target pages for the actor domains
+    const targetPages = await prisma.targetPage.findMany({
+      where: {
+        domain: {
+          in: actor.domains.map((domain) => domain.domain),
+        },
+        lastApifyRunAt: { not: null },
+        disabledAt: null,
+        markedAsNonIndexAt: null,
+      },
+      take: startUrlCount,
+    });
+
+    const startUrls = targetPages.map((page) => {
+      return {
+        url: page.url,
+        metadata: {
+          targetPageId: page.id,
+          targetPageUrl: page.url,
+          verifyLocale: page.verified_locale,
+          merchantId: page.merchantId,
+        },
+      };
+    });
+
+    return new StandardResponse('Start urls fetched', false, { startUrls });
   }
 }
