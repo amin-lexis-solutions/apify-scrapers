@@ -8,7 +8,7 @@ async function main() {
 
   const crawler = await preparePuppeteerScraper(router as any, {
     indexPageSelectors: ['#store-topbar', '.offers'],
-    nonIndexPageSelectors: ['.featured-stores'],
+    nonIndexPageSelectors: ['.featured-stores', '.error-404'],
   });
 
   await crawler.run();
