@@ -5,7 +5,6 @@ const fs = require('fs').promises;
 const { exec } = require('child_process');
 const path = require('path');
 const util = require('util');
-const fetch = require('node-fetch');
 
 const execAsync = util.promisify(exec);
 
