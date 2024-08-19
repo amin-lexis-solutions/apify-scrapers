@@ -5,13 +5,12 @@ import {
   sleep,
   getMerchantDomainFromUrl,
   generateItemId,
-  checkItemsIds,
   ItemResult,
-  ItemHashMap,
   formatDateTime,
 } from './helpers';
 import { preProcess, postProcess } from './hooks';
 import { Label, CUSTOM_HEADERS } from './actor-utils';
+import jp from 'jsonpath';
 
 function checkVoucherCode(code: string | null | undefined) {
   // Trim the code to remove any leading/trailing whitespace
@@ -178,10 +177,6 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    log.info(
-      `Found ${pageProps.vouchers.length} active vouchers and ${pageProps.expiredVouchers.length} expired vouchers\n    at: ${request.url}\n`
-    );
-
     // Declarations outside the loop
     const merchantName = pageProps.retailer.name;
 
@@ -198,26 +193,33 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Combine active and expired items
-    const activetItems = pageProps.vouchers.map((voucher) => ({
-      ...voucher,
-      is_expired: false,
-    }));
-    const expiredItem = pageProps.expiredVouchers.map((voucher) => ({
-      ...voucher,
-      is_expired: true,
-    }));
+    const activeVouchers = jp.query(pageProps, '$..vouchers')?.[0] || [];
+    const expiredVouchers =
+      jp.query(pageProps, '$..expiredVouchers')?.[0] || [];
+    const similarVouchers =
+      jp.query(pageProps, '$..similarVouchers')?.[0] || [];
 
-    const Allitems = [...activetItems, ...expiredItem];
+    const allVouchers = [...activeVouchers, ...expiredVouchers].filter(
+      (voucher) =>
+        !similarVouchers.some(
+          (similar: any) => similar.idPool === voucher.idPool
+        )
+    );
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
+    log.info(
+      `Retrieved ${activeVouchers.length} active vouchers and ` +
+        ` ${expiredVouchers.length} expired vouchers from ${request.url}.` +
+        `Total clear vouchers: ${allVouchers.length}.`
+    );
+
+    const vouchersWithCode: any = [];
     let result: ItemResult;
 
-    for (const item of Allitems) {
+    for (const item of allVouchers) {
       await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings
 
-      if (!item?.idPool && !item?.idVoucher && !item?.idInSite) {
-        logger.error(`idInSite not found in item`);
+      if (!item.idPool && !item.idVoucher && !item.idInSite) {
+        logger.error(`idInSite not found in item`, item);
         continue;
       }
 
@@ -235,8 +237,7 @@ router.addHandler(Label.listing, async (context) => {
       );
 
       if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = result;
-        idsToCheck.push(result.generatedHash);
+        vouchersWithCode.push(result);
         continue;
       }
 
@@ -254,23 +255,18 @@ router.addHandler(Label.listing, async (context) => {
         return;
       }
     }
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
 
-    if (nonExistingIds.length == 0) return;
+    // Add the items with codes to the request queue
+    for (const voucher of vouchersWithCode) {
+      const { itemUrl, validator } = voucher;
 
-    let currentResult: ItemResult;
-
-    for (const id of nonExistingIds) {
-      currentResult = itemsWithCode[id];
-      // Add the coupon URL to the request queue
       await crawler?.requestQueue?.addRequest(
         {
-          url: currentResult.itemUrl,
+          url: itemUrl,
           userData: {
             ...request.userData,
             label: Label.getCode,
-            validatorData: currentResult.validator.getData(),
+            validatorData: validator.getData(),
           },
           headers: CUSTOM_HEADERS,
         },
