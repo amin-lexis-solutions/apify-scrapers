@@ -16,7 +16,7 @@ import { postProcess, preProcess } from 'shared/hooks';
 const router = Router.create<PuppeteerCrawlingContext>();
 
 router.addHandler(Label.listing, async (context) => {
-  const { page, request, enqueueLinks, log } = context;
+  const { page, request, crawler, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
@@ -68,10 +68,9 @@ router.addHandler(Label.listing, async (context) => {
   }
 
   async function getItemUrl(merchantName, id) {
-    return `https://www.drivereasy.com/coupons/${merchantName.replace(
-      ' ',
-      '-'
-    )}?promoid=${id}`;
+    return `https://www.drivereasy.com/coupons/${merchantName
+      ?.toLowerCase()
+      ?.replaceAll(' ', '-')}?promoid=${id}`;
   }
 
   try {
@@ -182,13 +181,12 @@ router.addHandler(Label.listing, async (context) => {
 
       if (!currentResult.itemUrl) continue;
       // Add the coupon URL to the request queue
-      await enqueueLinks({
-        urls: [currentResult.itemUrl],
+      await crawler?.requestQueue?.addRequest({
+        url: currentResult.itemUrl,
         userData: {
           label: Label.getCode,
           validatorData: currentResult.validator.getData(),
         },
-        forefront: true,
       });
     }
   } finally {
@@ -202,7 +200,7 @@ router.addHandler(Label.getCode, async (context) => {
 
   if (request.userData.label !== Label.getCode) return;
 
-  await page.waitForSelector('.coupon_detail_pop');
+  await page.waitForSelector('.coupon_detail_pop', { timeout: 30_000 });
 
   try {
     log.info(`GetCode ${request.url}`);
