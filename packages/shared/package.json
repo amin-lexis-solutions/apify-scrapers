@@ -9,6 +9,7 @@
   "license": "ISC",
   "dependencies": {
     "@sentry/node": "^7.107.0",
-    "@sentry/types": "^8.24.0"
+    "@sentry/types": "^8.24.0",
+    "jsonpath": "^1.1.1"
   }
 }
