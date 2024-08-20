@@ -185,9 +185,17 @@ async function getActorInputSpec(sourceName) {
     const data = await response.json();
     console.log('Received prefill data:', data);
 
-    const prefill = data.data?.startUrls || null;
-
-    if (!prefill) throw new Error('Failed to fetch prefill data.');
+    const prefill = data.data?.startUrls || [
+      {
+        url: 'https://www.example.com',
+        metadata: {
+          targetPageId: '123',
+          targetPageUrl: 'https://www.example.com',
+          verifyLocale: 'en_US',
+          merchantId: '123',
+        },
+      },
+    ];
 
     return {
       title: `${actorId} scraper`,
