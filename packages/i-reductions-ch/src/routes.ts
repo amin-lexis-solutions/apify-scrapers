@@ -51,6 +51,7 @@ export async function sitemapHandler(requestQueue: RequestQueue, context) {
     await requestQueue.addRequest({
       url: url,
       userData: {
+        ...request.userData.metadata,
         label: Label.listing,
       },
     });
@@ -171,6 +172,7 @@ export async function listingHandler(requestQueue: RequestQueue, context) {
         {
           url: codeDetailsUrl,
           userData: {
+            ...request.userData.metadata,
             label: Label.getCode,
             validatorData: validatorData,
           },
