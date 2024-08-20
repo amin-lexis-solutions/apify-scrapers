@@ -14,7 +14,8 @@
     "crawlee": "3.7.2",
     "moment": "^2.29.4",
     "@sentry/node": "^7.107.0",
-    "@sentry/types": "^8.24.0"
+    "@sentry/types": "^8.24.0",
+    "jsonpath": "^1.1.1"
   },
   "devDependencies": {
     "@apify/tsconfig": "^0.1.0",
