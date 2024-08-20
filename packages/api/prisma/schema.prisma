@@ -121,6 +121,8 @@ model TargetLocale {
   coupons        Coupon[]
   runs           ProcessedRun[]
   merchants      Merchant[]
+
+  @@unique([countryCode, languageCode])
 }
 
 // Maps to a page we want to scrape using an Apify actor

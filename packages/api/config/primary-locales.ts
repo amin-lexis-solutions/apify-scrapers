@@ -1,5 +1,14 @@
+/* eslint-disable no-console */
 import { Locale } from './locales';
-const localesToImport = [
+
+interface LocaleEntry {
+  locale: Locale;
+  countryCode: string;
+  languageCode: string;
+  searchTemplate: string;
+}
+
+const localesToImport: LocaleEntry[] = [
   {
     locale: Locale.cs_CZ,
     countryCode: 'cz',
@@ -116,7 +125,7 @@ const localesToImport = [
   },
   {
     locale: Locale.es_CL,
-    countryCode: 'mx',
+    countryCode: 'cl',
     languageCode: 'es',
     searchTemplate: '{{merchant_name}} código de descuento',
   },
@@ -223,5 +232,31 @@ const localesToImport = [
     searchTemplate: '{{merchant_name}} rabattkod',
   },
 ];
+
+function validateUniqueness(data: LocaleEntry[]) {
+  const localeSet = new Set();
+  const countryLangSet = new Set();
+
+  for (const entry of data) {
+    const localeKey = entry.locale;
+    const countryLangKey = `${entry.languageCode}_${entry.countryCode}`;
+
+    // Check for locale uniqueness
+    if (localeSet.has(localeKey)) {
+      throw new Error(`Duplicate locale found: ${localeKey}`);
+    }
+    localeSet.add(localeKey);
+
+    // Check for country and language code combination uniqueness
+    if (countryLangSet.has(countryLangKey)) {
+      throw new Error(
+        `Duplicate country and language combination found: ${localeKey}`
+      );
+    }
+    countryLangSet.add(countryLangKey);
+  }
+}
+
+validateUniqueness(localesToImport);
 
 export { localesToImport };
