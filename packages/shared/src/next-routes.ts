@@ -90,7 +90,7 @@ function processItem(
   validator.addValue('termsAndConditions', termsAndConditions);
   validator.addValue('expiryDateAt', formatDateTime(item.endTime));
   validator.addValue('startDateAt', formatDateTime(item.startTime));
-  validator.addValue('isExclusive', item.exclusiveVoucher);
+  validator.addValue('isExclusive', item.isExclusive);
   validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
