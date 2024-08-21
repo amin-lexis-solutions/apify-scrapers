@@ -3,7 +3,7 @@ import path from 'path';
 
 export default [
   {
-    apifyActorId: null,
+    apifyActorId: '26OcADUt32W2YHi6u',
     domains: [
       {
         domain: 'kr.coupert.com',
