@@ -3,7 +3,7 @@ import path from 'path';
 
 export default [
   {
-    apifyActorId: null,
+    apifyActorId: 'O3TfA5APuNHKU62Rs',
     domains: [
       {
         domain: 'shopback.co.kr',

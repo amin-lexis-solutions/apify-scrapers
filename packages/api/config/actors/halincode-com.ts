@@ -3,7 +3,7 @@ import path from 'path';
 
 export default [
   {
-    apifyActorId: null,
+    apifyActorId: 'ZayOJBSPEVPfSwahQ',
     domains: [
       {
         domain: 'halincode.com',
