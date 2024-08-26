@@ -29,6 +29,7 @@
     "scripts:load-serp": "ts-node -r tsconfig-paths/register  scripts/load_serp_results.ts",
     "scripts:tests": "ts-node -r tsconfig-paths/register  scripts/automated-tests.ts",
     "scripts:sync-merchants-data": "ts-node -r tsconfig-paths/register scripts/sync-merchants-data.ts",
+    "scripts:migrate-old-sources": "ts-node -r tsconfig-paths/register scripts/migrate-old-sources.ts",
     "scripts:match-merchants-and-target-pages": "ts-node -r tsconfig-paths/register scripts/match-merchants-and-target-pages.ts",
     "scripts:match-merchants-and-coupons": "ts-node -r tsconfig-paths/register scripts/match-merchants-and-coupons.ts",
     "scripts:verify-runnable-actors-are-shared-with-oberst": "ts-node -r tsconfig-paths/register scripts/verify-runnable-actors-are-shared-with-oberst.ts",
