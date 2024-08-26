@@ -177,6 +177,7 @@ router.addHandler(Label.listing, async (context) => {
             'Content-Length': '0', // Explicitly declare an empty request body
           },
           userData: {
+            ...request.userData,
             label: Label.getCode,
             validatorData: currentResult.validator.getData(),
           },

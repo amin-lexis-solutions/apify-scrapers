@@ -17,10 +17,11 @@ const CUSTOM_HEADERS_LOCAL = {
   Origin: 'https://www.picodi.com',
 };
 
-function requestForCouponWithCode(item: ItemResult) {
+function requestForCouponWithCode(item: ItemResult, request: any) {
   return {
     url: item.itemUrl,
     userData: {
+      ...request.userData,
       label: Label.getCode,
       validatorData: item.validator.getData(),
     },
@@ -170,7 +171,10 @@ router.addHandler(Label.listing, async (context) => {
       result = processItem(itemData, $cheerio);
 
       if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = requestForCouponWithCode(result);
+        itemsWithCode[result.generatedHash] = requestForCouponWithCode(
+          result,
+          request
+        );
         itemsWithCode[result.generatedHash].userData.sourceUrl = request.url;
         idsToCheck.push(result.generatedHash);
         continue;

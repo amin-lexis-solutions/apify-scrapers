@@ -174,6 +174,7 @@ router.addHandler(Label.listing, async (context) => {
       await enqueueLinks({
         urls: [currentResult?.itemUrl],
         userData: {
+          ...request.userData,
           label: Label.getCode,
           validatorData: currentResult.validator,
         },

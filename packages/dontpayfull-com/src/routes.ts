@@ -50,10 +50,11 @@ router.addHandler(Label.listing, async (context) => {
 
     return { generatedHash, hasCode, itemUrl, validator };
   }
-  async function makeRequest(url, validator) {
+  async function makeRequest(url, validator, request) {
     await enqueueLinks({
       urls: [url],
       userData: {
+        ...request.userData,
         label: Label.getCode,
         validatorData: validator.getData(),
       },
@@ -165,7 +166,11 @@ router.addHandler(Label.listing, async (context) => {
 
     for (const id of nonExistingIds) {
       currentResult = itemsWithCode[id];
-      await makeRequest(currentResult.itemUrl, currentResult.validator);
+      await makeRequest(
+        currentResult.itemUrl,
+        currentResult.validator,
+        request
+      );
     }
   } catch {
     // We don't catch so that the error is logged in Sentry, but use finally

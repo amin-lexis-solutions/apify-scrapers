@@ -7,7 +7,10 @@ import { router } from 'shared/next-routes';
 async function main() {
   await Actor.init();
 
-  const crawler = await prepareCheerioScraper(router);
+  const crawler = await prepareCheerioScraper(router, {
+    indexPageSelectors: ['#__NEXT_DATA__'],
+    nonIndexPageSelectors: [],
+  });
 
   await crawler.run();
 }

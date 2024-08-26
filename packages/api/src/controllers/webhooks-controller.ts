@@ -446,7 +446,7 @@ export class WebhooksController {
       couponStats[sourceUrl].count++;
     });
 
-    const updatePromises = Object.keys(couponStats).map(async (sourceUrl) => {
+    for (const sourceUrl of Object.keys(couponStats)) {
       const couponCount = couponStats[sourceUrl].count;
 
       const historicalData = await prisma.couponStats.findMany({
@@ -487,9 +487,7 @@ export class WebhooksController {
         plungeThreshold,
         anomalyType,
       };
-    });
-
-    await Promise.all(updatePromises);
+    }
 
     const statsData = Object.keys(couponStats).map((sourceUrl) => ({
       sourceUrl,

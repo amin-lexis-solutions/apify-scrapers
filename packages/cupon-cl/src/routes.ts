@@ -79,7 +79,7 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = await page.evaluate(() => {
       return document
         .querySelector('.fallback_link')
-        ?.getAttribute('data-tracking-label');
+        ?.getAttribute('data-shop');
     });
 
     if (!merchantName) {

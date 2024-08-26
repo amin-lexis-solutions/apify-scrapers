@@ -176,6 +176,7 @@ router.addHandler(Label.listing, async (context) => {
         {
           url: currentResult.itemUrl,
           userData: {
+            ...request.userData,
             label: Label.getCode,
             validatorData: currentResult.validator.getData(),
           },

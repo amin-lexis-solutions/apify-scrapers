@@ -33,6 +33,7 @@ const app: Express = express();
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
+  enabled: (process.env?.SENTRY_LOGGING || false) as boolean,
   integrations: [
     // enable HTTP calls tracing
     new Sentry.Integrations.Http({ tracing: true }),

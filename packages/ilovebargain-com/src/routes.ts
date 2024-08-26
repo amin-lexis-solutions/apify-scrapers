@@ -56,6 +56,7 @@ router.addHandler(Label.listing, async (context) => {
         {
           url: itemUrl,
           userData: {
+            ...request.userData,
             label: Label.details,
             id: id,
           },

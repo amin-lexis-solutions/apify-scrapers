@@ -29,7 +29,7 @@ export default [
           '/in': Locale.en_IN,
           '/ph': Locale.en_PH,
           '/my': Locale.en_MY,
-          '/ar': Locale.en_AE,
+          '/ae': Locale.en_AE,
         },
       },
     ],

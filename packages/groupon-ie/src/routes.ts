@@ -50,7 +50,7 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   try {
-    const items = $('li.coupons-list-row');
+    const items = $('.coupons-list .coupon-offer-tile');
 
     try {
       await preProcess(
@@ -79,8 +79,11 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const merchantUrl = `https://${$('.merchant-outlink').text()}`;
-    const merchantDomain = getMerchantDomainFromUrl(merchantUrl);
+    const merchantOutlink = $('.merchant-outlink').text() || null;
+    const merchantUrl = merchantOutlink ? `https://${merchantOutlink}` : null;
+    const merchantDomain = merchantUrl
+      ? getMerchantDomainFromUrl(merchantUrl)
+      : null;
 
     merchantDomain
       ? log.info(
@@ -92,10 +95,11 @@ router.addHandler(Label.listing, async (context) => {
     const idsToCheck: string[] = [];
 
     for (const selector of items) {
-      const title = $(selector).find('.coupon-tile-title')?.text();
+      // extract title, idInSite, and hasCode from the item cheerio object
+      const title = $(selector)?.find('.coupon-tile-title')?.text()?.trim();
 
       if (!title) {
-        logger.error('Coupon title not found in item');
+        logger.error(`Title not found in item ${request.url}`);
         continue;
       }
 

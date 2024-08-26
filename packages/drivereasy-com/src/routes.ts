@@ -184,6 +184,7 @@ router.addHandler(Label.listing, async (context) => {
       await crawler?.requestQueue?.addRequest({
         url: currentResult.itemUrl,
         userData: {
+          ...request.userData,
           label: Label.getCode,
           validatorData: currentResult.validator.getData(),
         },

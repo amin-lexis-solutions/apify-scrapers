@@ -3,6 +3,7 @@ import { SeverityLevel } from '@sentry/types';
 
 // Check for the Sentry DSN and initialize if provided
 const SENTRY_DSN = process.env.SENTRY_DSN_ACTORS;
+
 if (!SENTRY_DSN) {
   console.error(
     'SENTRY_DSN_ACTORS is not set. Errors will not be sent to Sentry.'
@@ -13,6 +14,7 @@ if (!SENTRY_DSN) {
     dsn: SENTRY_DSN,
     tracesSampleRate: 1.0, // Capture 100% of transactions
     debug: false, // Disable debug mode in production
+    enabled: (process.env?.SENTRY_LOGGING || false) as boolean,
   });
 
   // Global handler for unhandled promise rejections
