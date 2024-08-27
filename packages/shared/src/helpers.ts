@@ -217,6 +217,21 @@ export async function checkIndexPageSelectors(
   const { page, $ } = context;
   const { indexSelector, nonIndexSelector } = pageSelectors;
 
+  // Check if the page is a 404 , if so, mark it as non-index page
+  const statusCode =
+    context.response.statusCode || (await context.response?.status());
+  if (statusCode === 404 || statusCode === 410) {
+    await Dataset.pushData({
+      __isNotIndexPage: true,
+      __url: context.request.url,
+    });
+    throw new Error(
+      `${context.request.url} - ${
+        statusCode === 404 ? 'Page not found' : 'Page removed'
+      }`
+    );
+  }
+
   log.info(`checkIndexPageSelectors ${context.request.url}`);
 
   // Function to check selectors in Puppeteer
