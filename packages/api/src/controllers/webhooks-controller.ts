@@ -410,6 +410,7 @@ export class WebhooksController {
       archivedAt,
       archivedReason,
       shouldBeFake: item.code ? !isValidCouponCode(item.code) : null,
+      sourceDomain: new URL(sourceUrl).hostname.replace('www.', ''),
     };
   }
 

@@ -38,9 +38,16 @@ async function seedSources() {
         name,
         maxStartUrls: maxStartUrls || null,
         domains: {
-          create: domainsToCreate.map((d: any) => ({
-            domain: d.domain,
-            proxyCountryCode: d?.proxyCountryCode,
+          upsert: domains.map((d: any) => ({
+            where: { domain: d.domain },
+            update: {
+              proxyCountryCode: d?.proxyCountryCode,
+            },
+            create: {
+              domain: d.domain,
+              reliability: Reliability.reliable,
+              proxyCountryCode: d?.proxyCountryCode,
+            },
           })),
           deleteMany: { domain: { in: domainsToDelete } },
         },

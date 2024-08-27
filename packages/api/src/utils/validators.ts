@@ -1,4 +1,5 @@
 import { Type } from 'class-transformer';
+import { Reliability } from '@prisma/client';
 import {
   IsArray,
   IsBoolean,
@@ -65,6 +66,9 @@ export class ListRequestBody {
   @IsBoolean()
   @IsOptional()
   isExpired?: boolean;
+
+  @IsOptional()
+  reliability?: Reliability | null;
 
   @IsBoolean()
   @IsOptional()

@@ -53,12 +53,19 @@ export class CouponsController {
       isExpired,
       shouldBeFake,
       show_disabled_merchants,
+      reliability,
     } = params;
 
     const where: Prisma.CouponWhereInput = {};
 
     if (merchantName) {
       where.merchantName = merchantName;
+    }
+
+    if (reliability !== null) {
+      where.source_domain_relation = {
+        reliability: reliability ?? Reliability.reliable,
+      };
     }
 
     // Return only items with a active merchant
@@ -158,6 +165,8 @@ export class CouponsController {
         currentPageResults,
         currentPage: page,
         lastPage,
+        reliability:
+          reliability === null ? 'all' : reliability ?? Reliability.reliable,
         results: formattedData,
       }
     );
