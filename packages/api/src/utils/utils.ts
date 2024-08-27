@@ -27,9 +27,10 @@ export function generateHash(
   return hash.digest('hex');
 }
 
-export function validDateOrNull(dateString: string) {
+export function validDateOrNull(dateString: string | null): string | null {
+  if (!dateString) return null;
   const date = new Date(dateString);
-  return !dateString || isNaN(date.getTime()) ? null : date.toISOString();
+  return isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 // Function to determine tolerance multiplier based on couponCount

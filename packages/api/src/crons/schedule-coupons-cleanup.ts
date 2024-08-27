@@ -59,10 +59,14 @@ const markExpiredCoupons = async () => {
         expiryDateAt: {
           lt: new Date(), // Find coupons whose expiry date is before the current date/time
         },
-        isExpired: false,
+        isExpired: {
+          not: true,
+        },
       },
       data: {
         isExpired: true,
+        archivedAt: new Date(),
+        archivedReason: 'expired',
       },
     });
 

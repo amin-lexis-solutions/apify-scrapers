@@ -283,11 +283,11 @@ export class WebhooksController {
           if (value) {
             archivedAt = now;
             archivedReason = 'expired';
-            updateData.isShown = false;
+            updateData.isExpired = true;
           } else if (existingRecord?.isExpired) {
             archivedAt = null;
             archivedReason = 'unexpired';
-            updateData.isShown = true;
+            updateData.isExpired = false;
           }
         }
 
@@ -299,8 +299,10 @@ export class WebhooksController {
         ) {
           archivedAt = null;
           archivedReason = 'unexpired';
-          updateData.isShown = true;
+          updateData.isExpired = false;
         }
+
+        updateData.isShown = true;
 
         const locale = item.metadata.verifyLocale
           ? item.metadata.verifyLocale
@@ -331,10 +333,9 @@ export class WebhooksController {
         };
         updateData.archivedAt = archivedAt;
         updateData.archivedReason = archivedReason;
-        (updateData as any)[key] =
-          key === 'expiryDateAt' || key === 'startDateAt'
-            ? validDateOrNull(value as string)
-            : value || null;
+
+        if (key === 'expiryDateAt' || key === 'startDateAt')
+          (updateData as any)[key] = validDateOrNull(value as string | null);
       }
     }
     return {
