@@ -36,6 +36,7 @@ model Coupon {
   code               String?
   startDateAt        DateTime?      @db.Date
   sourceUrl          String
+  sourceDomain       String?
   isShown            Boolean        @default(false)
   isExpired          Boolean?
   isExclusive        Boolean?
@@ -53,6 +54,8 @@ model Coupon {
   locale_relation TargetLocale @relation(fields: [locale], references: [locale], onDelete: Cascade)
 
   merchant_relation Merchant @relation(fields: [merchantId], references: [id])
+
+  source_domain_relation SourceDomain? @relation(fields: [sourceDomain], references: [domain])
 
   @@index([apifyActorId])
   @@index([locale])
@@ -77,11 +80,13 @@ model Source {
 
 model SourceDomain {
   id                String      @id @default(uuid())
-  domain            String
+  domain            String      @unique
   reliability       Reliability @default(reliable)
   source_relation   Source      @relation(fields: [apifyActorId], references: [apifyActorId])
   apifyActorId      String
   proxyCountryCode  String?
+
+  coupons           Coupon[]
 }
 
 // Maps to a single Apify actor run
