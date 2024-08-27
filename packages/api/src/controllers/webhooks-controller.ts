@@ -98,8 +98,6 @@ export class WebhooksController {
       // Update coupon stats
       await this.updateCouponStats(scrapedData, apifyActorId);
 
-      // Check and handle non-existing coupons in page
-      await this.checkNonExistingCouponsInPage(scrapedData);
       // Update processed run
       await prisma.processedRun.update({
         where: { id: run.id },
@@ -195,7 +193,8 @@ export class WebhooksController {
       archivedCount: 0,
     };
     const errors: Record<string, any>[] = [];
-    const targetPages = new Set<string>();
+    const sourceUrlsSet = new Set<string>();
+    const couponsIds: string[] = [];
 
     for (const item of scrapedData) {
       const id = generateItemId(
@@ -203,7 +202,8 @@ export class WebhooksController {
         item?.idInSite,
         item?.sourceUrl
       );
-      targetPages.add(item.sourceUrl);
+      couponsIds.push(id);
+      sourceUrlsSet.add(item.sourceUrl);
 
       const existingRecord = await prisma.coupon.findUnique({ where: { id } });
       const { updateData, archivedAt, archivedReason } = this.prepareUpdateData(
@@ -242,15 +242,21 @@ export class WebhooksController {
     }
 
     // Update lastApifyRunAt for target pages
-    if (targetPages.size > 0) {
-      const targetPagesArray = Array.from(targetPages);
+    if (sourceUrlsSet.size > 0) {
+      const sourceUrls = Array.from(sourceUrlsSet);
       await prisma.targetPage.updateMany({
-        where: { url: { in: targetPagesArray } },
+        where: { url: { in: sourceUrls } },
         data: { lastApifyRunAt: dayjs().toDate() },
       });
+
+      // Archive coupons that were not updated in the current run
+      couponStats.archivedCount = await this.archiveNonExistingCouponsInPage(
+        couponsIds,
+        sourceUrls
+      );
     }
 
-    return { couponStats, errors, targetPages };
+    return { couponStats, errors };
   }
 
   // Prepare the coupons for updates and creation
@@ -598,42 +604,36 @@ export class WebhooksController {
   }
 
   // Define an asynchronous function to check and handle non-existing coupons in a page
-  private async checkNonExistingCouponsInPage(scrapedData: any) {
-    // Ensure scrapedData is not empty
-    if (scrapedData.length === 0) {
-      // eslint-disable-next-line no-console
-      console.log('No scraped data provided');
-      return; // Exit the function if scrapedData is empty
-    }
-
-    // Extract IDs of incoming coupons from the scraped data
-    const incomingCouponIds = scrapedData.map((item: any) =>
-      generateItemId(item?.merchantName, item?.idInSite, item?.sourceUrl)
-    );
-
-    // Get the source URL from scraped data
-    const sourceUrl = scrapedData[0]['sourceUrl'];
-
+  private async archiveNonExistingCouponsInPage(
+    couponIds: string[],
+    sourceUrls: string[]
+  ) {
     try {
       // Update the inaccessible coupons in the database, marking them as removed, with the current date, and expired
       const result = await prisma.coupon.updateMany({
         where: {
-          sourceUrl,
+          sourceUrl: { in: sourceUrls },
           id: {
-            notIn: incomingCouponIds,
+            notIn: couponIds,
           },
+          archivedReason: null,
+          archivedAt: null,
         },
         data: {
           archivedReason: $Enums.ArchiveReason.removed,
           archivedAt: new Date(),
           isExpired: true,
+          isShown: false,
         },
       });
 
-      console.log(`non-existing coupons in page ${result.count}`);
+      return result.count;
     } catch (err) {
-      console.log('Error updating coupons removed from page', err);
+      Sentry.captureException(`Error archiving non-existing coupons in page`, {
+        extra: { couponIds, sourceUrls, err },
+      });
     }
+    return 0;
   }
 
   @Post('/serp')
