@@ -22,7 +22,7 @@ function processItem(item: any, $cheerio: any): ItemResult {
   validator.addValue('domain', item.merchantDomain);
   validator.addValue('title', item.title);
   validator.addValue('idInSite', item.idInSite);
-  validator.addValue('isExclusive', $cheerio.IsExclusive);
+  validator.addValue('isExclusive', item.isExclusive);
   validator.addValue('isExpired', !$cheerio.Available);
   validator.addValue('isShown', true);
 
@@ -132,6 +132,7 @@ router.addHandler(Label.listing, async (context) => {
         title,
         merchantName,
         merchantDomain,
+        isExclusive: items.isExclusive,
         sourceUrl: request.url,
       };
 

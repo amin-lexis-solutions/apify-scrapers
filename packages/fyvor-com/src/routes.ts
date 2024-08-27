@@ -48,6 +48,7 @@ function processItem(item: any, $cheerioElement: cheerio.Root): ItemResult {
   validator.addValue('idInSite', item.idInSite);
   validator.addValue('description', description);
   validator.addValue('isExpired', isExpired);
+  validator.addValue('isExclusive', item.isExclusive);
   validator.addValue('isShown', true);
 
   const generatedHash = generateItemId(
@@ -143,11 +144,16 @@ router.addHandler(Label.listing, async (context) => {
         continue;
       }
 
+      const isExclusive = $cheerio('.coupon_exclu_tag')
+        ?.text()
+        ?.includes('Exclusive');
+
       const itemData = {
         title,
         merchantName,
         merchantDomain,
         idInSite,
+        isExclusive,
         sourceUrl: request.url,
       };
 

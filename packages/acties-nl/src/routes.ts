@@ -32,7 +32,7 @@ function processItem(item) {
   validator.addValue('termsAndConditions', item.termsAndConditions);
   validator.addValue('expiryDateAt', formatDateTime(item.endTime));
   validator.addValue('startDateAt', formatDateTime(item.startTime));
-  validator.addValue('isExclusive', item.exclusiveVoucher);
+  validator.addValue('isExclusive', item.isExclusive);
   validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
@@ -143,6 +143,14 @@ router.addHandler(Label.listing, async (context) => {
         item
       );
 
+      const isExclusive = await page.evaluate(
+        (node) =>
+          node
+            ?.querySelector('.details .coupon-tag')
+            ?.textContent?.includes('Exclusieve'),
+        item
+      );
+
       const itemData = {
         title,
         idInSite,
@@ -151,6 +159,7 @@ router.addHandler(Label.listing, async (context) => {
         hasCode,
         isExpired,
         description,
+        isExclusive,
         termsAndConditions,
         sourceUrl: request.url,
       };
