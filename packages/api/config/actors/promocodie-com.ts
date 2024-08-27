@@ -3,7 +3,7 @@ import path from 'path';
 
 export default [
   {
-    apifyActorId: null,
+    apifyActorId: 'KJhCl7i4ECa0Hg6Ri',
     domains: [
       {
         domain: 'br.promocodie.com',
