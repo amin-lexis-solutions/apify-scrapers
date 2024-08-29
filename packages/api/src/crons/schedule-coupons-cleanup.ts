@@ -57,11 +57,16 @@ const markExpiredCoupons = async () => {
     const updatedCoupons = await prisma.coupon.updateMany({
       where: {
         expiryDateAt: {
-          lt: new Date(), // Find coupons whose expiry date is before the current date/time
+          lt: new Date(),
         },
-        isExpired: {
-          not: true,
-        },
+        OR: [
+          {
+            isExpired: null,
+          },
+          {
+            isExpired: false,
+          },
+        ],
       },
       data: {
         isExpired: true,
