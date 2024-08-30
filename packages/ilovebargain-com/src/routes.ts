@@ -4,12 +4,7 @@ import cheerio from 'cheerio';
 
 import { DataValidator } from 'shared/data-validator';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
-import {
-  generateItemId,
-  ItemHashMap,
-  checkItemsIds,
-  ItemResult,
-} from 'shared/helpers';
+import { generateItemId, ItemResult } from 'shared/helpers';
 import { postProcess, preProcess } from 'shared/hooks';
 
 export const router = createCheerioRouter();
@@ -97,8 +92,6 @@ router.addHandler(Label.details, async (context) => {
     return;
   }
   // Extract validCoupons
-  const itemsWithCode: ItemHashMap = {};
-  const idsToCheck: string[] = [];
   let result: ItemResult;
 
   for (const item of items) {
@@ -144,15 +137,6 @@ router.addHandler(Label.details, async (context) => {
     // Create a result object containing generated hash, code availability, coupon URL, and validator data
     result = { generatedHash, hasCode, itemUrl, validator };
 
-    // If the coupon does not have a code, process and store its data using the validator
-    if (result.hasCode) {
-      // If the coupon has a code, store its details in the itemsWithCode object
-      itemsWithCode[result.generatedHash] = result;
-      // Add the generated hash to the list of IDs to check
-      idsToCheck.push(result.generatedHash);
-      continue;
-    }
-
     try {
       await postProcess(
         {
@@ -166,25 +150,5 @@ router.addHandler(Label.details, async (context) => {
       logger.error(`Post-Processing Error : ${error.message}`, error);
       return;
     }
-  }
-
-  // Call the API to check if the coupon exists
-  const nonExistingIds = await checkItemsIds(idsToCheck);
-
-  if (nonExistingIds.length == 0) return;
-
-  let currentResult: ItemResult;
-
-  for (const id of nonExistingIds) {
-    currentResult = itemsWithCode[id];
-    // Enqueue the coupon URL for further processing with appropriate label and validator data
-    await postProcess(
-      {
-        SaveDataHandler: {
-          validator: currentResult.validator,
-        },
-      },
-      context
-    );
   }
 });

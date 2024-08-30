@@ -6,8 +6,6 @@ import {
   generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
-  ItemHashMap,
-  checkItemsIds,
 } from 'shared/helpers';
 import { logger } from 'shared/logger';
 
@@ -47,7 +45,7 @@ function processItem(item: any) {
 
   return { generatedHash, hasCode: item?.hasCode, itemUrl, validator };
 }
-
+// TODO Broken Actor always Return the same coupon code for all items in the page
 router.addHandler(Label.listing, async (context) => {
   const { request, $, log } = context;
   if (request.userData.label !== Label.listing) return;
@@ -100,9 +98,6 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
-
     for (const item of items) {
       const title = $(item).find('.CalloutBlock_title__I1qLM').text();
 
@@ -136,41 +131,18 @@ router.addHandler(Label.listing, async (context) => {
 
       const result: ItemResult = processItem(itemData);
 
-      if (result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
             },
-            context
-          );
-        } catch (error) {
-          logger.error(`Postprocess Error: ${error}`);
-        }
-        continue;
-      }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
-    }
-
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    for (const id of nonExistingIds) {
-      const result: ItemResult = itemsWithCode[id];
-
-      await postProcess(
-        {
-          SaveDataHandler: {
-            validator: result.validator,
           },
-        },
-        context
-      );
+          context
+        );
+      } catch (error) {
+        logger.error(`Postprocess Error: ${error}`);
+      }
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

@@ -7,8 +7,6 @@ import {
   generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
-  ItemHashMap,
-  checkItemsIds,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -44,7 +42,7 @@ function processItem(item) {
 
   const hasCode = item.hasCode;
 
-  const itemUrl = `${item.sourceUrl}#d-${item.idInSite}`;
+  const itemUrl = `https://cupon.cl/modals/coupon_clickout?id=${item.idInSite}`;
 
   return { generatedHash, hasCode, itemUrl, validator };
 }
@@ -94,9 +92,6 @@ router.addHandler(Label.listing, async (context) => {
       ? log.info(`Merchant Name: ${merchantName} - Domain: ${merchantDomain}`)
       : log.warning('merchantDomain not found');
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
-
     for (const itemHandle of items) {
       const title = await page.evaluate((node) => {
         return node?.querySelector('.coupon__title')?.textContent;
@@ -138,43 +133,40 @@ router.addHandler(Label.listing, async (context) => {
 
       const result: ItemResult = processItem(itemData);
 
-      if (!result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
-            },
-            context
-          );
-        } catch (error) {
-          log.error(`Postprocess Error: ${error}`);
-        }
+      if (result.hasCode) {
+        if (!result.itemUrl) continue;
+        await enqueueLinks({
+          urls: [result.itemUrl],
+          userData: {
+            ...request.userData,
+            label: Label.getCode,
+            validatorData: result.validator.getData(),
+          },
+          forefront: true,
+          transformRequestFunction: (request) => {
+            request.keepUrlFragment = true;
+            request.method = 'POST'; // This is a POST request
+            request.payload = JSON.stringify({});
+            return request;
+          },
+        });
+
+        log.info(`Enqueued code page: ${result.itemUrl}`);
         continue;
       }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
-    }
 
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    for (const id of nonExistingIds) {
-      const result: ItemResult = itemsWithCode[id];
-
-      if (!result.itemUrl) continue;
-
-      await enqueueLinks({
-        urls: [result.itemUrl],
-        userData: {
-          ...request.userData,
-          label: Label.getCode,
-          validatorData: result.validator.getData(),
-        },
-      });
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error) {
+        log.error(`Postprocess Error: ${error}`);
+      }
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
@@ -186,9 +178,8 @@ router.addHandler(Label.getCode, async (context) => {
   // Destructure objects from the context
   const { request, page, log } = context;
 
+  log.info(`GetCode ${request.url}`);
   try {
-    await page.setJavaScriptEnabled(true);
-
     log.info(`GetCode ${request.url}`);
     // Extract validator data from request's user data
     const validatorData = request.userData.validatorData;
@@ -197,18 +188,35 @@ router.addHandler(Label.getCode, async (context) => {
     // Load validator data
     validator.loadData(validatorData);
 
-    const modalElement = await page.$('.modal__dialog');
+    // get page content
 
-    const code = await page.evaluate((node) => {
-      return node?.querySelector('.coupon-code')?.textContent?.trim();
+    const modalElement = await page.$('.modal__code-wrap');
+
+    // Get the data-clipboard-target attribute value from the copy button
+    const clipboardTarget = await page.evaluate((node) => {
+      const button = node?.querySelector('button.modal-clickout__copy');
+      return button ? button.getAttribute('data-clipboard-target') : null;
     }, modalElement);
 
-    if (!code) {
-      log.warning('No code found');
-    }
+    if (clipboardTarget) {
+      // Get the code from the modal using the clipboard target selector
+      const code = await page.evaluate(
+        (node, target) => {
+          return node?.querySelector(target)?.textContent?.trim();
+        },
+        modalElement,
+        clipboardTarget
+      );
 
-    // Add the code value to the validator
-    validator.addValue('code', code);
+      if (!code) {
+        log.warning('No code found');
+      } else {
+        log.info(`Found code: ${code}`);
+      }
+
+      // Add the code value to the validator
+      validator.addValue('code', code);
+    }
 
     try {
       await postProcess(

@@ -3,13 +3,7 @@ import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import {
-  sleep,
-  generateItemId,
-  checkItemsIds,
-  ItemResult,
-  ItemHashMap,
-} from 'shared/helpers';
+import { sleep, generateItemId, ItemResult } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -100,8 +94,6 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Extract valid coupons
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let result: ItemResult;
 
     for (const item of items) {
@@ -140,8 +132,22 @@ router.addHandler(Label.listing, async (context) => {
       result = processItem(itemData, $cheerio);
 
       if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = result;
-        idsToCheck.push(result.generatedHash);
+        if (!result.itemUrl) continue;
+
+        await crawler.requestQueue.addRequest(
+          {
+            url: result.itemUrl,
+            userData: {
+              ...request.userData,
+              label: Label.getCode,
+              validatorData: result.validator.getData(),
+            },
+            headers: CUSTOM_HEADERS,
+          },
+          { forefront: true }
+        );
+
+        log.info(`Enqueued code request for ${result.itemUrl}`);
         continue;
       }
 
@@ -159,34 +165,13 @@ router.addHandler(Label.listing, async (context) => {
         return;
       }
     }
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length > 0) {
-      let currentResult: ItemResult;
-      for (const id of nonExistingIds) {
-        currentResult = itemsWithCode[id];
-        // Add the coupon URL to the request queue
-        await crawler.requestQueue.addRequest(
-          {
-            url: currentResult.itemUrl,
-            userData: {
-              ...request.userData,
-              label: Label.getCode,
-              validatorData: currentResult.validator.getData(),
-            },
-            headers: CUSTOM_HEADERS,
-          },
-          { forefront: true }
-        );
-      }
-    }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
 
+// TODO: Review this handler to not working properly
 router.addHandler(Label.getCode, async (context) => {
   // context includes request, body, etc.
   const { request, $, log } = context;

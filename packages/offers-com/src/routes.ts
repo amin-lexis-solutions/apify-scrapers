@@ -7,8 +7,6 @@ import {
   generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
-  ItemHashMap,
-  checkItemsIds,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -41,7 +39,7 @@ function processItem(merchantName, merchantDomain, item, sourceUrl) {
 
   return { generatedHash, hasCode: true, itemUrl: item.url, validator };
 }
-
+// TODO: To inspect later Missing merchantName & code
 router.addHandler(Label.listing, async (context) => {
   const { request, $, enqueueLinks, log } = context;
   if (request.userData.label !== Label.listing) return;
@@ -97,8 +95,6 @@ router.addHandler(Label.listing, async (context) => {
     const currentItems = itemsJSON.makesOffer;
     const items = [...currentItems];
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     for (const item of items) {
       if (!item?.name) {
         logger.error('Coupon title not found in item');
@@ -111,43 +107,32 @@ router.addHandler(Label.listing, async (context) => {
         request.url
       );
 
-      if (!result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
-            },
-            context
-          );
-        } catch (error) {
-          logger.error(`Postprocess Error: ${error}`);
-        }
+      if (result.hasCode) {
+        if (!result.itemUrl) continue;
+
+        await enqueueLinks({
+          urls: [result.itemUrl],
+          userData: {
+            ...request.userData,
+            label: Label.getCode,
+            validatorData: result.validator.getData(),
+          },
+        });
         continue;
       }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
-    }
 
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    for (const id of nonExistingIds) {
-      const result: ItemResult = itemsWithCode[id];
-
-      if (!result.itemUrl) continue;
-
-      await enqueueLinks({
-        urls: [result.itemUrl],
-        userData: {
-          ...request.userData,
-          label: Label.getCode,
-          validatorData: result.validator.getData(),
-        },
-      });
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error) {
+        logger.error(`Postprocess Error: ${error}`);
+      }
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

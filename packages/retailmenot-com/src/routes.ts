@@ -3,8 +3,6 @@ import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
 import {
   generateItemId,
-  ItemHashMap,
-  checkItemsIds,
   ItemResult,
   getMerchantDomainFromUrl,
 } from 'shared/helpers';
@@ -13,7 +11,7 @@ import { postProcess, preProcess } from 'shared/hooks';
 
 // Export the router function that determines which handler to use based on the request label
 const router = Router.create<PuppeteerCrawlingContext>();
-
+//TODO: Actor To Investigate later
 // Add a handler for a specific label using router.addHandler()
 router.addHandler(Label.listing, async (context) => {
   const { page, request, enqueueLinks } = context;
@@ -59,8 +57,6 @@ router.addHandler(Label.listing, async (context) => {
     const merchantDomain = getMerchantDomainFromUrl(request.url);
 
     // Extract items
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let result: ItemResult;
 
     // Iterate over each valid coupon element
@@ -141,9 +137,17 @@ router.addHandler(Label.listing, async (context) => {
       result = { generatedHash, hasCode, itemUrl, validator };
       // If the coupon has a code, store its details in the itemsWithCode object
       if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = result;
-        // Add the generated hash to the list of IDs to check
-        idsToCheck.push(result.generatedHash);
+        if (!result?.itemUrl) continue;
+        // Enqueue the coupon URL for further processing with appropriate label and validator data
+        await enqueueLinks({
+          urls: [result?.itemUrl],
+          userData: {
+            ...request.userData,
+            label: Label.getCode,
+            validatorData: result.validator,
+          },
+          forefront: true,
+        });
         continue;
       }
 
@@ -160,26 +164,6 @@ router.addHandler(Label.listing, async (context) => {
         logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
-    }
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    for (const id of nonExistingIds) {
-      const currentResult: ItemResult = itemsWithCode[id];
-
-      if (!currentResult?.itemUrl) continue;
-      // Enqueue the coupon URL for further processing with appropriate label and validator data
-      await enqueueLinks({
-        urls: [currentResult?.itemUrl],
-        userData: {
-          ...request.userData,
-          label: Label.getCode,
-          validatorData: currentResult.validator,
-        },
-        forefront: true,
-      });
     }
   } finally {
     // We don't catch errors explicitly so that they are logged in Sentry,

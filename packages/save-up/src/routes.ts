@@ -2,12 +2,7 @@ import * as cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import {
-  checkItemsIds,
-  ItemHashMap,
-  ItemResult,
-  generateHash,
-} from 'shared/helpers';
+import { ItemResult, generateHash } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -100,8 +95,6 @@ router.addHandler(Label.listing, async (context) => {
     const merchantDomain = merchantDomainTag.attr('href')?.split('@')?.[1];
 
     // Extract items
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let result: ItemResult;
 
     for (const element of items) {
@@ -124,13 +117,6 @@ router.addHandler(Label.listing, async (context) => {
 
       result = await processItem(item, $cheerio);
 
-      if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = result;
-        // Add the generated hash to the list of IDs to check
-        idsToCheck.push(result.generatedHash);
-        continue;
-      }
-
       try {
         await postProcess(
           {
@@ -143,25 +129,6 @@ router.addHandler(Label.listing, async (context) => {
       } catch (error: any) {
         logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
-      }
-    }
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length > 0) {
-      let currentResult: ItemResult;
-
-      for (const id of nonExistingIds) {
-        currentResult = itemsWithCode[id];
-        // Enqueue the coupon URL for further processing with appropriate label and validator data
-        await postProcess(
-          {
-            SaveDataHandler: {
-              validator: currentResult.validator,
-            },
-          },
-          context
-        );
       }
     }
   } finally {

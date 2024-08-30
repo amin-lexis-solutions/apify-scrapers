@@ -6,9 +6,7 @@ import { DataValidator } from 'shared/data-validator';
 import {
   sleep,
   generateItemId,
-  checkItemsIds,
   ItemResult,
-  ItemHashMap,
   getMerchantDomainFromUrl,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
@@ -94,8 +92,7 @@ router.addHandler(Label.listing, async (context) => {
       log.warning('Domain is missing');
     }
     // Extract valid coupons
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
+    const itemsWithCode: ItemResult[] = [];
     let result: ItemResult;
 
     const items = $('div.promotion-list__promotions > div');
@@ -145,8 +142,7 @@ router.addHandler(Label.listing, async (context) => {
       result = processItem(itemData, $cheerioElement);
 
       if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = result;
-        idsToCheck.push(result.generatedHash);
+        itemsWithCode.push(result);
         continue;
       }
 
@@ -164,23 +160,16 @@ router.addHandler(Label.listing, async (context) => {
         return;
       }
     }
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
 
-    if (nonExistingIds.length == 0) return;
-
-    let currentResult: ItemResult;
-
-    for (const id of nonExistingIds) {
-      currentResult = itemsWithCode[id];
+    for (const item of itemsWithCode) {
       // Add the coupon URL to the request queue
       await crawler?.requestQueue?.addRequest(
         {
-          url: currentResult.itemUrl,
+          url: item.itemUrl,
           userData: {
             ...request.userData,
             label: Label.getCode,
-            validatorData: currentResult.validator.getData(),
+            validatorData: item.validator.getData(),
           },
           headers: CUSTOM_HEADERS,
         },

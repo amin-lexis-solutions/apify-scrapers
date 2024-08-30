@@ -6,9 +6,7 @@ import { DataValidator } from 'shared/data-validator';
 import {
   sleep,
   generateItemId,
-  checkItemsIds,
   ItemResult,
-  ItemHashMap,
   getMerchantDomainFromUrl,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
@@ -140,8 +138,6 @@ router.addHandler(Label.listing, async (context) => {
       log.warning('domain name is missing');
     }
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let result: ItemResult;
 
     for (const item of items) {
@@ -189,8 +185,19 @@ router.addHandler(Label.listing, async (context) => {
       result = processItem(itemData, $cheerio);
 
       if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = result;
-        idsToCheck.push(result.generatedHash);
+        if (!result.itemUrl) continue;
+        await crawler.requestQueue.addRequest(
+          {
+            url: result.itemUrl,
+            userData: {
+              ...request.userData,
+              label: Label.getCode,
+              validatorData: result.validator.getData(),
+            },
+            headers: CUSTOM_HEADERS_LOCAL,
+          },
+          { forefront: true }
+        );
         continue;
       }
 
@@ -207,30 +214,6 @@ router.addHandler(Label.listing, async (context) => {
         logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
-    }
-
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    let currentResult: ItemResult;
-
-    for (const id of nonExistingIds) {
-      currentResult = itemsWithCode[id];
-      // Add the coupon URL to the request queue
-      await crawler.requestQueue.addRequest(
-        {
-          url: currentResult.itemUrl,
-          userData: {
-            ...request.userData,
-            label: Label.getCode,
-            validatorData: currentResult.validator.getData(),
-          },
-          headers: CUSTOM_HEADERS_LOCAL,
-        },
-        { forefront: true }
-      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

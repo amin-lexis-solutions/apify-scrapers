@@ -2,12 +2,7 @@ import { createCheerioRouter, log } from 'crawlee';
 import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { DataValidator } from 'shared/data-validator';
-import {
-  generateItemId,
-  checkItemsIds,
-  ItemResult,
-  ItemHashMap,
-} from 'shared/helpers';
+import { generateItemId, ItemResult } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -79,8 +74,6 @@ router.addHandler(Label.listing, async (context) => {
     const merchantName = domain?.split('.')?.[0];
 
     // Initialize variables
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let result: ItemResult;
     // Loop through each coupon element and process it
     for (const item of items) {
@@ -113,14 +106,6 @@ router.addHandler(Label.listing, async (context) => {
 
       result = processItem(itemData, $cheerio);
 
-      // If coupon has no code, process and store its data
-      if (result.hasCode) {
-        // If coupon has a code, store it in a hashmap and add its ID for checking
-        itemsWithCode[result.generatedHash] = result;
-        idsToCheck.push(result.generatedHash);
-        continue;
-      }
-
       try {
         await postProcess(
           {
@@ -134,24 +119,6 @@ router.addHandler(Label.listing, async (context) => {
         logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
-    }
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-    // If non-existing coupons are found, process and store their data
-    if (nonExistingIds.length == 0) return;
-
-    let currentResult: ItemResult;
-    // Loop through each nonExistingIds and process it
-    for (const id of nonExistingIds) {
-      currentResult = itemsWithCode[id];
-      await postProcess(
-        {
-          SaveDataHandler: {
-            validator: currentResult.validator,
-          },
-        },
-        context
-      );
     }
   } finally {
     // Use finally to ensure the actor ends successfully

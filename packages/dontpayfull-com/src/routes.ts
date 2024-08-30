@@ -1,13 +1,7 @@
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import {
-  generateItemId,
-  ItemHashMap,
-  checkItemsIds,
-  ItemResult,
-  getMerchantDomainFromUrl,
-} from 'shared/helpers';
+import { generateItemId, getMerchantDomainFromUrl } from 'shared/helpers';
 import { createPuppeteerRouter, sleep } from 'crawlee';
 import { postProcess, preProcess } from 'shared/hooks';
 import { ElementHandle } from 'puppeteer';
@@ -50,17 +44,7 @@ router.addHandler(Label.listing, async (context) => {
 
     return { generatedHash, hasCode, itemUrl, validator };
   }
-  async function makeRequest(url, validator, request) {
-    await enqueueLinks({
-      urls: [url],
-      userData: {
-        ...request.userData,
-        label: Label.getCode,
-        validatorData: validator.getData(),
-      },
-      forefront: true,
-    });
-  }
+
   try {
     log.info(`Listing ${request.url}`);
 
@@ -103,8 +87,6 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Initialize variables
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let result: any;
     // Loop through each coupon element and process it
 
@@ -121,7 +103,7 @@ router.addHandler(Label.listing, async (context) => {
       const idInSite = await element.evaluate((node) =>
         node?.getAttribute('data-id')
       );
-      // // Throw an error if ID is not found
+
       if (!idInSite) {
         logger.error(`idInSite not found`);
         continue;
@@ -138,8 +120,16 @@ router.addHandler(Label.listing, async (context) => {
       result = await processCoupon(item, element);
 
       if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = result;
-        idsToCheck.push(result.generatedHash);
+        if (!result.itemUrl) continue;
+        await enqueueLinks({
+          urls: [result.itemUrl],
+          userData: {
+            ...request.userData,
+            label: Label.getCode,
+            validatorData: result.validator.getData(),
+          },
+          forefront: true,
+        });
         continue;
       }
 
@@ -156,21 +146,6 @@ router.addHandler(Label.listing, async (context) => {
         logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
-    }
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds?.length == 0) return;
-
-    let currentResult: ItemResult;
-
-    for (const id of nonExistingIds) {
-      currentResult = itemsWithCode[id];
-      await makeRequest(
-        currentResult.itemUrl,
-        currentResult.validator,
-        request
-      );
     }
   } catch {
     // We don't catch so that the error is logged in Sentry, but use finally

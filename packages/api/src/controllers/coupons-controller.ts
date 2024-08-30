@@ -24,9 +24,12 @@ import {
   CouponIdsRequestBody,
 } from '../utils/validators';
 import dayjs from 'dayjs';
+import { ItemService } from '@api/services/ItemsServices';
 
 @JsonController('/items')
 export class CouponsController {
+  private itemService: ItemService;
+
   @Get('/')
   @OpenAPI({
     summary: 'List items',
@@ -443,5 +446,43 @@ export class CouponsController {
       );
       return new StandardResponse('An error occurred  ', true);
     }
+  }
+  @Post('/archive')
+  @OpenAPI({
+    summary: 'Archive multiple records',
+    description:
+      'Archives a list of records by their IDs. Each record will be marked as archived with a timestamp and a manual reason.',
+  })
+  @Authorized()
+  @ResponseSchema(StandardResponse)
+  async archiveRecords(
+    @Body() requestBody: CouponMatchRequestBody
+  ): Promise<StandardResponse> {
+    const { ids } = requestBody;
+    if (!ids || ids.length == 0) {
+      throw new BadRequestError(
+        'The "ids" field is required and must contain at least one ID.'
+      );
+    }
+
+    const existingRecords = await this.itemService.getItemsByIds(ids);
+
+    if (!existingRecords) {
+      throw new BadRequestError('No records found for the provided IDs.');
+    }
+
+    const idsToArchive = existingRecords.map((data) => data.id);
+
+    const archiveResult = await this.itemService.updateMany(idsToArchive, {
+      archivedAt: new Date(),
+      archivedReason: 'manual',
+    });
+
+    const notArchivedCount = ids.length - archiveResult.count;
+
+    return new StandardResponse('Record archived successfully', false, {
+      archivedRecords: archiveResult,
+      notArchivedCount,
+    });
   }
 }

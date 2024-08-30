@@ -1,16 +1,11 @@
 import { createCheerioRouter } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
-import {
-  formatDateTime,
-  generateItemId,
-  ItemResult,
-  ItemHashMap,
-  checkItemsIds,
-} from 'shared/helpers';
+import { formatDateTime } from 'shared/helpers';
 import { logger } from 'shared/logger';
 
 import { preProcess, postProcess } from 'shared/hooks';
+import jp from 'jsonpath';
 
 // Export the router function that determines which handler to use based on the request label
 export const router = createCheerioRouter();
@@ -28,37 +23,60 @@ function processItem(item: any) {
   // Add optional values to the validator
   validator.addValue('domain', item.merchantDomain);
   validator.addValue('description', item.description);
-  validator.addValue('termsAndConditions', item.termsAndConditions);
-  validator.addValue('expiryDateAt', formatDateTime(item.endTime));
-  validator.addValue('startDateAt', formatDateTime(item.startTime));
-  validator.addValue('isExclusive', item.exclusiveVoucher);
-  validator.addValue('isExpired', item.isExpired);
+  validator.addValue('termsAndConditions', item.restrict);
+  validator.addValue('expiryDateAt', formatDateTime(item.expire_time));
+  validator.addValue('startDateAt', formatDateTime(item.start_time));
+  validator.addValue('isExclusive', null);
+  validator.addValue('isExpired', null);
   validator.addValue('isShown', true);
+  validator.addValue('code', item.code);
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
-  const itemUrl = `${item.sourceUrl}?promoid=${item.idInSite}`;
-
-  return { generatedHash, hasCode: item.hasCode, itemUrl, validator };
+  return { validator };
 }
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, enqueueLinks, log } = context;
+  const { request, $, log } = context;
   if (request.userData.label !== Label.listing) return;
 
   try {
-    const merchantName = $('.cpbotlogo img').attr('alt')?.split(' ')?.[0];
+    // Extract the page data from the __NUXT_DATA__ script content
+    const nuxtDataScript = $('script#__NUXT_DATA__').text() || '{}';
+    const nuxtData = JSON.parse(nuxtDataScript);
+
+    if (Array.isArray(nuxtData) && nuxtData.length === 0) {
+      logger.error('Page data not found');
+      return;
+    }
+    // reverse engineer the page data
+    const page_data = nuxtData.reduce((longest, item) => {
+      if (typeof item === 'string' && item.length > longest.length) {
+        try {
+          const decodedItem = JSON.parse(
+            Buffer.from(item, 'base64').toString()
+          );
+          return decodedItem;
+        } catch (error) {
+          return item;
+        }
+      }
+      return longest;
+    }, '');
+
+    // page data js object with merchant_coupons
+
+    if (!page_data || !page_data.merchant_coupons) {
+      logger.error(`Page data not found ${request.url}`);
+      return;
+    }
+
+    const merchantName = jp.query(page_data, '$.info.name')?.[0];
 
     if (!merchantName) {
       logger.error(`MerchantName not found ${request.url}`);
       return;
     }
 
-    const merchantDomain = request.url.split('/')?.pop()?.replace('-', '.');
+    const merchantDomain = jp.query(page_data, '$.info.domain')?.[0];
 
     merchantDomain
       ? log.info(
@@ -66,9 +84,7 @@ router.addHandler(Label.listing, async (context) => {
         )
       : log.warning('merchantDomain not found');
 
-    const currentItems = $('.item-wrapper');
-    const expiredItems = [];
-    const items = [...currentItems, ...expiredItems];
+    const items = jp.query(page_data, '$.merchant_coupons[*]') || [];
 
     try {
       await preProcess(
@@ -88,115 +104,32 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
-
     for (const item of items) {
-      const title = $(item).find('.coupon-title')?.text()?.trim();
-
-      if (!title) {
-        logger.error('Coupon title not found in item');
-        continue;
-      }
-
-      const idInSite = $(item).attr('data-id');
-
-      if (!idInSite) {
-        logger.error('idInSite not found in item');
-        continue;
-      }
-
-      const hasCode = $(item).find('.get-code')?.hasClass('get-code');
-
       const itemData = {
-        idInSite,
-        title,
-        merchantDomain,
+        ...item,
+        idInSite: item.id.toString(),
+        merchantDomain: item.domain,
         merchantName,
-        hasCode,
         sourceUrl: request.url,
       };
 
-      const result: ItemResult = processItem(itemData);
+      const { validator } = processItem(itemData);
 
-      if (!result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator,
             },
-            context
-          );
-        } catch (error) {
-          log.error(`Postprocess Error: ${error}`);
-        }
-        continue;
+          },
+          context
+        );
+      } catch (error) {
+        log.error(`Postprocess Error: ${error}`);
       }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
     }
 
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    for (const id of nonExistingIds) {
-      const result: ItemResult = itemsWithCode[id];
-
-      if (!result.itemUrl) continue;
-
-      await enqueueLinks({
-        urls: [result.itemUrl],
-        userData: {
-          ...request.userData,
-          label: Label.getCode,
-          validatorData: result.validator.getData(),
-        },
-      });
-    }
-  } finally {
-    // We don't catch so that the error is logged in Sentry, but use finally
-    // since we want the Apify actor to end successfully and not waste resources by retrying.
-  }
-});
-
-router.addHandler(Label.getCode, async (context) => {
-  // Destructure objects from the context
-  const { request, $, log } = context;
-
-  try {
-    log.info(`GetCode ${request.url}`);
-    // Extract validator data from request's user data
-    const validatorData = request.userData.validatorData;
-    // Create a new DataValidator instance
-    const validator = new DataValidator();
-    // Load validator data
-    validator.loadData(validatorData);
-
-    // Get the code value from the JSON response
-    const code = $('.code-box .code-text').text();
-
-    if (!code) {
-      log.warning('No code found');
-    }
-
-    // Add the code value to the validator
-    validator.addValue('code', code);
-
-    try {
-      await postProcess(
-        {
-          SaveDataHandler: { validator },
-        },
-        context
-      );
-    } catch (error) {
-      log.error(`Postprocess Error: ${error}`);
-      return;
-    }
+    log.info(`Processed ${items.length} items from ${request.url}`);
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

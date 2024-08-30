@@ -1,13 +1,7 @@
 import { createCheerioRouter } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
-import {
-  formatDateTime,
-  generateItemId,
-  ItemResult,
-  ItemHashMap,
-  checkItemsIds,
-} from 'shared/helpers';
+import { formatDateTime, generateItemId, ItemResult } from 'shared/helpers';
 import { logger } from 'shared/logger';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -93,9 +87,6 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
-
     for (const item of items) {
       const title = $(item).find('div')?.first()?.attr('title');
 
@@ -129,41 +120,18 @@ router.addHandler(Label.listing, async (context) => {
 
       const result: ItemResult = processItem(itemData);
 
-      if (!result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
             },
-            context
-          );
-        } catch (error) {
-          log.error(`Postprocess Error: ${error}`);
-        }
-        continue;
-      }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
-    }
-
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    for (const id of nonExistingIds) {
-      const result: ItemResult = itemsWithCode[id];
-
-      await postProcess(
-        {
-          SaveDataHandler: {
-            validator: result.validator,
           },
-        },
-        context
-      );
+          context
+        );
+      } catch (error) {
+        log.error(`Postprocess Error: ${error}`);
+      }
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

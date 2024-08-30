@@ -2,12 +2,7 @@ import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import {
-  checkItemsIds,
-  ItemHashMap,
-  ItemResult,
-  generateHash,
-} from 'shared/helpers';
+import { ItemResult, generateHash } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -86,8 +81,6 @@ router.addHandler(Label.listing, async (context) => {
     merchantName = merchantName?.trim()?.toLowerCase();
 
     // Extract valid coupons
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let result: ItemResult;
 
     for (const element of items) {
@@ -132,12 +125,6 @@ router.addHandler(Label.listing, async (context) => {
 
       result = await processItem(item, $cheerio);
 
-      if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = result;
-        idsToCheck.push(result.generatedHash);
-        continue;
-      }
-
       try {
         await postProcess(
           {
@@ -151,25 +138,6 @@ router.addHandler(Label.listing, async (context) => {
         logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
-    }
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    let currentResult: ItemResult;
-
-    for (const id of nonExistingIds) {
-      currentResult = itemsWithCode[id];
-      // Process and store the data
-      await postProcess(
-        {
-          SaveDataHandler: {
-            validator: currentResult.validator,
-          },
-        },
-        context
-      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

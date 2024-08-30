@@ -4,8 +4,6 @@ import { createCheerioRouter, log } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
 import {
-  checkItemsIds,
-  ItemHashMap,
   ItemResult,
   generateHash,
   getMerchantDomainFromUrl,
@@ -109,8 +107,6 @@ router.addHandler(Label.listing, async (context) => {
       log.warning('merchantDomain name is missing');
     }
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let result: ItemResult;
 
     for (const item of items) {
@@ -147,12 +143,6 @@ router.addHandler(Label.listing, async (context) => {
 
       result = await processItem(itemData, $cheerioElement);
 
-      if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = result;
-        idsToCheck.push(result.generatedHash);
-        continue;
-      }
-
       try {
         await postProcess(
           {
@@ -166,23 +156,6 @@ router.addHandler(Label.listing, async (context) => {
         logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
-    }
-
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    let currentResult: ItemResult;
-    for (const id of nonExistingIds) {
-      currentResult = itemsWithCode[id];
-      await postProcess(
-        {
-          SaveDataHandler: {
-            validator: currentResult.validator,
-          },
-        },
-        context
-      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

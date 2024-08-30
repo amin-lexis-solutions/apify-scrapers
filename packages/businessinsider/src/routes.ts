@@ -6,8 +6,6 @@ import {
   generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
-  ItemHashMap,
-  checkItemsIds,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -99,8 +97,6 @@ router.addHandler(Label.listing, async (context) => {
 
     log.info(`Merchant Name: ${merchantName} - Domain: ${domain}`);
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     for (const item of items) {
       const result: ItemResult = processItem(
         merchantName,
@@ -126,16 +122,6 @@ router.addHandler(Label.listing, async (context) => {
         }
         continue;
       }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
-    }
-
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    for (const id of nonExistingIds) {
-      const result: ItemResult = itemsWithCode[id];
 
       if (!result.itemUrl) continue;
 

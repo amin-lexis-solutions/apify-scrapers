@@ -1,13 +1,7 @@
 import { createPuppeteerRouter, sleep } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
-import {
-  generateItemId,
-  getMerchantDomainFromUrl,
-  checkItemsIds,
-  ItemResult,
-  ItemHashMap,
-} from 'shared/helpers';
+import { generateItemId, getMerchantDomainFromUrl } from 'shared/helpers';
 import { preProcess, postProcess } from 'shared/hooks';
 
 // Export the router function that determines which handler to use based on the request label
@@ -126,8 +120,6 @@ router.addHandler(Label.listing, async (context) => {
     log.info(`Processing ${merchantName} coupons`);
 
     // Initialize variables
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let processedData: any = {};
 
     // Loop through each coupon element and process it
@@ -138,12 +130,6 @@ router.addHandler(Label.listing, async (context) => {
         item,
         request.url
       );
-      // If coupon has no code, process and store its data
-      if (processedData.hasCode) {
-        itemsWithCode[processedData.generatedHash] = processedData;
-        idsToCheck.push(processedData.generatedHash);
-        continue;
-      }
 
       try {
         await postProcess(
@@ -158,24 +144,6 @@ router.addHandler(Label.listing, async (context) => {
         log.warning(`Post-Processing Error : ${error.message}`);
         return;
       }
-    }
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-    // If non-existing coupons are found, process and store their data
-    if (nonExistingIds.length == 0) return;
-
-    let currentResult: ItemResult;
-    // Loop through each nonExistingIds and process it
-    for (const id of nonExistingIds) {
-      currentResult = itemsWithCode[id];
-      await postProcess(
-        {
-          SaveDataHandler: {
-            validator: currentResult.validator,
-          },
-        },
-        context
-      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
