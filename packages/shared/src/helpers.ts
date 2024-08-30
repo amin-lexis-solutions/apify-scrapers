@@ -36,31 +36,6 @@ export async function fetchSentryUrl() {
   }
 }
 
-export async function checkItemsIds(ids: any[]): Promise<any[]> {
-  try {
-    // Send a POST request to the API to check if the coupon IDs exist
-    const response = await axios.post(
-      `${process.env.BASE_URL}items/match-ids`,
-      { ids: ids }
-    );
-
-    // response.data contains the array of indices of coupons that exist
-    const existingIdsIndices = response.data;
-
-    // Convert indices back to IDs
-    const existingIds = existingIdsIndices.map((index: any) => ids[index]);
-
-    // Filter the original IDs array to get only the non-existing IDs
-    const nonExistingIds = ids.filter((id: any) => !existingIds.includes(id));
-    console.log('Non-existing IDs count:', nonExistingIds.length);
-
-    return nonExistingIds as any[];
-  } catch (error) {
-    // console.log('Failed to check coupon IDs:', error);
-    return [] as any[];
-  }
-}
-
 export function generateItemId(
   merchantName?: string | null,
   idInSite?: string | null,

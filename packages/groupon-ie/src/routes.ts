@@ -7,8 +7,6 @@ import {
   generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
-  ItemHashMap,
-  checkItemsIds,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -91,9 +89,6 @@ router.addHandler(Label.listing, async (context) => {
         )
       : log.warning('merchantDomain not found');
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
-
     for (const selector of items) {
       // extract title, idInSite, and hasCode from the item cheerio object
       const title = $(selector)?.find('.coupon-tile-title')?.text()?.trim();
@@ -127,41 +122,31 @@ router.addHandler(Label.listing, async (context) => {
         request.url
       );
 
-      if (!result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
-            },
-            context
-          );
-        } catch (error) {
-          log.error(`Postprocess Error: ${error}`);
-        }
+      if (result.hasCode) {
+        if (!result.itemUrl) continue;
+        await enqueueLinks({
+          urls: [result.itemUrl],
+          userData: {
+            ...request.userData,
+            label: Label.getCode,
+            validatorData: result.validator.getData(),
+          },
+        });
         continue;
       }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
-    }
 
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    for (const id of nonExistingIds) {
-      const result: ItemResult = itemsWithCode[id];
-      if (!result.itemUrl) continue;
-      await enqueueLinks({
-        urls: [result.itemUrl],
-        userData: {
-          ...request.userData,
-          label: Label.getCode,
-          validatorData: result.validator.getData(),
-        },
-      });
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error) {
+        log.error(`Postprocess Error: ${error}`);
+      }
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

@@ -7,8 +7,6 @@ import {
   generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
-  ItemHashMap,
-  checkItemsIds,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -102,10 +100,9 @@ router.addHandler(Label.listing, async (context) => {
 
     merchantDomain
       ? log.info(`Merchant Name: ${merchantName} - Domain: ${merchantDomain}`)
-      : log.warning('merchantDomain not found');
+      : log.warning(`Merchant Domain not found for ${request.url}`);
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
+    const itemsWithCode: ItemResult[] = [];
 
     for (const item of items) {
       const title = await page.evaluate((node) => {
@@ -181,28 +178,19 @@ router.addHandler(Label.listing, async (context) => {
         }
         continue;
       }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
+      itemsWithCode.push(result);
     }
 
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    for (const id of nonExistingIds) {
+    for (const item of itemsWithCode) {
       await sleep(100);
-
-      const result: ItemResult = itemsWithCode[id];
-
-      if (!result.itemUrl) continue;
+      if (!item.itemUrl) continue;
 
       await enqueueLinks({
-        urls: [result.itemUrl],
+        urls: [item.itemUrl],
         userData: {
           ...request.userData,
           label: Label.getCode,
-          validatorData: result.validator.getData(),
+          validatorData: item.validator.getData(),
         },
       });
     }

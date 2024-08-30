@@ -2,13 +2,7 @@ import { createCheerioRouter } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import {
-  formatDateTime,
-  generateItemId,
-  ItemResult,
-  ItemHashMap,
-  checkItemsIds,
-} from 'shared/helpers';
+import { formatDateTime, generateItemId, ItemResult } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
 
@@ -95,10 +89,8 @@ router.addHandler(Label.listing, async (context) => {
       ? log.info(`Merchant Name: ${merchantName} - Domain: ${merchantDomain}`)
       : log.warning('merchantDomain not found');
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
-
     for (const item of items) {
+      // TDOO :INVESTIGATE why title is not found too often
       if (!item.title) {
         log.warning('title not found in item');
         continue;
@@ -110,40 +102,18 @@ router.addHandler(Label.listing, async (context) => {
         request.url
       );
 
-      if (!result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
             },
-            context
-          );
-        } catch (error) {
-          log.error(`Postprocess Error: ${error}`);
-        }
-        continue;
-      }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
-    }
-
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length <= 0) return;
-
-    for (const id of nonExistingIds) {
-      const result: ItemResult = itemsWithCode[id];
-      await postProcess(
-        {
-          SaveDataHandler: {
-            validator: result.validator,
           },
-        },
-        context
-      );
+          context
+        );
+      } catch (error) {
+        log.error(`Postprocess Error: ${error}`);
+      }
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

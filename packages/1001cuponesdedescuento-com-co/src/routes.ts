@@ -7,8 +7,6 @@ import {
   generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
-  ItemHashMap,
-  checkItemsIds,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -82,15 +80,18 @@ router.addHandler(Label.listing, async (context) => {
       ? log.info(`merchantDomain: ${merchantDomain}`)
       : log.warning('merchantDomain not found');
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
+    let merchantName: string | null = null;
+    const scriptContent = $('script[type="application/ld+json"]')
+      .first()
+      .html();
+    if (scriptContent) {
+      const jsonData = JSON.parse(scriptContent) || {};
+      merchantName = jsonData?.itemListElement?.slice(-1)[0]?.item.name;
+    }
 
     for (const item of items) {
-      const merchantName = $(item)
-        .find('.__logo .__logo-shop')
-        .text()
-        .split('descuento')[1]
-        ?.trim();
+      merchantName =
+        merchantName ?? $(item).find('.__logo-img img').attr('alt') ?? null;
 
       if (!merchantName) {
         logger.error(`MerchantName not found ${request.url}`);
@@ -99,7 +100,9 @@ router.addHandler(Label.listing, async (context) => {
 
       merchantDomain = merchantName.includes('.') ? merchantName : null;
 
-      const title = $(item).find('.__desc-title h3').text();
+      const title =
+        $(item).find('.__desc-title h3 a').text() ||
+        $(item).find('.__desc-title h3').text();
 
       if (!title) {
         logger.error('Coupon title not found in item');
@@ -132,40 +135,18 @@ router.addHandler(Label.listing, async (context) => {
 
       const result: ItemResult = processItem(itemData);
 
-      if (!result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
             },
-            context
-          );
-        } catch (error) {
-          log.error(`Postprocess Error: ${error}`);
-        }
-        continue;
-      }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
-    }
-
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    for (const id of nonExistingIds) {
-      const result: ItemResult = itemsWithCode[id];
-      await postProcess(
-        {
-          SaveDataHandler: {
-            validator: result.validator,
           },
-        },
-        context
-      );
+          context
+        );
+      } catch (error) {
+        log.error(`Postprocess Error: ${request.url}`, error as any);
+      }
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

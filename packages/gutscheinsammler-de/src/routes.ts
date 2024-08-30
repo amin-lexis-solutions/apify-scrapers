@@ -5,9 +5,7 @@ import { DataValidator } from 'shared/data-validator';
 import {
   sleep,
   generateItemId,
-  checkItemsIds,
   ItemResult,
-  ItemHashMap,
   getMerchantDomainFromUrl,
 } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
@@ -118,8 +116,6 @@ router.addHandler(Label.listing, async (context) => {
       log.warning(`merchantDomain not found ${request.url}`);
     }
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let result: ItemResult;
 
     for (const element of items) {
@@ -133,10 +129,7 @@ router.addHandler(Label.listing, async (context) => {
       }
 
       // Extract the voucher title
-      const title = $cheerio('button[class*="VouchersListItem_titleButton"]')
-        ?.first()
-        ?.text()
-        ?.trim();
+      const title = $(element).find('h3')?.first()?.text()?.trim();
 
       if (!title) {
         logger.error('title not foun in item');
@@ -154,8 +147,20 @@ router.addHandler(Label.listing, async (context) => {
       result = processItem(item, $cheerio);
 
       if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = result;
-        idsToCheck.push(result.generatedHash);
+        if (!result.itemUrl) continue;
+        // Add the coupon URL to the request queue
+        await crawler?.requestQueue?.addRequest(
+          {
+            url: result.itemUrl,
+            userData: {
+              ...request.userData,
+              label: Label.getCode,
+              validatorData: result.validator.getData(),
+            },
+            headers: CUSTOM_HEADERS_LOCAL,
+          },
+          { forefront: true }
+        );
         continue;
       }
 
@@ -172,30 +177,6 @@ router.addHandler(Label.listing, async (context) => {
         logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
       }
-    }
-
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length == 0) return;
-
-    let currentResult: ItemResult;
-
-    for (const id of nonExistingIds) {
-      currentResult = itemsWithCode[id];
-      // Add the coupon URL to the request queue
-      await crawler?.requestQueue?.addRequest(
-        {
-          url: currentResult.itemUrl,
-          userData: {
-            ...request.userData,
-            label: Label.getCode,
-            validatorData: currentResult.validator.getData(),
-          },
-          headers: CUSTOM_HEADERS_LOCAL,
-        },
-        { forefront: true }
-      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

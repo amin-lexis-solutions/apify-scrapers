@@ -7,12 +7,10 @@ import {
   generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
-  ItemHashMap,
-  checkItemsIds,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
-
+//TODO: Actor To Investigate later
 // Export the router function that determines which handler to use based on the request label
 export const router = createPuppeteerRouter();
 
@@ -90,9 +88,6 @@ router.addHandler(Label.listing, async (context) => {
       ? log.info(`Merchant Name: ${merchantName} - Domain: ${merchantDomain}`)
       : log.warning('merchantDomain not found');
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
-
     for (const itemHandle of items) {
       const title = await itemHandle.evaluate((node) => {
         return node.querySelector('p.title-wrap')?.textContent;
@@ -146,40 +141,18 @@ router.addHandler(Label.listing, async (context) => {
       };
       const result: ItemResult = processItem(itemData);
 
-      if (!result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
             },
-            context
-          );
-        } catch (error) {
-          log.error(`Postprocess Error: ${error}`);
-        }
-        continue;
-      }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
-    }
-
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length <= 0) return;
-
-    for (const id of nonExistingIds) {
-      const result: ItemResult = itemsWithCode[id];
-      await postProcess(
-        {
-          SaveDataHandler: {
-            validator: result.validator,
           },
-        },
-        context
-      );
+          context
+        );
+      } catch (error) {
+        log.error(`Postprocess Error: ${error}`);
+      }
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally

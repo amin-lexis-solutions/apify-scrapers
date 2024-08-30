@@ -3,12 +3,7 @@ import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import {
-  sleep,
-  generateItemId,
-  checkItemsIds,
-  ItemResult,
-} from 'shared/helpers';
+import { sleep, generateItemId, ItemResult } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -16,18 +11,6 @@ const CUSTOM_HEADERS_LOCAL = {
   ...CUSTOM_HEADERS,
   Origin: 'https://www.picodi.com',
 };
-
-function requestForCouponWithCode(item: ItemResult, request: any) {
-  return {
-    url: item.itemUrl,
-    userData: {
-      ...request.userData,
-      label: Label.getCode,
-      validatorData: item.validator.getData(),
-    },
-    headers: CUSTOM_HEADERS_LOCAL,
-  };
-}
 
 function extractCountryCode(url: string): string {
   // Use the URL constructor to parse the given URL
@@ -139,8 +122,6 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const itemsWithCode: any = {};
-    const idsToCheck: string[] = [];
     let result: ItemResult;
 
     for (const item of items) {
@@ -171,12 +152,18 @@ router.addHandler(Label.listing, async (context) => {
       result = processItem(itemData, $cheerio);
 
       if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = requestForCouponWithCode(
-          result,
-          request
-        );
-        itemsWithCode[result.generatedHash].userData.sourceUrl = request.url;
-        idsToCheck.push(result.generatedHash);
+        if (!result.itemUrl) continue;
+
+        await crawler.requestQueue.addRequest({
+          url: result.itemUrl,
+          userData: {
+            ...request.userData,
+            label: Label.getCode,
+            validatorData: result.validator.getData(),
+          },
+          headers: CUSTOM_HEADERS_LOCAL,
+        });
+
         continue;
       }
 
@@ -192,41 +179,6 @@ router.addHandler(Label.listing, async (context) => {
       } catch (error: any) {
         logger.error(`Post-Processing Error : ${error.message}`, error);
         return;
-      }
-    }
-
-    // merge the new requests with the existing ones
-    const mergedRequests = {
-      ...itemsWithCode,
-    };
-
-    const queue = crawler.requestQueue;
-
-    log.debug(`Handled requests count: ${queue.handledCount()}`);
-
-    // Queue the requests for the coupons with codes
-    log.debug(`Queuing ${Object.keys(mergedRequests).length} requests`);
-
-    // // Check if the queue is finished
-    const isQueueFinished = await queue.fetchNextRequest();
-
-    if (isQueueFinished === null) {
-      log.debug('Queue is finished');
-      // mergedRequests keys as an array of strings
-      const keys = Object.keys(mergedRequests);
-      const nonExistingIds = await checkItemsIds(keys);
-      log.debug(`Non-existing IDs count: ${nonExistingIds.length}`);
-
-      // Filter out the non-existing IDs from the merged requests
-      if (nonExistingIds.length > 0) {
-        let currentResult: any;
-        for (const id of nonExistingIds) {
-          currentResult = mergedRequests[id];
-          // Add the coupon URL to the request queue
-          await crawler.requestQueue.addRequest(currentResult, {
-            forefront: true,
-          });
-        }
       }
     }
   } finally {

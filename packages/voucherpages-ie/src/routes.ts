@@ -6,7 +6,6 @@ import {
   formatDateTime,
   generateItemId,
   ItemResult,
-  checkItemsIds,
   getMerchantDomainFromUrl,
 } from 'shared/helpers';
 
@@ -155,10 +154,6 @@ router.addHandler(Label.details, async (context) => {
       item,
       request.url
     );
-
-    const nonExistingId = await checkItemsIds([result.generatedHash]);
-
-    if (nonExistingId.length == 0) return;
 
     try {
       await postProcess(

@@ -2,12 +2,7 @@ import { createCheerioRouter } from 'crawlee';
 import { logger } from 'shared/logger';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
-import {
-  ItemHashMap,
-  ItemResult,
-  checkItemsIds,
-  generateItemId,
-} from 'shared/helpers';
+import { generateItemId } from 'shared/helpers';
 import { postProcess, preProcess } from 'shared/hooks';
 
 export const router = createCheerioRouter();
@@ -17,7 +12,7 @@ router.addHandler(Label.listing, async (context) => {
 
   if (request.userData.label !== Label.listing) return;
 
-  const processItem = async (item) => {
+  const processItem = async (item: any) => {
     // Create a new DataValidator instance
     const validator = new DataValidator();
 
@@ -47,6 +42,12 @@ router.addHandler(Label.listing, async (context) => {
   try {
     log.info(`Listing ${request.url}`);
 
+    // Retry if the page has a captcha
+    if ($('div.g-recaptcha').length) {
+      logger.warning(`Recaptcha found in sourceUrl ${request.url}`);
+      throw new Error(`Recaptcha found in sourceUrl ${request.url}`);
+    }
+
     const merchantName = $('#merchant-rating img').attr('alt')?.toLowerCase();
 
     if (!merchantName) {
@@ -54,7 +55,8 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const items = $('#deals div')?.toArray();
+    // deals div has attribute data-deal-offer
+    const items = $('div[data-deal-offer]');
 
     try {
       // Preprocess the data
@@ -62,7 +64,7 @@ router.addHandler(Label.listing, async (context) => {
         {
           AnomalyCheckHandler: {
             url: request.url,
-            items,
+            items: items?.toArray(),
           },
         },
         context
@@ -73,15 +75,13 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     // Initialize variables
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let processedData: any = {};
 
     for (const item of items) {
       const title = $(item).find('.h3')?.text();
 
       if (!title) {
-        logger.error('title not found in item');
+        logger.error(`Title not found in item ${request.url}`);
         continue;
       }
 
@@ -108,12 +108,6 @@ router.addHandler(Label.listing, async (context) => {
         sourceUrl: request.url,
       });
 
-      if (processedData.hasCode) {
-        itemsWithCode[processedData.generatedHash] = processedData;
-        idsToCheck.push(processedData.generatedHash);
-        continue;
-      }
-
       try {
         await postProcess(
           {
@@ -127,24 +121,6 @@ router.addHandler(Label.listing, async (context) => {
         log.warning(`Post-Processing Error : ${error.message}`);
         return;
       }
-    }
-    // Call the API to check if the coupon exists
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-    // If non-existing coupons are found, process and store their data
-    if (nonExistingIds.length == 0) return;
-
-    let currentResult: ItemResult;
-    // Loop through each nonExistingIds and process it
-    for (const id of nonExistingIds) {
-      currentResult = itemsWithCode[id];
-      await postProcess(
-        {
-          SaveDataHandler: {
-            validator: currentResult.validator,
-          },
-        },
-        context
-      );
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
