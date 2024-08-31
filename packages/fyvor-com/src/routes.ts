@@ -162,6 +162,7 @@ router.addHandler(Label.listing, async (context) => {
           {
             url: result.itemUrl,
             userData: {
+              ...request.userData,
               label: Label.getCode,
               validatorData: result.validator.getData(),
             },
