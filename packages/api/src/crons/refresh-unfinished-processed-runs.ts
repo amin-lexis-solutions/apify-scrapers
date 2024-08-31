@@ -10,6 +10,7 @@ dotenv.config();
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
+  enabled: process.env.SENTRY_LOGGING === 'true',
   tracesSampleRate: 1.0,
 });
 
