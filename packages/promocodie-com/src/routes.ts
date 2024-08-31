@@ -1,17 +1,13 @@
-import { createPuppeteerRouter } from 'crawlee';
+import { createCheerioRouter } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
-import {
-  formatDateTime,
-  generateItemId,
-  getMerchantDomainFromUrl,
-  ItemResult,
-} from 'shared/helpers';
+import { formatDateTime } from 'shared/helpers';
 import { preProcess, postProcess } from 'shared/hooks';
 import { logger } from 'shared/logger';
+import jp from 'jsonpath';
 
 // Export the router function that determines which handler to use based on the request label
-export const router = createPuppeteerRouter();
+export const router = createCheerioRouter();
 
 function processItem(item: any) {
   // Create a new DataValidator instance
@@ -26,47 +22,77 @@ function processItem(item: any) {
   // Add optional values to the validator
   validator.addValue('domain', item.merchantDomain);
   validator.addValue('description', item.description);
-  validator.addValue('termsAndConditions', item.termsAndConditions);
-  validator.addValue('expiryDateAt', formatDateTime(item.expiryDateAt));
-  validator.addValue('startDateAt', formatDateTime(item.startTime));
-  validator.addValue('isExclusive', item.isExclusive);
-  validator.addValue('isExpired', item.isExpired);
+  validator.addValue('termsAndConditions', item.restrict);
+  validator.addValue('expiryDateAt', formatDateTime(item.expire_time));
+  validator.addValue('startDateAt', formatDateTime(item.start_time));
+  validator.addValue('isExclusive', item?.isExclusive);
+  validator.addValue('isExpired', item?.isExpired);
   validator.addValue('isShown', true);
   validator.addValue('code', item.code);
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
-  return { generatedHash, hasCode: item.hasCode, itemUrl: '', validator };
+  return { validator };
 }
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, page, log } = context;
+  const { request, $, log } = context;
   if (request.userData.label !== Label.listing) return;
 
   try {
-    const merchantName = await page.evaluate(
-      () =>
-        document.querySelector('.logo-wrapper img')?.getAttribute('alt') ||
-        document.querySelector('.logo-wrapper')?.textContent
-    );
+    log.info(`Start processing ${request.url}`);
+
+    // Find the script tag that contains the window.__NUXT__ object
+    const scriptContent = $('script')
+      .filter((i, el) => {
+        const htmlContent = $(el).html()?.trim();
+        return (
+          !!htmlContent && htmlContent.startsWith('window.__NUXT__=(function')
+        );
+      })
+      .html();
+
+    let pageDataJson: any = null;
+
+    if (scriptContent) {
+      // Extract the JSON part of the script content
+      const pageDataMatch = scriptContent.match(/pageData:"([^"]+)"/);
+
+      if (pageDataMatch && pageDataMatch[1]) {
+        const encodedPageData = pageDataMatch[1];
+
+        try {
+          // Decode the Base64 encoded pageDataß
+          pageDataJson = JSON.parse(
+            Buffer.from(encodedPageData, 'base64').toString('utf-8')
+          );
+        } catch (error) {
+          logger.error('Failed to decode pageData:', error);
+          return;
+        }
+      } else {
+        logger.error('pageData not found in the script');
+        return;
+      }
+    } else {
+      logger.error('Nuxt data not found');
+      return;
+    }
+
+    const merchantName = jp.query(pageDataJson, '$.info.merchant_name')[0];
 
     if (!merchantName) {
       logger.error(`Merchant name not found ${request.url}`);
       return;
     }
 
-    const merchantDomain = getMerchantDomainFromUrl(request.url);
+    const merchantDomain = jp.query(pageDataJson, '$.info.domain')[0];
 
     merchantDomain
       ? log.info(`Merchant Name: ${merchantName} - Domain: ${merchantDomain}`)
       : log.warning('merchantDomain not found');
 
-    const currentItems = [...(await page.$$('.item'))];
-    const expiredItems = [];
+    const currentItems =
+      jp.query(pageDataJson, '$.merchant_coupons')?.[0] || [];
+    const expiredItems = jp.query(pageDataJson, '$.expired_coupons')?.[0] || [];
     const items = [...currentItems, ...expiredItems];
 
     try {
@@ -88,62 +114,21 @@ router.addHandler(Label.listing, async (context) => {
     }
 
     for (const item of items) {
-      const title = await page.evaluate(() => {
-        return document.querySelector('.merchat-coupon-title')?.textContent;
-      }, item);
-
-      if (!title) {
-        logger.error('Coupon title not found in item');
-        continue;
-      }
-      const idInSite = await page.evaluate((node) => {
-        return node?.getAttribute('id')?.replace('c-', '');
-      }, item);
-
-      if (!idInSite) {
-        logger.error('idInSite not found in item');
-        continue;
-      }
-
-      const code = await page.evaluate(
-        (node) => node?.querySelector('.text-code')?.textContent,
-        item
-      );
-
-      const expiryDateAt = await page.evaluate((node) => {
-        const match = node
-          .querySelector('.date')
-          ?.textContent?.match(/\b(\d{2})-(\d{2})-(\d{2})\b/);
-
-        const day = match?.[1];
-        const month = match?.[2];
-        const year = match?.[3];
-
-        return `20${year}-${month}-${day}`;
-      }, item);
-
-      const hasCode = !!code;
-
       const itemData = {
-        title,
-        idInSite,
-        merchantDomain: merchantDomain.includes(merchantName)
-          ? merchantDomain
-          : null,
-        code,
-        expiryDateAt,
-        hasCode,
+        ...item,
+        idInSite: item.id || item.upk,
+        merchantDomain,
         merchantName,
         sourceUrl: request.url,
       };
 
-      const result: ItemResult = processItem(itemData);
+      const { validator } = processItem(itemData);
 
       try {
         await postProcess(
           {
             SaveDataHandler: {
-              validator: result.validator,
+              validator: validator,
             },
           },
           context
