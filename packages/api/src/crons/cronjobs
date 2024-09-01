@@ -17,4 +17,4 @@
 0 0,6,12,18 * * * /usr/local/bin/node /app/packages/api/dist/api/scripts/sync-merchants-data.js > /tmp/cron_sync.log 2>&1
 
 # Schedule failed retry 15 minutes
-*/15 * * * *  /usr/local/bin/node /app/packages/api/dist/api/src/crons/refresh-unfinished-processed-runs.js  > /tmp/refresh_unfinished.log 2>&1
+# */15 * * * *  /usr/local/bin/node /app/packages/api/dist/api/src/crons/refresh-unfinished-processed-runs.js  > /tmp/refresh_unfinished.log 2>&1
