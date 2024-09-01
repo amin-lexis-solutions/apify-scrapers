@@ -63,6 +63,9 @@ model Coupon {
   @@index([isShown])
   @@index([domain])
   @@index([code])
+  @@index([shouldBeFake])
+  @@index([isExclusive])
+
 }
 
 // A source of coupons, handled by an Apify actor
