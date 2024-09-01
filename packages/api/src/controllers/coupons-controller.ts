@@ -26,7 +26,7 @@ import {
 import dayjs from 'dayjs';
 import { ItemService } from '@api/services/ItemsServices';
 
-@JsonController('/items')
+@JsonController('/itemss')
 export class CouponsController {
   private itemService: ItemService;
 
