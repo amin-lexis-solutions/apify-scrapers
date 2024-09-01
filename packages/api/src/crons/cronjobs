@@ -2,19 +2,19 @@
 * * * * * echo "Cron is working at $(date)" >> /tmp/cron_debug.log 2>&1
 
 # Schedule actors every 5 minutes
-# */5 6,7,8,9 * * *  /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-actors.js  > /tmp/cron_actors.log 2>&1
+*/5 6,7,8,9 * * *  /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-actors.js  > /tmp/cron_actors.log 2>&1
 
 # Schedule SERP finding every 10 minutes from midnight to 8 AM on the first day of the month
-# */10 0-8 1 * * /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-find-serp.js > /tmp/cron_serp.log 2>&1
+*/10 0-8 2 * * /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-find-serp.js > /tmp/cron_serp.log 2>&1
 
 # Run tests every Monday
 # */10 * * * 1 /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-tests.js > /tmp/cron_tests.log 2>&1
 
 # Cleanup old data daily at 4:30 AM
-# 30 4 * * * /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-coupons-cleanup.js > /tmp/cron_cleanup.log 2>&1
+30 4 * * * /usr/local/bin/node /app/packages/api/dist/api/src/crons/schedule-coupons-cleanup.js > /tmp/cron_cleanup.log 2>&1
 
 # Sync Merchant data every 6 hours
-# 0 0,6,12,18 * * * /usr/local/bin/node /app/packages/api/dist/api/scripts/sync-merchants-data.js > /tmp/cron_sync.log 2>&1
+0 0,6,12,18 * * * /usr/local/bin/node /app/packages/api/dist/api/scripts/sync-merchants-data.js > /tmp/cron_sync.log 2>&1
 
 # Schedule failed retry 15 minutes
 # */15 * * * *  /usr/local/bin/node /app/packages/api/dist/api/src/crons/refresh-unfinished-processed-runs.js  > /tmp/refresh_unfinished.log 2>&1
