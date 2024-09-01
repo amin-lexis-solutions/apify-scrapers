@@ -18,7 +18,7 @@ import { getMetadataArgsStorage } from 'routing-controllers';
 import { routingControllersToSpec } from 'routing-controllers-openapi';
 import swaggerUi from 'swagger-ui-express';
 
-// import { CouponsController } from './controllers/coupons-controller';
+import { CouponsController } from './controllers/coupons-controller';
 import { ExportsController } from './controllers/exports-controller';
 import { TargetsController } from './controllers/targets-controller';
 import { WebhooksController } from './controllers/webhooks-controller';
@@ -59,7 +59,7 @@ app.use(json({ limit: '5mb' }));
 const routingControllersOptions: RoutingControllersOptions = {
   controllers: [
     WebhooksController,
-    // CouponsController,
+    CouponsController,
     TargetsController,
     SentryController,
     ExportsController,
