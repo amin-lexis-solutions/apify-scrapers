@@ -44,19 +44,19 @@ export class CouponsController {
     const {
       page,
       pageSize,
-      archived,
-      merchantDomain,
+      // archived,
+      // merchantDomain,
       merchantName,
-      sourceName,
-      sourceDomain,
-      locale,
-      type,
-      isShown,
-      isExclusive,
-      isExpired,
-      shouldBeFake,
-      show_disabled_merchants,
-      reliability,
+      // sourceName,
+      // sourceDomain,
+      // locale,
+      // type,
+      // isShown,
+      // isExclusive,
+      // isExpired,
+      // shouldBeFake,
+      // show_disabled_merchants,
+      // reliability,
     } = params;
 
     const where: Prisma.CouponWhereInput = {};
@@ -71,55 +71,55 @@ export class CouponsController {
     //   };
     // }
 
-    // Return only items with a active merchant
-    if (
-      show_disabled_merchants === undefined ||
-      show_disabled_merchants === false
-    ) {
-      where.merchant_relation = { disabledAt: null };
-    }
+    // // Return only items with a active merchant
+    // if (
+    //   show_disabled_merchants === undefined ||
+    //   show_disabled_merchants === false
+    // ) {
+    //   where.merchant_relation = { disabledAt: null };
+    // }
 
-    if (isShown !== undefined) {
-      where.isShown = isShown;
-    }
+    // if (isShown !== undefined) {
+    //   where.isShown = isShown;
+    // }
 
-    if (isExclusive !== undefined) {
-      where.isExclusive = isExclusive;
-    }
+    // if (isExclusive !== undefined) {
+    //   where.isExclusive = isExclusive;
+    // }
 
-    if (shouldBeFake !== undefined) {
-      where.shouldBeFake = shouldBeFake;
-    }
+    // if (shouldBeFake !== undefined) {
+    //   where.shouldBeFake = shouldBeFake;
+    // }
 
-    if (isExpired !== undefined) {
-      where.isExpired = isExpired;
-    }
+    // if (isExpired !== undefined) {
+    //   where.isExpired = isExpired;
+    // }
 
-    if (sourceName) {
-      where.source_relation = { name: sourceName };
-    }
+    // if (sourceName) {
+    //   where.source_relation = { name: sourceName };
+    // }
 
-    if (archived !== undefined) {
-      where.archivedAt = archived ? { not: null } : null;
-    }
+    // if (archived !== undefined) {
+    //   where.archivedAt = archived ? { not: null } : null;
+    // }
 
-    if (type !== 'all') {
-      where.code = type === 'code' ? { not: null } : { equals: null };
-    }
+    // if (type !== 'all') {
+    //   where.code = type === 'code' ? { not: null } : { equals: null };
+    // }
 
-    if (merchantDomain) {
-      where.domain = merchantDomain;
-    }
+    // if (merchantDomain) {
+    //   where.domain = merchantDomain;
+    // }
 
-    if (sourceDomain) {
-      where.sourceUrl = {
-        contains: sourceDomain,
-      };
-    }
+    // if (sourceDomain) {
+    //   where.sourceUrl = {
+    //     contains: sourceDomain,
+    //   };
+    // }
 
-    if (locale) {
-      where.locale = locale;
-    }
+    // if (locale) {
+    //   where.locale = locale;
+    // }
 
     const offset = (page - 1) * pageSize;
     const [totalResults, data] = await Promise.all([
@@ -168,8 +168,8 @@ export class CouponsController {
         currentPageResults,
         currentPage: page,
         lastPage,
-        reliability:
-          reliability === null ? 'all' : reliability ?? Reliability.reliable,
+        // reliability:
+        // reliability === null ? 'all' : reliability ?? Reliability.reliable,
         results: formattedData,
       }
     );
