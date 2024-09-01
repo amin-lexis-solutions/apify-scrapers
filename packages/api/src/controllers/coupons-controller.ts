@@ -1,14 +1,14 @@
 import * as Sentry from '@sentry/node';
-import { Prisma, Reliability } from '@prisma/client';
+import { Reliability } from '@prisma/client';
 import {
   Authorized,
   BadRequestError,
   Body,
-  Get,
+  // Get,
   JsonController,
   Param,
   Post,
-  QueryParams,
+  // QueryParams,
 } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { isValidSourceDomain } from '../utils/utils';
@@ -16,7 +16,7 @@ import { couponMatchCache } from '../lib/cache';
 import { prisma } from '../lib/prisma';
 import {
   CouponMatchRequestBody,
-  ListRequestBody,
+  // ListRequestBody,
   StandardResponse,
   AnomalyRequestBody,
   ReliabilityRequestBody,
@@ -24,153 +24,156 @@ import {
   CouponIdsRequestBody,
 } from '../utils/validators';
 import dayjs from 'dayjs';
+import { ItemService } from '@api/services/ItemsServices';
 
 @JsonController('/items')
 export class CouponsController {
-  @Get('/')
-  @OpenAPI({
-    summary: 'List items',
-    description: 'Get a list of items with pagination and optional filtering',
-  })
-  @ResponseSchema(StandardResponse)
-  @Authorized()
-  @OpenAPI({ security: [{ bearerAuth: [] }] })
-  async getList(
-    @QueryParams() params: ListRequestBody
-  ): Promise<StandardResponse> {
-    const {
-      page,
-      pageSize,
-      archived,
-      merchantDomain,
-      merchantName,
-      sourceName,
-      sourceDomain,
-      locale,
-      type,
-      isShown,
-      isExclusive,
-      isExpired,
-      shouldBeFake,
-      show_disabled_merchants,
-      reliability,
-    } = params;
+  private itemService: ItemService;
 
-    const where: Prisma.CouponWhereInput = {};
+  // @Get('/')
+  // @OpenAPI({
+  //   summary: 'List items',
+  //   description: 'Get a list of items with pagination and optional filtering',
+  // })
+  // @ResponseSchema(StandardResponse)
+  // @Authorized()
+  // @OpenAPI({ security: [{ bearerAuth: [] }] })
+  // async getList(
+  //   @QueryParams() params: ListRequestBody
+  // ): Promise<StandardResponse> {
+  //   const {
+  //     page,
+  //     pageSize,
+  //     archived,
+  //     merchantDomain,
+  //     merchantName,
+  //     sourceName,
+  //     sourceDomain,
+  //     locale,
+  //     type,
+  //     isShown,
+  //     isExclusive,
+  //     isExpired,
+  //     shouldBeFake,
+  //     show_disabled_merchants,
+  //     reliability,
+  //   } = params;
 
-    if (merchantName) {
-      where.merchantName = merchantName;
-    }
+  //   const where: Prisma.CouponWhereInput = {};
 
-    if (reliability !== null) {
-      where.source_domain_relation = {
-        reliability: reliability ?? Reliability.reliable,
-      };
-    }
+  //   if (merchantName) {
+  //     where.merchantName = merchantName;
+  //   }
 
-    // Return only items with a active merchant
-    if (
-      show_disabled_merchants === undefined ||
-      show_disabled_merchants === false
-    ) {
-      where.merchant_relation = { disabledAt: null };
-    }
+  //   if (reliability !== null) {
+  //     where.source_domain_relation = {
+  //       reliability: reliability ?? Reliability.reliable,
+  //     };
+  //   }
 
-    if (isShown !== undefined) {
-      where.isShown = isShown;
-    }
+  //   // Return only items with a active merchant
+  //   if (
+  //     show_disabled_merchants === undefined ||
+  //     show_disabled_merchants === false
+  //   ) {
+  //     where.merchant_relation = { disabledAt: null };
+  //   }
 
-    if (isExclusive !== undefined) {
-      where.isExclusive = isExclusive;
-    }
+  //   if (isShown !== undefined) {
+  //     where.isShown = isShown;
+  //   }
 
-    if (shouldBeFake !== undefined) {
-      where.shouldBeFake = shouldBeFake;
-    }
+  //   if (isExclusive !== undefined) {
+  //     where.isExclusive = isExclusive;
+  //   }
 
-    if (isExpired !== undefined) {
-      where.isExpired = isExpired;
-    }
+  //   if (shouldBeFake !== undefined) {
+  //     where.shouldBeFake = shouldBeFake;
+  //   }
 
-    if (sourceName) {
-      where.source_relation = { name: sourceName };
-    }
+  //   if (isExpired !== undefined) {
+  //     where.isExpired = isExpired;
+  //   }
 
-    if (archived !== undefined) {
-      where.archivedAt = archived ? { not: null } : null;
-    }
+  //   if (sourceName) {
+  //     where.source_relation = { name: sourceName };
+  //   }
 
-    if (type !== 'all') {
-      where.code = type === 'code' ? { not: null } : { equals: null };
-    }
+  //   if (archived !== undefined) {
+  //     where.archivedAt = archived ? { not: null } : null;
+  //   }
 
-    if (merchantDomain) {
-      where.domain = merchantDomain;
-    }
+  //   if (type !== 'all') {
+  //     where.code = type === 'code' ? { not: null } : { equals: null };
+  //   }
 
-    if (sourceDomain) {
-      where.sourceUrl = {
-        contains: sourceDomain,
-      };
-    }
+  //   if (merchantDomain) {
+  //     where.domain = merchantDomain;
+  //   }
 
-    if (locale) {
-      where.locale = locale;
-    }
+  //   if (sourceDomain) {
+  //     where.sourceUrl = {
+  //       contains: sourceDomain,
+  //     };
+  //   }
 
-    const offset = (page - 1) * pageSize;
-    const [totalResults, data] = await Promise.all([
-      prisma.coupon.count({ where }),
-      prisma.coupon.findMany({
-        skip: offset,
-        take: pageSize,
-        where: where,
-        orderBy: { lastSeenAt: 'desc' },
-        include: {
-          source_relation: {
-            select: { name: true, isActive: true, apifyActorId: true },
-          },
-          merchant_relation: {
-            select: {
-              id: true,
-              name: true,
-              domain: true,
-              locale: true,
-              disabledAt: true,
-            },
-          },
-        },
-      }),
-    ]);
+  //   if (locale) {
+  //     where.locale = locale;
+  //   }
 
-    // Format the expiryDateAt field for each item in the data array
-    const formattedData = data.map((item) => ({
-      ...item,
-      startDateAt: item.startDateAt
-        ? dayjs(item.startDateAt).format('YYYY-MM-DD')
-        : null,
-      expiryDateAt: item.expiryDateAt
-        ? dayjs(item.expiryDateAt).format('YYYY-MM-DD')
-        : null,
-    }));
+  //   const offset = (page - 1) * pageSize;
+  //   const [totalResults, data] = await Promise.all([
+  //     prisma.coupon.count({ where }),
+  //     prisma.coupon.findMany({
+  //       skip: offset,
+  //       take: pageSize,
+  //       where: where,
+  //       orderBy: { lastSeenAt: 'desc' },
+  //       include: {
+  //         source_relation: {
+  //           select: { name: true, isActive: true, apifyActorId: true },
+  //         },
+  //         merchant_relation: {
+  //           select: {
+  //             id: true,
+  //             name: true,
+  //             domain: true,
+  //             locale: true,
+  //             disabledAt: true,
+  //           },
+  //         },
+  //       },
+  //     }),
+  //   ]);
 
-    const lastPage = Math.ceil(totalResults / pageSize);
-    const currentPageResults = data.length;
+  //   // Format the expiryDateAt field for each item in the data array
+  //   const formattedData = data.map((item) => ({
+  //     ...item,
+  //     startDateAt: item.startDateAt
+  //       ? dayjs(item.startDateAt).format('YYYY-MM-DD')
+  //       : null,
+  //     expiryDateAt: item.expiryDateAt
+  //       ? dayjs(item.expiryDateAt).format('YYYY-MM-DD')
+  //       : null,
+  //   }));
 
-    return new StandardResponse(
-      `Success! ${totalResults} total results found. Showing page ${page} of ${lastPage}`,
-      false,
-      {
-        totalResults,
-        currentPageResults,
-        currentPage: page,
-        lastPage,
-        reliability:
-          reliability === null ? 'all' : reliability ?? Reliability.reliable,
-        results: formattedData,
-      }
-    );
-  }
+  //   const lastPage = Math.ceil(totalResults / pageSize);
+  //   const currentPageResults = data.length;
+
+  //   return new StandardResponse(
+  //     `Success! ${totalResults} total results found. Showing page ${page} of ${lastPage}`,
+  //     false,
+  //     {
+  //       totalResults,
+  //       currentPageResults,
+  //       currentPage: page,
+  //       lastPage,
+  //       reliability:
+  //         reliability === null ? 'all' : reliability ?? Reliability.reliable,
+  //       results: formattedData,
+  //     }
+  //   );
+  // }
 
   // Get a list of items by ID
   @Post('/ids')
@@ -443,5 +446,43 @@ export class CouponsController {
       );
       return new StandardResponse('An error occurred  ', true);
     }
+  }
+  @Post('/archive')
+  @OpenAPI({
+    summary: 'Archive multiple records',
+    description:
+      'Archives a list of records by their IDs. Each record will be marked as archived with a timestamp and a manual reason.',
+  })
+  @Authorized()
+  @ResponseSchema(StandardResponse)
+  async archiveRecords(
+    @Body() requestBody: CouponMatchRequestBody
+  ): Promise<StandardResponse> {
+    const { ids } = requestBody;
+    if (!ids || ids.length == 0) {
+      throw new BadRequestError(
+        'The "ids" field is required and must contain at least one ID.'
+      );
+    }
+
+    const existingRecords = await this.itemService.getItemsByIds(ids);
+
+    if (!existingRecords) {
+      throw new BadRequestError('No records found for the provided IDs.');
+    }
+
+    const idsToArchive = existingRecords.map((data) => data.id);
+
+    const archiveResult = await this.itemService.updateMany(idsToArchive, {
+      archivedAt: new Date(),
+      archivedReason: 'manual',
+    });
+
+    const notArchivedCount = ids.length - archiveResult.count;
+
+    return new StandardResponse('Record archived successfully', false, {
+      archivedRecords: archiveResult,
+      notArchivedCount,
+    });
   }
 }
