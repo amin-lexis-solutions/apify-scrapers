@@ -47,15 +47,15 @@ export class CouponsController {
       archived,
       merchantDomain,
       merchantName,
-      // sourceName,
-      // sourceDomain,
+      sourceName,
+      sourceDomain,
       locale,
       type,
       isShown,
       isExclusive,
       isExpired,
       shouldBeFake,
-      // show_disabled_merchants,
+      show_disabled_merchants,
       reliability,
     } = params;
 
@@ -71,13 +71,13 @@ export class CouponsController {
       };
     }
 
-    // // Return only items with a active merchant
-    // if (
-    //   show_disabled_merchants === undefined ||
-    //   show_disabled_merchants === false
-    // ) {
-    //   where.merchant_relation = { disabledAt: null };
-    // }
+    // Return only items with a active merchant
+    if (
+      show_disabled_merchants === undefined ||
+      show_disabled_merchants === false
+    ) {
+      where.merchant_relation = { disabledAt: null };
+    }
 
     if (isShown !== undefined) {
       where.isShown = isShown;
@@ -95,9 +95,9 @@ export class CouponsController {
       where.isExpired = isExpired;
     }
 
-    // if (sourceName) {
-    //   where.source_relation = { name: sourceName };
-    // }
+    if (sourceName) {
+      where.source_relation = { name: sourceName };
+    }
 
     if (archived !== undefined) {
       where.archivedAt = archived ? { not: null } : null;
@@ -111,11 +111,11 @@ export class CouponsController {
       where.domain = merchantDomain;
     }
 
-    // if (sourceDomain) {
-    //   where.sourceUrl = {
-    //     contains: sourceDomain,
-    //   };
-    // }
+    if (sourceDomain) {
+      where.sourceUrl = {
+        contains: sourceDomain,
+      };
+    }
 
     if (locale) {
       where.locale = locale;
@@ -168,8 +168,8 @@ export class CouponsController {
         currentPageResults,
         currentPage: page,
         lastPage,
-        // reliability:
-        // reliability === null ? 'all' : reliability ?? Reliability.reliable,
+        reliability:
+          reliability === null ? 'all' : reliability ?? Reliability.reliable,
         results: formattedData,
       }
     );
