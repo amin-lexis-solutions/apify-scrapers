@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
-// import * as Sentry from '@sentry/node';
-// import { nodeProfilingIntegration } from '@sentry/profiling-node';
+import * as Sentry from '@sentry/node';
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 // import 'reflect-metadata'; // Required for routing-controllers
 
 // import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
@@ -31,27 +31,27 @@ import {
 // Create a single Express app instance
 const app: Express = express();
 
-// Sentry.init({
-//   dsn: process.env.SENTRY_DSN,
-//   enabled: process.env.SENTRY_LOGGING === 'true',
-//   integrations: [
-//     // enable HTTP calls tracing
-//     new Sentry.Integrations.Http({ tracing: true }),
-//     // enable Express.js middleware tracing
-//     new Sentry.Integrations.Express({ app }),
-//     nodeProfilingIntegration(),
-//   ],
-//   // Performance Monitoring
-//   tracesSampleRate: 0.5, // Adjusted from 1 to 0.5 to reduce the amount of data sent
-//   // Set sampling rate for profiling - this is relative to tracesSampleRate
-//   profilesSampleRate: 0.2, // Reduce profiling rate to decrease performance impact
-// });
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  enabled: process.env.SENTRY_LOGGING === 'true',
+  integrations: [
+    // enable HTTP calls tracing
+    new Sentry.Integrations.Http({ tracing: true }),
+    // enable Express.js middleware tracing
+    new Sentry.Integrations.Express({ app }),
+    nodeProfilingIntegration(),
+  ],
+  // Performance Monitoring
+  tracesSampleRate: 0.5, // Adjusted from 1 to 0.5 to reduce the amount of data sent
+  // Set sampling rate for profiling - this is relative to tracesSampleRate
+  profilesSampleRate: 0.2, // Reduce profiling rate to decrease performance impact
+});
 
 // The request handler must be the first middleware on the app
-// app.use(Sentry.Handlers.requestHandler());
+app.use(Sentry.Handlers.requestHandler());
 
 // // TracingHandler creates a trace for every incoming request
-// app.use(Sentry.Handlers.tracingHandler());
+app.use(Sentry.Handlers.tracingHandler());
 
 // Set the limit to 50MB
 // app.use(json({ limit: '5mb' }));
@@ -114,7 +114,7 @@ useExpressServer(app, routingControllersOptions);
 // );
 
 // The error handler must be before any other error middleware and after all controllers
-// app.use(Sentry.Handlers.errorHandler());
+app.use(Sentry.Handlers.errorHandler());
 
 const port = process.env.PORT || 3000;
 
