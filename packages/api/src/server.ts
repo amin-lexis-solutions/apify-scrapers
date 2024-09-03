@@ -23,10 +23,11 @@ import { ExportsController } from './controllers/exports-controller';
 import { TargetsController } from './controllers/targets-controller';
 import { WebhooksController } from './controllers/webhooks-controller';
 import { SentryController } from './controllers/sentry-controller';
+import { TestsController } from './controllers/tests-controller';
+import { SummaryController } from './controllers/summary-controller';
 import { useNgrok } from './lib/ngrok';
 import { CustomErrorHandler } from './middlewares/custom-error-handler';
 import { authorizationChecker } from './utils/auth';
-import { TestsController } from './controllers/tests-controller';
 
 // Create a single Express app instance
 const app: Express = express();
@@ -64,6 +65,7 @@ const routingControllersOptions: RoutingControllersOptions = {
     SentryController,
     ExportsController,
     TestsController,
+    SummaryController,
   ],
   middlewares: [
     CustomErrorHandler, // Registering your custom error handler
