@@ -317,3 +317,8 @@ export function getEndpointBaseUrl(): string {
     ? `http://localhost:${port}/`
     : process.env.BASE_URL || '';
 }
+
+export function convertToBooleanOrNull(value: any): boolean | null {
+  if (value?.toLowerCase() === 'null') return null;
+  return value === 'true';
+}

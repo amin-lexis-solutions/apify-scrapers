@@ -25,6 +25,7 @@ import {
 } from '../utils/validators';
 import dayjs from 'dayjs';
 import { ItemService } from '@api/services/ItemsServices';
+import { convertToBooleanOrNull } from '@api/utils/utils';
 
 @JsonController('/items')
 export class CouponsController {
@@ -83,16 +84,31 @@ export class CouponsController {
       where.isShown = isShown;
     }
 
-    if (isExclusive !== undefined) {
-      where.isExclusive = isExclusive;
+    if (isExclusive && isExclusive.length < 3) {
+      if (!Array.isArray(where.AND)) where.AND = [];
+      where.AND.push({
+        OR: isExclusive.map((value: any) => ({
+          isExclusive: convertToBooleanOrNull(value),
+        })),
+      });
     }
 
-    if (shouldBeFake !== undefined) {
-      where.shouldBeFake = shouldBeFake;
+    if (shouldBeFake && shouldBeFake.length < 3) {
+      if (!Array.isArray(where.AND)) where.AND = [];
+      where.AND.push({
+        OR: shouldBeFake.map((value: any) => ({
+          shouldBeFake: convertToBooleanOrNull(value),
+        })),
+      });
     }
 
-    if (isExpired !== undefined) {
-      where.isExpired = isExpired;
+    if (isExpired && isExpired.length < 3) {
+      if (!Array.isArray(where.AND)) where.AND = [];
+      where.AND.push({
+        OR: isExpired.map((value: any) => ({
+          isExpired: convertToBooleanOrNull(value),
+        })),
+      });
     }
 
     if (sourceName) {

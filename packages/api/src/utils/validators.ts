@@ -59,13 +59,13 @@ export class ListRequestBody {
   @IsOptional()
   archived?: boolean;
 
-  @IsBoolean()
+  @IsArray()
   @IsOptional()
-  isExclusive?: boolean;
+  isExclusive?: string[];
 
-  @IsBoolean()
+  @IsArray()
   @IsOptional()
-  isExpired?: boolean;
+  isExpired?: string[];
 
   @IsOptional()
   reliability?: Reliability | null;
@@ -74,9 +74,9 @@ export class ListRequestBody {
   @IsOptional()
   isShown?: boolean;
 
-  @IsBoolean()
+  @IsArray()
   @IsOptional()
-  shouldBeFake?: boolean;
+  shouldBeFake?: string[];
 
   @IsString()
   @IsOptional()
