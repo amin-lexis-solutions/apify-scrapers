@@ -1,9 +1,11 @@
 import { Reliability } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-import { Authorized, Get, JsonController } from 'routing-controllers';
+import { Authorized, Get, JsonController, Param } from 'routing-controllers';
 import { OpenAPI, ResponseSchema } from 'routing-controllers-openapi';
 import { StandardResponse } from '../utils/validators';
 import { SOURCES_DATA } from '../../config/actors';
+import { localesToImport } from '../../config/primary-locales';
+import dayjs from 'dayjs';
 
 interface CouponSummaryRow {
   coupons: bigint;
@@ -170,5 +172,116 @@ export class SummaryController {
     return new StandardResponse(`Locales Summary`, false, {
       locales: localesSummary,
     });
+  }
+
+  @Get('/scrape-stats/:locale/:domain')
+  @OpenAPI({
+    summary: 'Locales summary',
+    description: 'Get a summary of the locales',
+  })
+  @ResponseSchema(StandardResponse)
+  @Authorized()
+  @OpenAPI({ security: [{ bearerAuth: [] }] })
+  async getSummaryByLocaleAndDomain(
+    @Param('locale') locale: string,
+    @Param('domain') domain: string
+  ) {
+    // check if locale is valid
+    if (!localesToImport.find((l) => l.locale === locale)) {
+      return new StandardResponse('Invalid locale', true);
+    }
+
+    const sourceDomain = await prisma.sourceDomain.findFirst({
+      select: { domain: true },
+      where: { domain: domain },
+    });
+
+    if (!sourceDomain) {
+      return new StandardResponse('Invalid source domain', true);
+    }
+
+    const result = await prisma.coupon.groupBy({
+      by: ['sourceUrl', 'lastSeenAt', 'isExpired'],
+      where: { locale, sourceDomain: sourceDomain.domain },
+      _count: { _all: true },
+      orderBy: {
+        lastSeenAt: 'desc',
+      },
+    });
+
+    // if no data found return empty response
+    if (!result.length)
+      return new StandardResponse(`Locales Summary`, false, {
+        locale,
+        totalItems: 0,
+        nonExpiredItems: 0,
+        totalTargetPages: 0,
+        targetPagesList: [],
+      });
+
+    const totalItems = result.reduce((sum, row) => sum + row._count._all, 0);
+    const nonExpiredItems = result
+      .filter((row) => !row.isExpired)
+      .reduce((sum, row) => sum + row._count._all, 0);
+
+    const sourceUrls = new Set(result.map((row) => row.sourceUrl));
+    const totalTargetPages = sourceUrls.size;
+
+    const targetPagesMap = new Map<
+      string,
+      {
+        url: string;
+        lastCrawled: string | null;
+        totalItems: number;
+        nonExpiredItems: number;
+      }
+    >();
+
+    result.forEach((row) => {
+      const url = row.sourceUrl;
+      if (!targetPagesMap.has(url)) {
+        targetPagesMap.set(url, {
+          url,
+          lastCrawled: row.lastSeenAt ? row.lastSeenAt.toISOString() : null,
+          totalItems: 0,
+          nonExpiredItems: 0,
+        });
+      }
+      const targetPage = targetPagesMap.get(url)!;
+      targetPage.totalItems += row._count._all;
+
+      if (row.lastSeenAt && !row.isExpired) {
+        const lastCrawledAt = dayjs(row.lastSeenAt);
+        const targetPageLastCrawled = targetPage.lastCrawled
+          ? dayjs(targetPage.lastCrawled)
+          : null;
+
+        if (
+          !targetPage.lastCrawled ||
+          (targetPageLastCrawled &&
+            lastCrawledAt.isAfter(targetPageLastCrawled))
+        ) {
+          targetPage.lastCrawled = lastCrawledAt.toISOString();
+        }
+        targetPage.nonExpiredItems += row._count._all;
+      }
+    });
+
+    const targetPagesList = Array.from(targetPagesMap.values()).map((page) => ({
+      ...page,
+      lastCrawled: page.lastCrawled
+        ? page.lastCrawled.replace('T', ' ').replace('Z', ' UTC')
+        : null,
+    }));
+
+    const formattedResult = {
+      locale,
+      totalItems,
+      nonExpiredItems,
+      totalTargetPages,
+      targetPagesList,
+    };
+
+    return new StandardResponse('Locales Summary', false, formattedResult);
   }
 }
