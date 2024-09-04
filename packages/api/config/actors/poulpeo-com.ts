@@ -11,6 +11,7 @@ export default [
         proxyCountryCode: 'FR',
       },
     ],
+    maxStartUrls: 500,
     name: path.basename(__filename, path.extname(__filename)),
   },
 ];

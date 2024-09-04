@@ -173,10 +173,22 @@ export async function preparePuppeteerScraper(
     proxyConfiguration,
     headless: true,
     useSessionPool: true,
-    navigationTimeoutSecs: 60,
+    navigationTimeoutSecs: 30,
+    autoscaledPoolOptions: {
+      maxConcurrency: 10,
+    },
     launchContext: {
       launchOptions: {
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        defaultViewport: {
+          width: 1280,
+          height: 720,
+        },
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+        ],
       },
     },
     requestHandler: router as any,
@@ -191,6 +203,19 @@ export async function preparePuppeteerScraper(
         },
       });
     },
+    preNavigationHooks: [
+      async ({ page }) => {
+        await page.setRequestInterception(true);
+
+        await page.on('request', (req) => {
+          if (['image', 'stylesheet', 'font'].includes(req.resourceType())) {
+            req.abort();
+          } else {
+            req.continue();
+          }
+        });
+      },
+    ],
   });
 
   return crawler;
