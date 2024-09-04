@@ -52,7 +52,11 @@ export class WebhooksController {
     @Body() webhookData: WebhookRequestBody
   ): Promise<StandardResponse> {
     const { defaultDatasetId, status, usageTotalUsd } = webhookData.resource;
-    const { actorRunId, actorId: apifyActorId } = webhookData.eventData;
+    const {
+      actorRunId,
+      actorId: apifyActorId,
+      retriesCount = 0,
+    } = webhookData.eventData;
     const startedAt = new Date();
     const run = await prisma.processedRun.create({
       data: {
@@ -61,6 +65,7 @@ export class WebhooksController {
         status,
         startedAt,
         payload: webhookData as any,
+        retriesCount,
       },
     });
 

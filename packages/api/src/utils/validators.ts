@@ -133,6 +133,10 @@ export class EventData {
 
   @IsString()
   actorRunId: string;
+
+  @IsNumber()
+  @IsOptional()
+  retriesCount?: number;
 }
 
 export class Resource {

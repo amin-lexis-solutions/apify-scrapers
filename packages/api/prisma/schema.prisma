@@ -109,6 +109,7 @@ model ProcessedRun {
   errorCount          Int       @default(0)
   processingErrors    Json?
   costInUsdMicroCents Int       @default(0)
+  retriesCount        Int       @default(0)
   payload             Json?
   source_relation       Source?       @relation(fields: [apifyActorId], references: [apifyActorId])
   targetLocale TargetLocale? @relation(fields: [localeId], references: [id])

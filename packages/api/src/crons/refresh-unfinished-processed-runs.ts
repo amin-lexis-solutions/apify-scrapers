@@ -52,7 +52,13 @@ const processFailedRun = async (failedProcess: any) => {
       Authorization: `Bearer ${process.env.API_SECRET}`,
       Accept: 'application/json',
     },
-    body: JSON.stringify(postData),
+    body: JSON.stringify({
+      ...postData,
+      eventData: {
+        ...postData.eventData,
+        retriesCount: failedProcess.retriesCount + 1,
+      },
+    }),
   });
 
   if (!response.ok) {
@@ -62,6 +68,7 @@ const processFailedRun = async (failedProcess: any) => {
         ...failedProcess,
         payload: JSON.stringify(failedProcess.payload),
         processingErrors: JSON.stringify(failedProcess.processingErrors),
+        retriesCount: failedProcess.retriesCount + 1,
       },
     });
     throw new Error(errorData.message || 'Failed to send webhook');
@@ -76,12 +83,33 @@ const main = async () => {
     const failedProcesses = await prisma.processedRun.findMany({
       where: {
         endedAt: null,
-        startedAt: {
-          lt: dayjs().subtract(1, 'hours').toDate(),
-        },
         payload: {
           not: {},
         },
+        AND: [
+          {
+            OR: [
+              {
+                startedAt: {
+                  lt: dayjs().subtract(1, 'hours').toDate(),
+                },
+                retriesCount: 0,
+              },
+              {
+                startedAt: {
+                  lt: dayjs().subtract(12, 'hours').toDate(),
+                },
+                retriesCount: 1,
+              },
+              {
+                startedAt: {
+                  lt: dayjs().subtract(24, 'hours').toDate(),
+                },
+                retriesCount: 2,
+              },
+            ],
+          },
+        ],
       },
       take: 2,
     });
