@@ -7,6 +7,7 @@ import 'reflect-metadata'; // Required for routing-controllers
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 
 import express, { Express } from 'express';
+import { useApitally } from 'apitally/express';
 import { json } from 'body-parser';
 
 import expressBasicAuth from 'express-basic-auth';
@@ -31,6 +32,12 @@ import { authorizationChecker } from './utils/auth';
 
 // Create a single Express app instance
 const app: Express = express();
+
+if (process.env.APITALLY_CLIENT_ID)
+  useApitally(app, {
+    clientId: process.env.APITALLY_CLIENT_ID,
+    env: process.env.NODE_ENV,
+  });
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,

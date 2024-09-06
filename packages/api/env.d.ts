@@ -16,6 +16,7 @@ declare global {
       ANOMALY_DETECTION_DAYS?: number;
       APIFY_DAILY_COST_LIMIT_USD: number;
       SENTRY_LOGGING?: string;
+      APITALLY_CLIENT_ID?: string;
     }
   }
 }
