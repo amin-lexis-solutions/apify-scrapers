@@ -62,11 +62,6 @@
   resolved "https://registry.npmjs.org/@apify/timeout/-/timeout-0.3.0.tgz"
   integrity sha512-jLwg4vC1hHsU1UWbwO5suYFGPBANPy5Dovc6P9y56TZ1B2RsRYjfDaX3BdfaAa6E2akib19EinF9EjuN13m5AA==
 
-"@apify/timeout@^0.3.1":
-  version "0.3.1"
-  resolved "https://registry.npmjs.org/@apify/timeout/-/timeout-0.3.1.tgz"
-  integrity sha512-sLIuOqfySki/7AXiQ1yZoCI07vX6aYFLgP6YaJ8e8YLn8CFsRERma/Crxcz0zyCaxhc7C7EPgcs1O+p/djZchw==
-
 "@apify/tsconfig@^0.1.0":
   version "0.1.0"
   resolved "https://registry.npmjs.org/@apify/tsconfig/-/tsconfig-0.1.0.tgz"
@@ -89,7 +84,15 @@
     css-tree "^2.3.1"
     is-potential-custom-element-name "^1.0.1"
 
-"@babel/code-frame@^7.0.0", "@babel/code-frame@^7.12.13", "@babel/code-frame@^7.24.7":
+"@babel/code-frame@^7.0.0", "@babel/code-frame@^7.22.13", "@babel/code-frame@^7.23.5":
+  version "7.23.5"
+  resolved "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.23.5.tgz"
+  integrity sha512-CgH3s1a96LipHCmSUmYFPwY7MNx8C3avkq7i4Wl3cfa662ldtUe4VM1TPXX70pfmrlWTb6jLqTYrZyT2ZTJBgA==
+  dependencies:
+    "@babel/highlight" "^7.23.4"
+    chalk "^2.4.2"
+
+"@babel/code-frame@^7.12.13":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.24.7.tgz"
   integrity sha512-BcYH1CVJBO9tvyIZ2jVeXgSIMvGZ2FDRvDdOIVQyuklNKSsx+eppDEBq/g47Ayw+RqNFE+URvOShmf+f/qwAlA==
@@ -97,12 +100,25 @@
     "@babel/highlight" "^7.24.7"
     picocolors "^1.0.0"
 
+"@babel/code-frame@^7.24.7":
+  version "7.24.7"
+  resolved "https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.24.7.tgz"
+  integrity sha512-BcYH1CVJBO9tvyIZ2jVeXgSIMvGZ2FDRvDdOIVQyuklNKSsx+eppDEBq/g47Ayw+RqNFE+URvOShmf+f/qwAlA==
+  dependencies:
+    "@babel/highlight" "^7.24.7"
+    picocolors "^1.0.0"
+
+"@babel/compat-data@^7.23.5":
+  version "7.23.5"
+  resolved "https://registry.npmjs.org/@babel/compat-data/-/compat-data-7.23.5.tgz"
+  integrity sha512-uU27kfDRlhfKl+w1U6vp16IuvSLtjAxdArVXPa9BvLkrr7CYIsxH5adpHObeAGY/41+syctUWOZ140a2Rvkgjw==
+
 "@babel/compat-data@^7.24.7":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/compat-data/-/compat-data-7.24.7.tgz"
   integrity sha512-qJzAIcv03PyaWqxRgO4mSU3lihncDT296vnyuE2O8uA4w3UHWI4S3hgeZd1L8W1Bft40w9JxJ2b412iDUFFRhw==
 
-"@babel/core@^7.0.0", "@babel/core@^7.0.0-0", "@babel/core@^7.11.6", "@babel/core@^7.12.3", "@babel/core@^7.14.6", "@babel/core@^7.23.9", "@babel/core@^7.8.0", "@babel/core@>=7.0.0-beta.0 <8":
+"@babel/core@^7.0.0", "@babel/core@^7.0.0-0", "@babel/core@^7.11.6", "@babel/core@^7.12.3", "@babel/core@^7.23.9", "@babel/core@^7.8.0", "@babel/core@>=7.0.0-beta.0 <8":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/core/-/core-7.24.7.tgz"
   integrity sha512-nykK+LEK86ahTkX/3TgauT0ikKoNCfKHEaZYTUVupJdTLzGNvrblu4u6fa7DhZONAltdf8e662t/abY8idrd/g==
@@ -123,6 +139,37 @@
     json5 "^2.2.3"
     semver "^6.3.1"
 
+"@babel/core@^7.14.6":
+  version "7.23.7"
+  resolved "https://registry.npmjs.org/@babel/core/-/core-7.23.7.tgz"
+  integrity sha512-+UpDgowcmqe36d4NwqvKsyPMlOLNGMsfMmQ5WGCu+siCe3t3dfe9njrzGfdN4qq+bcNUt0+Vw6haRxBOycs4dw==
+  dependencies:
+    "@ampproject/remapping" "^2.2.0"
+    "@babel/code-frame" "^7.23.5"
+    "@babel/generator" "^7.23.6"
+    "@babel/helper-compilation-targets" "^7.23.6"
+    "@babel/helper-module-transforms" "^7.23.3"
+    "@babel/helpers" "^7.23.7"
+    "@babel/parser" "^7.23.6"
+    "@babel/template" "^7.22.15"
+    "@babel/traverse" "^7.23.7"
+    "@babel/types" "^7.23.6"
+    convert-source-map "^2.0.0"
+    debug "^4.1.0"
+    gensync "^1.0.0-beta.2"
+    json5 "^2.2.3"
+    semver "^6.3.1"
+
+"@babel/generator@^7.23.6":
+  version "7.23.6"
+  resolved "https://registry.npmjs.org/@babel/generator/-/generator-7.23.6.tgz"
+  integrity sha512-qrSfCYxYQB5owCmGLbl8XRpX1ytXlpueOb0N0UmQwA073KZxejgQTzAmJezxvpwQD9uGtK2shHdi55QT+MbjIw==
+  dependencies:
+    "@babel/types" "^7.23.6"
+    "@jridgewell/gen-mapping" "^0.3.2"
+    "@jridgewell/trace-mapping" "^0.3.17"
+    jsesc "^2.5.1"
+
 "@babel/generator@^7.24.7", "@babel/generator@^7.7.2":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/generator/-/generator-7.24.7.tgz"
@@ -132,6 +179,17 @@
     "@jridgewell/gen-mapping" "^0.3.5"
     "@jridgewell/trace-mapping" "^0.3.25"
     jsesc "^2.5.1"
+
+"@babel/helper-compilation-targets@^7.23.6":
+  version "7.23.6"
+  resolved "https://registry.npmjs.org/@babel/helper-compilation-targets/-/helper-compilation-targets-7.23.6.tgz"
+  integrity sha512-9JB548GZoQVmzrFgp8o7KxdgkTGm6xs9DW0o/Pim72UDjzr5ObUQ6ZzYPqA+g9OTS2bBQoctLJrky0RDCAWRgQ==
+  dependencies:
+    "@babel/compat-data" "^7.23.5"
+    "@babel/helper-validator-option" "^7.23.5"
+    browserslist "^4.22.2"
+    lru-cache "^5.1.1"
+    semver "^6.3.1"
 
 "@babel/helper-compilation-targets@^7.24.7":
   version "7.24.7"
@@ -144,12 +202,25 @@
     lru-cache "^5.1.1"
     semver "^6.3.1"
 
+"@babel/helper-environment-visitor@^7.22.20":
+  version "7.22.20"
+  resolved "https://registry.npmjs.org/@babel/helper-environment-visitor/-/helper-environment-visitor-7.22.20.tgz"
+  integrity sha512-zfedSIzFhat/gFhWfHtgWvlec0nqB9YEIVrpuwjruLlXfUSnA8cJB0miHKwqDnQ7d32aKo2xt88/xZptwxbfhA==
+
 "@babel/helper-environment-visitor@^7.24.7":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/helper-environment-visitor/-/helper-environment-visitor-7.24.7.tgz"
   integrity sha512-DoiN84+4Gnd0ncbBOM9AZENV4a5ZiL39HYMyZJGZ/AZEykHYdJw0wW3kdcsh9/Kn+BRXHLkkklZ51ecPKmI1CQ==
   dependencies:
     "@babel/types" "^7.24.7"
+
+"@babel/helper-function-name@^7.23.0":
+  version "7.23.0"
+  resolved "https://registry.npmjs.org/@babel/helper-function-name/-/helper-function-name-7.23.0.tgz"
+  integrity sha512-OErEqsrxjZTJciZ4Oo+eoZqeW9UIiOcuYKRJA4ZAgV9myA+pOXhhmpfNCKjEH/auVfEYVFJ6y1Tc4r0eIApqiw==
+  dependencies:
+    "@babel/template" "^7.22.15"
+    "@babel/types" "^7.23.0"
 
 "@babel/helper-function-name@^7.24.7":
   version "7.24.7"
@@ -159,12 +230,26 @@
     "@babel/template" "^7.24.7"
     "@babel/types" "^7.24.7"
 
+"@babel/helper-hoist-variables@^7.22.5":
+  version "7.22.5"
+  resolved "https://registry.npmjs.org/@babel/helper-hoist-variables/-/helper-hoist-variables-7.22.5.tgz"
+  integrity sha512-wGjk9QZVzvknA6yKIUURb8zY3grXCcOZt+/7Wcy8O2uctxhplmUPkOdlgoNhmdVee2c92JXbf1xpMtVNbfoxRw==
+  dependencies:
+    "@babel/types" "^7.22.5"
+
 "@babel/helper-hoist-variables@^7.24.7":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/helper-hoist-variables/-/helper-hoist-variables-7.24.7.tgz"
   integrity sha512-MJJwhkoGy5c4ehfoRyrJ/owKeMl19U54h27YYftT0o2teQ3FJ3nQUf/I3LlJsX4l3qlw7WRXUmiyajvHXoTubQ==
   dependencies:
     "@babel/types" "^7.24.7"
+
+"@babel/helper-module-imports@^7.22.15":
+  version "7.22.15"
+  resolved "https://registry.npmjs.org/@babel/helper-module-imports/-/helper-module-imports-7.22.15.tgz"
+  integrity sha512-0pYVBnDKZO2fnSPCrgM/6WMc7eS20Fbok+0r88fp+YtWVLZrp4CkafFGIp+W0VKw4a22sgebPT99y+FDNMdP4w==
+  dependencies:
+    "@babel/types" "^7.22.15"
 
 "@babel/helper-module-imports@^7.24.7":
   version "7.24.7"
@@ -174,7 +259,18 @@
     "@babel/traverse" "^7.24.7"
     "@babel/types" "^7.24.7"
 
-"@babel/helper-module-transforms@^7.23.3", "@babel/helper-module-transforms@^7.24.7":
+"@babel/helper-module-transforms@^7.23.3":
+  version "7.23.3"
+  resolved "https://registry.npmjs.org/@babel/helper-module-transforms/-/helper-module-transforms-7.23.3.tgz"
+  integrity sha512-7bBs4ED9OmswdfDzpz4MpWgSrV7FXlc3zIagvLFjS5H+Mk7Snr21vQ6QwrsoCGMfNC4e4LQPdoULEt4ykz0SRQ==
+  dependencies:
+    "@babel/helper-environment-visitor" "^7.22.20"
+    "@babel/helper-module-imports" "^7.22.15"
+    "@babel/helper-simple-access" "^7.22.5"
+    "@babel/helper-split-export-declaration" "^7.22.6"
+    "@babel/helper-validator-identifier" "^7.22.20"
+
+"@babel/helper-module-transforms@^7.24.7":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/helper-module-transforms/-/helper-module-transforms-7.24.7.tgz"
   integrity sha512-1fuJEwIrp+97rM4RWdO+qrRsZlAeL1lQJoPqtCYWv0NL115XM93hIH4CSRln2w52SqvmY5hqdtauB6QFCDiZNQ==
@@ -185,18 +281,37 @@
     "@babel/helper-split-export-declaration" "^7.24.7"
     "@babel/helper-validator-identifier" "^7.24.7"
 
-"@babel/helper-plugin-utils@^7.0.0", "@babel/helper-plugin-utils@^7.10.4", "@babel/helper-plugin-utils@^7.12.13", "@babel/helper-plugin-utils@^7.14.5", "@babel/helper-plugin-utils@^7.18.9", "@babel/helper-plugin-utils@^7.22.5", "@babel/helper-plugin-utils@^7.24.7", "@babel/helper-plugin-utils@^7.8.0", "@babel/helper-plugin-utils@^7.8.3":
+"@babel/helper-plugin-utils@^7.0.0", "@babel/helper-plugin-utils@^7.10.4", "@babel/helper-plugin-utils@^7.12.13", "@babel/helper-plugin-utils@^7.14.5", "@babel/helper-plugin-utils@^7.24.7", "@babel/helper-plugin-utils@^7.8.0":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/helper-plugin-utils/-/helper-plugin-utils-7.24.7.tgz"
   integrity sha512-Rq76wjt7yz9AAc1KnlRKNAi/dMSVWgDRx43FHoJEbcYU6xOWaE2dVPwcdTukJrjxS65GITyfbvEYHvkirZ6uEg==
 
-"@babel/helper-simple-access@^7.22.5", "@babel/helper-simple-access@^7.24.7":
+"@babel/helper-plugin-utils@^7.18.9", "@babel/helper-plugin-utils@^7.22.5", "@babel/helper-plugin-utils@^7.8.3":
+  version "7.22.5"
+  resolved "https://registry.npmjs.org/@babel/helper-plugin-utils/-/helper-plugin-utils-7.22.5.tgz"
+  integrity sha512-uLls06UVKgFG9QD4OeFYLEGteMIAa5kpTPcFL28yuCIIzsf6ZyKZMllKVOCZFhiZ5ptnwX4mtKdWCBE/uT4amg==
+
+"@babel/helper-simple-access@^7.22.5":
+  version "7.22.5"
+  resolved "https://registry.npmjs.org/@babel/helper-simple-access/-/helper-simple-access-7.22.5.tgz"
+  integrity sha512-n0H99E/K+Bika3++WNL17POvo4rKWZ7lZEp1Q+fStVbUi8nxPQEBOlTmCOxW/0JsS56SKKQ+ojAe2pHKJHN35w==
+  dependencies:
+    "@babel/types" "^7.22.5"
+
+"@babel/helper-simple-access@^7.24.7":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/helper-simple-access/-/helper-simple-access-7.24.7.tgz"
   integrity sha512-zBAIvbCMh5Ts+b86r/CjU+4XGYIs+R1j951gxI3KmmxBMhCg4oQMsv6ZXQ64XOm/cvzfU1FmoCyt6+owc5QMYg==
   dependencies:
     "@babel/traverse" "^7.24.7"
     "@babel/types" "^7.24.7"
+
+"@babel/helper-split-export-declaration@^7.22.6":
+  version "7.22.6"
+  resolved "https://registry.npmjs.org/@babel/helper-split-export-declaration/-/helper-split-export-declaration-7.22.6.tgz"
+  integrity sha512-AsUnxuLhRYsisFiaJwvp1QF+I3KjD5FOxut14q/GzovUe6orHLesW2C7d754kRm53h5gqrz6sFl6sxc4BVtE/g==
+  dependencies:
+    "@babel/types" "^7.22.5"
 
 "@babel/helper-split-export-declaration@^7.24.7":
   version "7.24.7"
@@ -205,20 +320,44 @@
   dependencies:
     "@babel/types" "^7.24.7"
 
+"@babel/helper-string-parser@^7.23.4":
+  version "7.23.4"
+  resolved "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.23.4.tgz"
+  integrity sha512-803gmbQdqwdf4olxrX4AJyFBV/RTr3rSmOj0rKwesmzlfhYNDEs+/iOcznzpNWlJlIlTJC2QfPFcHB6DlzdVLQ==
+
 "@babel/helper-string-parser@^7.24.7":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.24.7.tgz"
   integrity sha512-7MbVt6xrwFQbunH2DNQsAP5sTGxfqQtErvBIvIMi6EQnbgUOuVYanvREcmFrOPhoXBrTtjhhP+lW+o5UfK+tDg==
+
+"@babel/helper-validator-identifier@^7.22.20":
+  version "7.22.20"
+  resolved "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.22.20.tgz"
+  integrity sha512-Y4OZ+ytlatR8AI+8KZfKuL5urKp7qey08ha31L8b3BwewJAoJamTzyvxPR/5D+KkdJCGPq/+8TukHBlY10FX9A==
 
 "@babel/helper-validator-identifier@^7.24.7":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.24.7.tgz"
   integrity sha512-rR+PBcQ1SMQDDyF6X0wxtG8QyLCgUB0eRAGguqRLfkCA87l7yAP7ehq8SNj96OOGTO8OBV70KhuFYcIkHXOg0w==
 
+"@babel/helper-validator-option@^7.23.5":
+  version "7.23.5"
+  resolved "https://registry.npmjs.org/@babel/helper-validator-option/-/helper-validator-option-7.23.5.tgz"
+  integrity sha512-85ttAOMLsr53VgXkTbkx8oA6YTfT4q7/HzXSLEYmjcSTJPMPQtvq1BD79Byep5xMUYbGRzEpDsjUf3dyp54IKw==
+
 "@babel/helper-validator-option@^7.24.7":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/helper-validator-option/-/helper-validator-option-7.24.7.tgz"
   integrity sha512-yy1/KvjhV/ZCL+SM7hBrvnZJ3ZuT9OuZgIJAGpPEToANvc3iM6iDvBnRjtElWibHU6n8/LPR/EjX9EtIEYO3pw==
+
+"@babel/helpers@^7.23.7":
+  version "7.23.8"
+  resolved "https://registry.npmjs.org/@babel/helpers/-/helpers-7.23.8.tgz"
+  integrity sha512-KDqYz4PiOWvDFrdHLPhKtCThtIcKVy6avWD2oG4GEvyQ+XDZwHD4YQd+H2vNMnq2rkdxsDkU82T+Vk8U/WXHRQ==
+  dependencies:
+    "@babel/template" "^7.22.15"
+    "@babel/traverse" "^7.23.7"
+    "@babel/types" "^7.23.6"
 
 "@babel/helpers@^7.24.7":
   version "7.24.7"
@@ -227,6 +366,15 @@
   dependencies:
     "@babel/template" "^7.24.7"
     "@babel/types" "^7.24.7"
+
+"@babel/highlight@^7.23.4":
+  version "7.23.4"
+  resolved "https://registry.npmjs.org/@babel/highlight/-/highlight-7.23.4.tgz"
+  integrity sha512-acGdbYSfp2WheJoJm/EBBBLh/ID8KDc64ISZ9DYtBmC8/Q204PZJLHyzeB5qMzJ5trcOkybd78M4x2KWsUq++A==
+  dependencies:
+    "@babel/helper-validator-identifier" "^7.22.20"
+    chalk "^2.4.2"
+    js-tokens "^4.0.0"
 
 "@babel/highlight@^7.24.7":
   version "7.24.7"
@@ -242,6 +390,11 @@
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/parser/-/parser-7.24.7.tgz"
   integrity sha512-9uUYRm6OqQrCqQdG1iCBwBPZgN8ciDBro2nIOFaiRz1/BCxaI7CNvQbDHvsArAC7Tw9Hda/B3U+6ui9u4HWXPw==
+
+"@babel/parser@^7.22.15", "@babel/parser@^7.23.6":
+  version "7.23.6"
+  resolved "https://registry.npmjs.org/@babel/parser/-/parser-7.23.6.tgz"
+  integrity sha512-Z2uID7YJ7oNvAI20O9X0bblw7Qqs8Q2hFy0R9tAfnfLkp5MW0UH9eUvnDSnFwKZ0AvgS1ucqR4KzvVHgnke1VQ==
 
 "@babel/plugin-proposal-export-namespace-from@^7.14.5":
   version "7.18.9"
@@ -365,6 +518,15 @@
     "@babel/helper-plugin-utils" "^7.22.5"
     "@babel/helper-simple-access" "^7.22.5"
 
+"@babel/template@^7.22.15":
+  version "7.22.15"
+  resolved "https://registry.npmjs.org/@babel/template/-/template-7.22.15.tgz"
+  integrity sha512-QPErUVm4uyJa60rkI73qneDacvdvzxshT3kksGqlGWYdOTIUOwJ7RDUL8sGqslY1uXWSL6xMFKEXDS3ox2uF0w==
+  dependencies:
+    "@babel/code-frame" "^7.22.13"
+    "@babel/parser" "^7.22.15"
+    "@babel/types" "^7.22.15"
+
 "@babel/template@^7.24.7", "@babel/template@^7.3.3":
   version "7.24.7"
   resolved "https://registry.npmjs.org/@babel/template/-/template-7.24.7.tgz"
@@ -373,6 +535,22 @@
     "@babel/code-frame" "^7.24.7"
     "@babel/parser" "^7.24.7"
     "@babel/types" "^7.24.7"
+
+"@babel/traverse@^7.23.7":
+  version "7.23.7"
+  resolved "https://registry.npmjs.org/@babel/traverse/-/traverse-7.23.7.tgz"
+  integrity sha512-tY3mM8rH9jM0YHFGyfC0/xf+SB5eKUu7HPj7/k3fpi9dAlsMc5YbQvDi0Sh2QTPXqMhyaAtzAr807TIyfQrmyg==
+  dependencies:
+    "@babel/code-frame" "^7.23.5"
+    "@babel/generator" "^7.23.6"
+    "@babel/helper-environment-visitor" "^7.22.20"
+    "@babel/helper-function-name" "^7.23.0"
+    "@babel/helper-hoist-variables" "^7.22.5"
+    "@babel/helper-split-export-declaration" "^7.22.6"
+    "@babel/parser" "^7.23.6"
+    "@babel/types" "^7.23.6"
+    debug "^4.3.1"
+    globals "^11.1.0"
 
 "@babel/traverse@^7.24.7":
   version "7.24.7"
@@ -397,6 +575,15 @@
   dependencies:
     "@babel/helper-string-parser" "^7.24.7"
     "@babel/helper-validator-identifier" "^7.24.7"
+    to-fast-properties "^2.0.0"
+
+"@babel/types@^7.22.15", "@babel/types@^7.22.5", "@babel/types@^7.23.0", "@babel/types@^7.23.6":
+  version "7.23.6"
+  resolved "https://registry.npmjs.org/@babel/types/-/types-7.23.6.tgz"
+  integrity sha512-+uarb83brBzPKN38NX1MkB6vb6+mwvR6amUulqAE7ccQw1pEl+bCia9TbdG1lsnFP7lZySvUn37CHyXQdfTwzg==
+  dependencies:
+    "@babel/helper-string-parser" "^7.23.4"
+    "@babel/helper-validator-identifier" "^7.22.20"
     to-fast-properties "^2.0.0"
 
 "@bcoe/v8-coverage@^0.2.3":
@@ -470,23 +657,6 @@
     tslib "^2.4.0"
     type-fest "^4.0.0"
 
-"@crawlee/basic@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@apify/log" "^2.4.0"
-    "@apify/timeout" "^0.3.0"
-    "@apify/utilities" "^2.7.10"
-    "@crawlee/core" "3.9.2"
-    "@crawlee/types" "3.9.2"
-    "@crawlee/utils" "3.9.2"
-    csv-stringify "^6.2.0"
-    fs-extra "^11.0.0"
-    got-scraping "^4.0.0"
-    ow "^0.28.1"
-    tldts "^6.0.0"
-    tslib "^2.4.0"
-    type-fest "^4.0.0"
-
 "@crawlee/browser-pool@3.7.2":
   version "3.7.2"
   resolved "https://registry.npmjs.org/@crawlee/browser-pool/-/browser-pool-3.7.2.tgz"
@@ -496,24 +666,6 @@
     "@apify/timeout" "^0.3.0"
     "@crawlee/core" "3.7.2"
     "@crawlee/types" "3.7.2"
-    fingerprint-generator "^2.0.6"
-    fingerprint-injector "^2.0.5"
-    lodash.merge "^4.6.2"
-    nanoid "^3.3.4"
-    ow "^0.28.1"
-    p-limit "^3.1.0"
-    proxy-chain "^2.0.1"
-    quick-lru "^5.1.1"
-    tiny-typed-emitter "^2.1.0"
-    tslib "^2.4.0"
-
-"@crawlee/browser-pool@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@apify/log" "^2.4.0"
-    "@apify/timeout" "^0.3.0"
-    "@crawlee/core" "3.9.2"
-    "@crawlee/types" "3.9.2"
     fingerprint-generator "^2.0.6"
     fingerprint-injector "^2.0.5"
     lodash.merge "^4.6.2"
@@ -538,18 +690,6 @@
     ow "^0.28.1"
     tslib "^2.4.0"
 
-"@crawlee/browser@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@apify/timeout" "^0.3.0"
-    "@crawlee/basic" "3.9.2"
-    "@crawlee/browser-pool" "3.9.2"
-    "@crawlee/types" "3.9.2"
-    "@crawlee/utils" "3.9.2"
-    ow "^0.28.1"
-    tslib "^2.4.0"
-    type-fest "^4.0.0"
-
 "@crawlee/cheerio@3.7.2":
   version "3.7.2"
   resolved "https://registry.npmjs.org/@crawlee/cheerio/-/cheerio-3.7.2.tgz"
@@ -562,33 +702,12 @@
     htmlparser2 "^9.0.0"
     tslib "^2.4.0"
 
-"@crawlee/cheerio@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@crawlee/http" "3.9.2"
-    "@crawlee/types" "3.9.2"
-    "@crawlee/utils" "3.9.2"
-    cheerio "^1.0.0-rc.12"
-    htmlparser2 "^9.0.0"
-    tslib "^2.4.0"
-
 "@crawlee/cli@3.7.2":
   version "3.7.2"
   resolved "https://registry.npmjs.org/@crawlee/cli/-/cli-3.7.2.tgz"
   integrity sha512-JXPBdrvnp+KuRVY5nM8kr9WFuoD1abbc7+s2xhLl1zMFa5kUl020yuPAUYljsKqMTluDyqW+GDEklQdyjdZ9kQ==
   dependencies:
     "@crawlee/templates" "3.7.2"
-    ansi-colors "^4.1.3"
-    fs-extra "^11.0.0"
-    inquirer "^8.2.4"
-    tslib "^2.4.0"
-    yargonaut "^1.1.4"
-    yargs "^17.5.1"
-
-"@crawlee/cli@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@crawlee/templates" "3.9.2"
     ansi-colors "^4.1.3"
     fs-extra "^11.0.0"
     inquirer "^8.2.4"
@@ -626,34 +745,6 @@
     tslib "^2.4.0"
     type-fest "^4.0.0"
 
-"@crawlee/core@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@apify/consts" "^2.20.0"
-    "@apify/datastructures" "^2.0.0"
-    "@apify/log" "^2.4.0"
-    "@apify/pseudo_url" "^2.0.30"
-    "@apify/timeout" "^0.3.0"
-    "@apify/utilities" "^2.7.10"
-    "@crawlee/memory-storage" "3.9.2"
-    "@crawlee/types" "3.9.2"
-    "@crawlee/utils" "3.9.2"
-    "@sapphire/async-queue" "^1.5.1"
-    "@types/tough-cookie" "^4.0.2"
-    "@vladfrangu/async_event_emitter" "^2.2.2"
-    csv-stringify "^6.2.0"
-    fs-extra "^11.0.0"
-    got-scraping "^4.0.0"
-    json5 "^2.2.3"
-    minimatch "^9.0.0"
-    ow "^0.28.1"
-    stream-chain "^2.2.5"
-    stream-json "^1.7.4"
-    tldts "^6.0.0"
-    tough-cookie "^4.0.0"
-    tslib "^2.4.0"
-    type-fest "^4.0.0"
-
 "@crawlee/http@3.7.2":
   version "3.7.2"
   resolved "https://registry.npmjs.org/@crawlee/http/-/http-3.7.2.tgz"
@@ -664,24 +755,6 @@
     "@crawlee/basic" "3.7.2"
     "@crawlee/types" "3.7.2"
     "@crawlee/utils" "3.7.2"
-    "@types/content-type" "^1.1.5"
-    cheerio "^1.0.0-rc.12"
-    content-type "^1.0.4"
-    got-scraping "^4.0.0"
-    iconv-lite "^0.6.3"
-    mime-types "^2.1.35"
-    ow "^0.28.1"
-    tslib "^2.4.0"
-    type-fest "^4.0.0"
-
-"@crawlee/http@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@apify/timeout" "^0.3.0"
-    "@apify/utilities" "^2.7.10"
-    "@crawlee/basic" "3.9.2"
-    "@crawlee/types" "3.9.2"
-    "@crawlee/utils" "3.9.2"
     "@types/content-type" "^1.1.5"
     cheerio "^1.0.0-rc.12"
     content-type "^1.0.4"
@@ -707,19 +780,6 @@
     ow "^0.28.2"
     tslib "^2.4.0"
 
-"@crawlee/jsdom@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@apify/timeout" "^0.3.0"
-    "@apify/utilities" "^2.7.10"
-    "@crawlee/http" "3.9.2"
-    "@crawlee/types" "3.9.2"
-    "@types/jsdom" "^21.0.0"
-    cheerio "^1.0.0-rc.12"
-    jsdom "^24.0.0"
-    ow "^0.28.2"
-    tslib "^2.4.0"
-
 "@crawlee/linkedom@3.7.2":
   version "3.7.2"
   resolved "https://registry.npmjs.org/@crawlee/linkedom/-/linkedom-3.7.2.tgz"
@@ -733,17 +793,6 @@
     ow "^0.28.2"
     tslib "^2.4.0"
 
-"@crawlee/linkedom@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@apify/timeout" "^0.3.0"
-    "@apify/utilities" "^2.7.10"
-    "@crawlee/http" "3.9.2"
-    "@crawlee/types" "3.9.2"
-    linkedom "^0.16.0"
-    ow "^0.28.2"
-    tslib "^2.4.0"
-
 "@crawlee/memory-storage@3.7.2":
   version "3.7.2"
   resolved "https://registry.npmjs.org/@crawlee/memory-storage/-/memory-storage-3.7.2.tgz"
@@ -751,20 +800,6 @@
   dependencies:
     "@apify/log" "^2.4.0"
     "@crawlee/types" "3.7.2"
-    "@sapphire/async-queue" "^1.5.0"
-    "@sapphire/shapeshift" "^3.0.0"
-    content-type "^1.0.4"
-    fs-extra "^11.0.0"
-    json5 "^2.2.3"
-    mime-types "^2.1.35"
-    proper-lockfile "^4.1.2"
-    tslib "^2.4.0"
-
-"@crawlee/memory-storage@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@apify/log" "^2.4.0"
-    "@crawlee/types" "3.9.2"
     "@sapphire/async-queue" "^1.5.0"
     "@sapphire/shapeshift" "^3.0.0"
     content-type "^1.0.4"
@@ -791,26 +826,6 @@
     ow "^0.28.1"
     tslib "^2.4.0"
 
-"@crawlee/playwright@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@apify/datastructures" "^2.0.0"
-    "@apify/log" "^2.4.0"
-    "@apify/timeout" "^0.3.1"
-    "@crawlee/browser" "3.9.2"
-    "@crawlee/browser-pool" "3.9.2"
-    "@crawlee/core" "3.9.2"
-    "@crawlee/types" "3.9.2"
-    "@crawlee/utils" "3.9.2"
-    cheerio "^1.0.0-rc.12"
-    idcac-playwright "^0.1.2"
-    jquery "^3.6.0"
-    lodash.isequal "^4.5.0"
-    ml-logistic-regression "^2.0.0"
-    ow "^0.28.1"
-    string-comparison "^1.3.0"
-    tslib "^2.4.0"
-
 "@crawlee/puppeteer@3.7.2":
   version "3.7.2"
   resolved "https://registry.npmjs.org/@crawlee/puppeteer/-/puppeteer-3.7.2.tgz"
@@ -829,22 +844,6 @@
     ow "^0.28.1"
     tslib "^2.4.0"
 
-"@crawlee/puppeteer@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@apify/datastructures" "^2.0.0"
-    "@apify/log" "^2.4.0"
-    "@crawlee/browser" "3.9.2"
-    "@crawlee/browser-pool" "3.9.2"
-    "@crawlee/types" "3.9.2"
-    "@crawlee/utils" "3.9.2"
-    cheerio "^1.0.0-rc.12"
-    devtools-protocol "*"
-    idcac-playwright "^0.1.2"
-    jquery "^3.6.0"
-    ow "^0.28.1"
-    tslib "^2.4.0"
-
 "@crawlee/templates@3.7.2":
   version "3.7.2"
   resolved "https://registry.npmjs.org/@crawlee/templates/-/templates-3.7.2.tgz"
@@ -856,24 +855,10 @@
     yargonaut "^1.1.4"
     yargs "^17.5.1"
 
-"@crawlee/templates@3.9.2":
-  version "3.9.2"
-  dependencies:
-    ansi-colors "^4.1.3"
-    inquirer "^9.0.0"
-    tslib "^2.4.0"
-    yargonaut "^1.1.4"
-    yargs "^17.5.1"
-
 "@crawlee/types@^3.3.0", "@crawlee/types@^3.6.1", "@crawlee/types@3.7.2":
   version "3.7.2"
   resolved "https://registry.npmjs.org/@crawlee/types/-/types-3.7.2.tgz"
   integrity sha512-eU5GErdcs2MDzWtx5BaA652fpgCZGbL053NwlkDfQt1cfElh7QPrN0Mj/dS0wstbTtKEiLKXyA9qIcUgG6AnfQ==
-  dependencies:
-    tslib "^2.4.0"
-
-"@crawlee/types@3.9.2":
-  version "3.9.2"
   dependencies:
     tslib "^2.4.0"
 
@@ -893,20 +878,6 @@
     sax "^1.3.0"
     tslib "^2.4.0"
 
-"@crawlee/utils@3.9.2":
-  version "3.9.2"
-  dependencies:
-    "@apify/log" "^2.4.0"
-    "@apify/ps-tree" "^1.2.0"
-    "@crawlee/types" "3.9.2"
-    "@types/sax" "^1.2.7"
-    cheerio "^1.0.0-rc.12"
-    got-scraping "^4.0.3"
-    ow "^0.28.1"
-    robots-parser "^3.0.1"
-    sax "^1.3.0"
-    tslib "^2.4.0"
-
 "@cspotcode/source-map-support@^0.8.0":
   version "0.8.1"
   resolved "https://registry.npmjs.org/@cspotcode/source-map-support/-/source-map-support-0.8.1.tgz"
@@ -914,10 +885,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@esbuild/darwin-arm64@0.20.2":
+"@esbuild/linux-x64@0.20.2":
   version "0.20.2"
-  resolved "https://registry.npmjs.org/@esbuild/darwin-arm64/-/darwin-arm64-0.20.2.tgz"
-  integrity sha512-4J6IRT+10J3aJH3l1yzEg9y3wkTDgDk7TSDFX+wKFiWjqWp/iCfLIYzGyasx9l0SAFPT1HwSCR+0w/h1ES/MjA==
+  resolved "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.20.2.tgz"
+  integrity sha512-1MdwI6OOTsfQfek8sLwgyjOXAu+wKhLEoaOLTjbijk6E2WONYpH9ZU2mNtR+lZ2B4uwr+usqGuVfFT9tMtGvGw==
 
 "@eslint-community/eslint-utils@^4.2.0":
   version "4.4.0"
@@ -1195,7 +1166,16 @@
     "@types/yargs" "^17.0.8"
     chalk "^4.0.0"
 
-"@jridgewell/gen-mapping@^0.3.0", "@jridgewell/gen-mapping@^0.3.5":
+"@jridgewell/gen-mapping@^0.3.0", "@jridgewell/gen-mapping@^0.3.2":
+  version "0.3.3"
+  resolved "https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.3.tgz"
+  integrity sha512-HLhSWOLRi875zjjMG/r+Nv0oCW8umGb0BgEhyX3dDX3egwZtB8PqLnjz3yedt8R5StBrzcg4aBpnh8UA9D1BoQ==
+  dependencies:
+    "@jridgewell/set-array" "^1.0.1"
+    "@jridgewell/sourcemap-codec" "^1.4.10"
+    "@jridgewell/trace-mapping" "^0.3.9"
+
+"@jridgewell/gen-mapping@^0.3.5":
   version "0.3.5"
   resolved "https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.5.tgz"
   integrity sha512-IzL8ZoEDIBRWEzlCcRhOaCupYyN5gdIK+Q6fbFdPDg6HqX6jpkItn7DFIpW9LQzXG6Df9sA7+OKnq0qlz/GaQg==
@@ -1209,6 +1189,11 @@
   resolved "https://registry.npmjs.org/@jridgewell/resolve-uri/-/resolve-uri-3.1.1.tgz"
   integrity sha512-dSYZh7HhCDtCKm4QakX0xFpsRDqjjtZf/kjI/v3T3Nwt5r8/qz/M19F9ySyOqU94SXBmeG9ttTul+YnR4LOxFA==
 
+"@jridgewell/set-array@^1.0.1":
+  version "1.1.2"
+  resolved "https://registry.npmjs.org/@jridgewell/set-array/-/set-array-1.1.2.tgz"
+  integrity sha512-xnkseuNADM0gt2bs+BvhO0p78Mk762YnZdsuzFV018NoG1Sj1SCQvpSqa7XUaTam5vAGasABV9qXASMKnFMwMw==
+
 "@jridgewell/set-array@^1.2.1":
   version "1.2.1"
   resolved "https://registry.npmjs.org/@jridgewell/set-array/-/set-array-1.2.1.tgz"
@@ -1219,10 +1204,26 @@
   resolved "https://registry.npmjs.org/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.4.15.tgz"
   integrity sha512-eF2rxCRulEKXHTRiDrDy6erMYWqNw4LPdQ8UQA4huuxaQsVeRPFl2oM8oDGxMFhJUWZf9McpLtJasDDZb/Bpeg==
 
-"@jridgewell/trace-mapping@^0.3.12", "@jridgewell/trace-mapping@^0.3.18", "@jridgewell/trace-mapping@^0.3.24", "@jridgewell/trace-mapping@^0.3.25", "@jridgewell/trace-mapping@^0.3.9":
+"@jridgewell/trace-mapping@^0.3.12", "@jridgewell/trace-mapping@^0.3.18", "@jridgewell/trace-mapping@^0.3.24", "@jridgewell/trace-mapping@^0.3.25":
   version "0.3.25"
   resolved "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.25.tgz"
   integrity sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==
+  dependencies:
+    "@jridgewell/resolve-uri" "^3.1.0"
+    "@jridgewell/sourcemap-codec" "^1.4.14"
+
+"@jridgewell/trace-mapping@^0.3.17":
+  version "0.3.21"
+  resolved "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.21.tgz"
+  integrity sha512-SRfKmRe1KvYnxjEMtxEr+J4HIeMX5YBg/qhRHpxEIGjhX1rshcHlnFUE9K0GazhVKWM7B+nARSkV8LuvJdJ5/g==
+  dependencies:
+    "@jridgewell/resolve-uri" "^3.1.0"
+    "@jridgewell/sourcemap-codec" "^1.4.14"
+
+"@jridgewell/trace-mapping@^0.3.9":
+  version "0.3.21"
+  resolved "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.21.tgz"
+  integrity sha512-SRfKmRe1KvYnxjEMtxEr+J4HIeMX5YBg/qhRHpxEIGjhX1rshcHlnFUE9K0GazhVKWM7B+nARSkV8LuvJdJ5/g==
   dependencies:
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
@@ -1253,7 +1254,14 @@
     methods "^1.1.2"
     path-to-regexp "^6.2.1"
 
-"@ljharb/through@^2.3.11", "@ljharb/through@^2.3.13":
+"@ljharb/through@^2.3.11":
+  version "2.3.11"
+  resolved "https://registry.npmjs.org/@ljharb/through/-/through-2.3.11.tgz"
+  integrity sha512-ccfcIDlogiXNq5KcbAwbaO7lMh3Tm1i3khMPYpxlK8hH/W53zN81KM9coerRLOnTGu3nfXIniAmQbRI9OxbC0w==
+  dependencies:
+    call-bind "^1.0.2"
+
+"@ljharb/through@^2.3.13":
   version "2.3.13"
   resolved "https://registry.npmjs.org/@ljharb/through/-/through-2.3.13.tgz"
   integrity sha512-/gKJun8NNiWGZJkGzI/Ragc53cOdcLNdzjLaIa+GEjguQs0ulsurx8WN0jijdK9yPqDvziX995sMRLyLt1uZMQ==
@@ -1287,9 +1295,9 @@
   integrity sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==
 
 "@prisma/client@^5.6.0":
-  version "5.16.1"
-  resolved "https://registry.npmjs.org/@prisma/client/-/client-5.16.1.tgz"
-  integrity sha512-wM9SKQjF0qLxdnOZIVAIMKiz6Hu7vDt4FFAih85K1dk/Rr2mdahy6d3QP41K62N9O0DJJA//gUDA3Mp49xsKIg==
+  version "5.8.0"
+  resolved "https://registry.npmjs.org/@prisma/client/-/client-5.8.0.tgz"
+  integrity sha512-QxO6C4MaA/ysTIbC+EcAH1aX/YkpymhXtO6zPdk+FvA7+59tNibIYpd+7koPdViLg2iKES4ojsxWNUGNJaEcbA==
 
 "@prisma/debug@5.8.0":
   version "5.8.0"
@@ -1327,17 +1335,16 @@
   dependencies:
     "@prisma/debug" "5.8.0"
 
-"@puppeteer/browsers@2.2.3":
-  version "2.2.3"
-  resolved "https://registry.npmjs.org/@puppeteer/browsers/-/browsers-2.2.3.tgz"
-  integrity sha512-bJ0UBsk0ESOs6RFcLXOt99a3yTDcOKlzfjad+rhFwdaG1Lu/Wzq58GHYCDTlZ9z6mldf4g+NTb+TXEfe0PpnsQ==
+"@puppeteer/browsers@1.9.1":
+  version "1.9.1"
+  resolved "https://registry.npmjs.org/@puppeteer/browsers/-/browsers-1.9.1.tgz"
+  integrity sha512-PuvK6xZzGhKPvlx3fpfdM2kYY3P/hB1URtK8wA7XUJ6prn6pp22zvJHu48th0SGcHL9SutbPHrFuQgfXTFobWA==
   dependencies:
     debug "4.3.4"
     extract-zip "2.0.1"
     progress "2.0.3"
-    proxy-agent "6.4.0"
-    semver "7.6.0"
-    tar-fs "3.0.5"
+    proxy-agent "6.3.1"
+    tar-fs "3.0.4"
     unbzip2-stream "1.4.3"
     yargs "17.7.2"
 
@@ -1354,66 +1361,141 @@
     fast-deep-equal "^3.1.3"
     lodash "^4.17.21"
 
-"@sentry-internal/tracing@7.119.0":
-  version "7.119.0"
-  resolved "https://registry.npmjs.org/@sentry-internal/tracing/-/tracing-7.119.0.tgz"
-  integrity sha512-oKdFJnn+56f0DHUADlL8o9l8jTib3VDLbWQBVkjD9EprxfaCwt2m8L5ACRBdQ8hmpxCEo4I8/6traZ7qAdBUqA==
+"@sentry-internal/tracing@7.107.0":
+  version "7.107.0"
+  resolved "https://registry.npmjs.org/@sentry-internal/tracing/-/tracing-7.107.0.tgz"
+  integrity sha512-le9wM8+OHBbq7m/8P7JUJ1UhSPIty+Z/HmRXc5Z64ODZcOwFV6TmDpYx729IXDdz36XUKmeI+BeM7yQdTTZPfQ==
   dependencies:
-    "@sentry/core" "7.119.0"
-    "@sentry/types" "7.119.0"
-    "@sentry/utils" "7.119.0"
+    "@sentry/core" "7.107.0"
+    "@sentry/types" "7.107.0"
+    "@sentry/utils" "7.107.0"
 
-"@sentry/core@7.119.0":
-  version "7.119.0"
-  resolved "https://registry.npmjs.org/@sentry/core/-/core-7.119.0.tgz"
-  integrity sha512-CS2kUv9rAJJEjiRat6wle3JATHypB0SyD7pt4cpX5y0dN5dZ1JrF57oLHRMnga9fxRivydHz7tMTuBhSSwhzjw==
+"@sentry-internal/tracing@7.118.0":
+  version "7.118.0"
+  resolved "https://registry.npmjs.org/@sentry-internal/tracing/-/tracing-7.118.0.tgz"
+  integrity sha512-dERAshKlQLrBscHSarhHyUeGsu652bDTUN1FK0m4e3X48M3I5/s+0N880Qjpe5MprNLcINlaIgdQ9jkisvxjfw==
   dependencies:
-    "@sentry/types" "7.119.0"
-    "@sentry/utils" "7.119.0"
+    "@sentry/core" "7.118.0"
+    "@sentry/types" "7.118.0"
+    "@sentry/utils" "7.118.0"
 
-"@sentry/integrations@7.119.0":
-  version "7.119.0"
-  resolved "https://registry.npmjs.org/@sentry/integrations/-/integrations-7.119.0.tgz"
-  integrity sha512-OHShvtsRW0A+ZL/ZbMnMqDEtJddPasndjq+1aQXw40mN+zeP7At/V1yPZyFaURy86iX7Ucxw5BtmzuNy7hLyTA==
+"@sentry/core@6.19.7":
+  version "6.19.7"
   dependencies:
-    "@sentry/core" "7.119.0"
-    "@sentry/types" "7.119.0"
-    "@sentry/utils" "7.119.0"
+    "@sentry/hub" "6.19.7"
+    "@sentry/minimal" "6.19.7"
+    "@sentry/types" "6.19.7"
+    "@sentry/utils" "6.19.7"
+    tslib "^1.9.3"
+
+"@sentry/core@7.107.0":
+  version "7.107.0"
+  resolved "https://registry.npmjs.org/@sentry/core/-/core-7.107.0.tgz"
+  integrity sha512-C7ogye6+KPyBi8NVL0P8Rxx3Ur7Td8ufnjxosVy678lqY+dcYPk/HONROrzUFYW5fMKWL4/KYnwP+x9uHnkDmw==
+  dependencies:
+    "@sentry/types" "7.107.0"
+    "@sentry/utils" "7.107.0"
+
+"@sentry/core@7.118.0":
+  version "7.118.0"
+  resolved "https://registry.npmjs.org/@sentry/core/-/core-7.118.0.tgz"
+  integrity sha512-ol0xBdp3/K11IMAYSQE0FMxBOOH9hMsb/rjxXWe0hfM5c72CqYWL3ol7voPci0GELJ5CZG+9ImEU1V9r6gK64g==
+  dependencies:
+    "@sentry/types" "7.118.0"
+    "@sentry/utils" "7.118.0"
+
+"@sentry/hub@6.19.7":
+  version "6.19.7"
+  resolved "https://registry.npmjs.org/@sentry/hub/-/hub-6.19.7.tgz"
+  integrity sha512-y3OtbYFAqKHCWezF0EGGr5lcyI2KbaXW2Ik7Xp8Mu9TxbSTuwTe4rTntwg8ngPjUQU3SUHzgjqVB8qjiGqFXCA==
+  dependencies:
+    "@sentry/types" "6.19.7"
+    "@sentry/utils" "6.19.7"
+    tslib "^1.9.3"
+
+"@sentry/integrations@7.118.0":
+  version "7.118.0"
+  resolved "https://registry.npmjs.org/@sentry/integrations/-/integrations-7.118.0.tgz"
+  integrity sha512-C2rR4NvIMjokF8jP5qzSf1o2zxDx7IeYnr8u15Kb2+HdZtX559owALR0hfgwnfeElqMhGlJBaKUWZ48lXJMzCQ==
+  dependencies:
+    "@sentry/core" "7.118.0"
+    "@sentry/types" "7.118.0"
+    "@sentry/utils" "7.118.0"
     localforage "^1.8.1"
 
-"@sentry/node@^7.107.0", "@sentry/node@^7.112.2":
-  version "7.119.0"
-  resolved "https://registry.npmjs.org/@sentry/node/-/node-7.119.0.tgz"
-  integrity sha512-9PFzN8xS6U0oZCflpVxS2SSIsHkCaj7qYBlsvHj4CTGWfao9ImwrU6+smy4qoG6oxwPfoVb5pOOMb4WpWOvXcQ==
+"@sentry/minimal@6.19.7":
+  version "6.19.7"
+  resolved "https://registry.npmjs.org/@sentry/minimal/-/minimal-6.19.7.tgz"
+  integrity sha512-wcYmSJOdvk6VAPx8IcmZgN08XTXRwRtB1aOLZm+MVHjIZIhHoBGZJYTVQS/BWjldsamj2cX3YGbGXNunaCfYJQ==
   dependencies:
-    "@sentry-internal/tracing" "7.119.0"
-    "@sentry/core" "7.119.0"
-    "@sentry/integrations" "7.119.0"
-    "@sentry/types" "7.119.0"
-    "@sentry/utils" "7.119.0"
+    "@sentry/hub" "6.19.7"
+    "@sentry/types" "6.19.7"
+    tslib "^1.9.3"
+
+"@sentry/node@^7.107.0":
+  version "7.107.0"
+  dependencies:
+    "@sentry-internal/tracing" "7.107.0"
+    "@sentry/core" "7.107.0"
+    "@sentry/types" "7.107.0"
+    "@sentry/utils" "7.107.0"
+
+"@sentry/node@^7.112.2":
+  version "7.118.0"
+  resolved "https://registry.npmjs.org/@sentry/node/-/node-7.118.0.tgz"
+  integrity sha512-79N63DvYKkNPqzmc0cjO+vMZ/nU7+CbE3K3COQNiV7gk58+666G9mRZQJuZVOVebatq5wM5UR0G4LPkwD+J84g==
+  dependencies:
+    "@sentry-internal/tracing" "7.118.0"
+    "@sentry/core" "7.118.0"
+    "@sentry/integrations" "7.118.0"
+    "@sentry/types" "7.118.0"
+    "@sentry/utils" "7.118.0"
 
 "@sentry/profiling-node@^7.112.2":
-  version "7.113.0"
+  version "7.118.0"
+  resolved "https://registry.npmjs.org/@sentry/profiling-node/-/profiling-node-7.118.0.tgz"
+  integrity sha512-CHxNwufyBJN44CrwFubYCj0g0h4CLQpx08mcny+b01TRgSdplJ0cMBChVLrQVsoL5i4nmifyyqpjuSRcvMMaiA==
   dependencies:
     detect-libc "^2.0.2"
     node-abi "^3.61.0"
 
 "@sentry/types@^8.24.0":
-  version "8.27.0"
-  resolved "https://registry.npmjs.org/@sentry/types/-/types-8.27.0.tgz"
-  integrity sha512-B6lrP46+m2x0lfqWc9F4VcUbN893mVGnPEd7KIMRk95mPzkFJ3sNxggTQF5/ZfNO7lDQYQb22uysB5sj/BqFiw==
+  version "8.26.0"
 
-"@sentry/types@7.119.0":
-  version "7.119.0"
-  resolved "https://registry.npmjs.org/@sentry/types/-/types-7.119.0.tgz"
-  integrity sha512-27qQbutDBPKGbuJHROxhIWc1i0HJaGLA90tjMu11wt0E4UNxXRX+UQl4Twu68v4EV3CPvQcEpQfgsViYcXmq+w==
+"@sentry/types@6.19.7":
+  version "6.19.7"
 
-"@sentry/utils@7.119.0":
-  version "7.119.0"
-  resolved "https://registry.npmjs.org/@sentry/utils/-/utils-7.119.0.tgz"
-  integrity sha512-ZwyXexWn2ZIe2bBoYnXJVPc2esCSbKpdc6+0WJa8eutXfHq3FRKg4ohkfCBpfxljQGEfP1+kfin945lA21Ka+A==
+"@sentry/types@7.107.0":
+  version "7.107.0"
+  resolved "https://registry.npmjs.org/@sentry/types/-/types-7.107.0.tgz"
+  integrity sha512-H7qcPjPSUWHE/Zf5bR1EE24G0pGVuJgrSx8Tvvl5nKEepswMYlbXHRVSDN0gTk/E5Z7cqf+hUBOpkQgZyps77w==
+
+"@sentry/types@7.118.0":
+  version "7.118.0"
+  resolved "https://registry.npmjs.org/@sentry/types/-/types-7.118.0.tgz"
+  integrity sha512-2drqrD2+6kgeg+W/ycmiti3G4lJrV3hGjY9PpJ3bJeXrh6T2+LxKPzlgSEnKFaeQWkXdZ4eaUbtTXVebMjb5JA==
+
+"@sentry/utils@6.19.7":
+  version "6.19.7"
+  resolved "https://registry.npmjs.org/@sentry/utils/-/utils-6.19.7.tgz"
+  integrity sha512-z95ECmE3i9pbWoXQrD/7PgkBAzJYR+iXtPuTkpBjDKs86O3mT+PXOT3BAn79w2wkn7/i3vOGD2xVr1uiMl26dA==
   dependencies:
-    "@sentry/types" "7.119.0"
+    "@sentry/types" "6.19.7"
+    tslib "^1.9.3"
+
+"@sentry/utils@7.107.0":
+  version "7.107.0"
+  resolved "https://registry.npmjs.org/@sentry/utils/-/utils-7.107.0.tgz"
+  integrity sha512-C6PbN5gHh73MRHohnReeQ60N8rrLYa9LciHue3Ru2290eSThg4CzsPnx4SzkGpkSeVlhhptKtKZ+hp/ha3iVuw==
+  dependencies:
+    "@sentry/types" "7.107.0"
+
+"@sentry/utils@7.118.0":
+  version "7.118.0"
+  resolved "https://registry.npmjs.org/@sentry/utils/-/utils-7.118.0.tgz"
+  integrity sha512-43qItc/ydxZV1Zb3Kn2M54RwL9XXFa3IAYBO8S82Qvq5YUYmU2AmJ1jgg7DabXlVSWgMA1HntwqnOV3JLaEnTQ==
+  dependencies:
+    "@sentry/types" "7.118.0"
 
 "@sinclair/typebox@^0.27.8":
   version "0.27.8"
@@ -1705,7 +1787,9 @@
   integrity sha512-DHQpWGjyQKSHj3ebjFI/wRKcqQcdR+MoFBygntYOZytCqNfkd2ZC4ARDJ2DQqhjH5p85Nnd3jhUJIXrszFX/JA==
 
 "@types/node@^20.0.0":
-  version "20.12.8"
+  version "20.12.12"
+  resolved "https://registry.npmjs.org/@types/node/-/node-20.12.12.tgz"
+  integrity sha512-eWLDGF/FOSPtAvEqeRAQ4C8LSA7M1I7i0ky1I8U7kD1J5ITyW3AsRhQrKVoWf5pFKZ2kILsEGJhsI9r93PYnOw==
   dependencies:
     undici-types "~5.26.4"
 
@@ -1917,7 +2001,7 @@
   resolved "https://registry.npmjs.org/@vladfrangu/async_event_emitter/-/async_event_emitter-2.2.4.tgz"
   integrity sha512-ButUPz9E9cXMLgvAW8aLAKKJJsPu1dY1/l/E8xzLFuysowXygs6GBcyunK9rnGC4zTsnIc2mQo71rGw9U+Ykug==
 
-"1001cuponesdedescuento-com-co@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/1001cuponesdedescuento-com-co":
+"1001cuponesdedescuento-com-co@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/1001cuponesdedescuento-com-co":
   version "0.0.1"
   resolved "file:packages/1001cuponesdedescuento-com-co"
   dependencies:
@@ -1955,7 +2039,7 @@ acorn-walk@^8.1.1:
   resolved "https://registry.npmjs.org/acorn/-/acorn-8.11.3.tgz"
   integrity sha512-Y9rRfJG5jcKOE0CLisYbojUjIrIEE7AGMzA/Sm4BslANhbS+cDMpgBdcPT91oJ7OuJ9hYJBx59RjbhxVnrF8Xg==
 
-"acties-nl@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/acties-nl":
+"acties-nl@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/acties-nl":
   version "0.0.1"
   resolved "file:packages/acties-nl"
   dependencies:
@@ -1975,12 +2059,17 @@ adm-zip@^0.5.9:
   resolved "https://registry.npmjs.org/adm-zip/-/adm-zip-0.5.10.tgz"
   integrity sha512-x0HvcHqVJNTPk/Bw8JbLWlWoo6Wwnsug0fnYYro1HBrjxZ3G7/AZk7Ahv8JwDe1uIcz8eBqvu86FuF1POiG7vQ==
 
-agent-base@^7.0.2, agent-base@^7.1.0, agent-base@^7.1.1:
-  version "7.1.1"
-  resolved "https://registry.npmjs.org/agent-base/-/agent-base-7.1.1.tgz"
-  integrity sha512-H0TSyFNDMomMNJQBn8wFV5YC/2eJ+VXECwOadZJT554xP6cODZHPX3H9QMQECxvrgiSOP1pHjy1sMWQVYJOUOA==
+agent-base@^7.0.2, agent-base@^7.1.0:
+  version "7.1.0"
+  resolved "https://registry.npmjs.org/agent-base/-/agent-base-7.1.0.tgz"
+  integrity sha512-o/zjMZRhJxny7OyEF+Op8X+efiELC7k7yOjMzgfzVqOzXqkBkWI79YoTdOtsuWd5BWhAGAuOY/Xa6xpiaWXiNg==
   dependencies:
     debug "^4.3.4"
+
+agent-base@6:
+  version "6.0.2"
+  dependencies:
+    debug "4"
 
 agentkeepalive@^4.2.1:
   version "4.5.0"
@@ -2025,7 +2114,7 @@ ajv@^8.11.0:
     require-from-string "^2.0.2"
     uri-js "^4.2.2"
 
-"alennuskoodini-fi@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/alennuskoodini-fi":
+"alennuskoodini-fi@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/alennuskoodini-fi":
   version "0.0.1"
   resolved "file:packages/alennuskoodini-fi"
   dependencies:
@@ -2040,7 +2129,7 @@ ajv@^8.11.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"alennuskoodit-suomi24-fi@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/alennuskoodit-suomi24-fi":
+"alennuskoodit-suomi24-fi@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/alennuskoodit-suomi24-fi":
   version "0.0.1"
   resolved "file:packages/alennuskoodit-suomi24-fi"
   dependencies:
@@ -2121,7 +2210,7 @@ anymatch@^3.0.3, anymatch@~3.1.2:
     normalize-path "^3.0.0"
     picomatch "^2.0.4"
 
-"api@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/api":
+"api@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/api":
   version "1.0.0"
   resolved "file:packages/api"
   dependencies:
@@ -2156,10 +2245,10 @@ anymatch@^3.0.3, anymatch@~3.1.2:
     swagger-ui-express "^5.0.0"
     ts-node "^10.9.2"
 
-apify-client@^2.8.4, apify-client@^2.9.5, apify-client@2.9.5:
-  version "2.9.5"
-  resolved "https://registry.npmjs.org/apify-client/-/apify-client-2.9.5.tgz"
-  integrity sha512-qjB6RdZoEpojibl842h2x3gu7waWoxb2njHwwiBGLkioBu4c7/beIrJnV9e7vdNSHA3Y9VhvfsYFttujF0Oy0w==
+apify-client@^2.8.4, apify-client@2.9.5:
+  version "2.9.3"
+  resolved "https://registry.npmjs.org/apify-client/-/apify-client-2.9.3.tgz"
+  integrity sha512-qQn1BxNL29cxwFSpgA3oc53i88xdYGtNZfYDFCoi3MJyds1XKx2NDPuf65YwQS/n0Qsfq1uHJqbkqV5oo/FSXw==
   dependencies:
     "@apify/consts" "^2.25.0"
     "@apify/log" "^2.2.6"
@@ -2167,6 +2256,22 @@ apify-client@^2.8.4, apify-client@^2.9.5, apify-client@2.9.5:
     agentkeepalive "^4.2.1"
     async-retry "^1.3.3"
     axios "^1.6.7"
+    content-type "^1.0.5"
+    ow "^0.28.2"
+    tslib "^2.5.0"
+    type-fest "^4.0.0"
+
+apify-client@^2.9.5:
+  version "2.8.6"
+  resolved "https://registry.npmjs.org/apify-client/-/apify-client-2.8.6.tgz"
+  integrity sha512-Oz+plFC6l28EAMF/Uof+Q/ZXBDX+hAA3Pj38NNhm/UQnhakEnW3zpgySSF0a7txYpegtfoO2tiyi7DSr74K32g==
+  dependencies:
+    "@apify/consts" "^2.25.0"
+    "@apify/log" "^2.2.6"
+    "@crawlee/types" "^3.3.0"
+    agentkeepalive "^4.2.1"
+    async-retry "^1.3.3"
+    axios "^0.21.1"
     content-type "^1.0.5"
     ow "^0.28.2"
     tslib "^2.5.0"
@@ -2344,19 +2449,26 @@ available-typed-arrays@^1.0.5:
   resolved "https://registry.npmjs.org/available-typed-arrays/-/available-typed-arrays-1.0.5.tgz"
   integrity sha512-DMD0KiN46eipeziST1LPP/STfDU0sufISXmjSgvVsoU2tqxctQeASejWcfNtxYKqETM1UxQ8sp2OrSBWpHY6sw==
 
+axios@^0.21.1:
+  version "0.21.4"
+  resolved "https://registry.npmjs.org/axios/-/axios-0.21.4.tgz"
+  integrity sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==
+  dependencies:
+    follow-redirects "^1.14.0"
+
 axios@^1.6.2, axios@^1.6.7:
-  version "1.7.5"
-  resolved "https://registry.npmjs.org/axios/-/axios-1.7.5.tgz"
-  integrity sha512-fZu86yCo+svH3uqJ/yTdQ0QHpQu5oL+/QE+QPSv6BZSkDAoky9vytxp7u5qk83OJFS3kEBcesWni9WTZAv3tSw==
+  version "1.6.8"
+  resolved "https://registry.npmjs.org/axios/-/axios-1.6.8.tgz"
+  integrity sha512-v/ZHtJDU39mDpyBoFVkETcd/uNdxrWRrg3bKpOKzXFA6Bvqopts6ALSMU3y6ijYxbw2B+wPrIv46egTzJXCLGQ==
   dependencies:
     follow-redirects "^1.15.6"
     form-data "^4.0.0"
     proxy-from-env "^1.1.0"
 
 b4a@^1.6.4:
-  version "1.6.6"
-  resolved "https://registry.npmjs.org/b4a/-/b4a-1.6.6.tgz"
-  integrity sha512-5Tk1HLk6b6ctmjIkAcU/Ujv/1WqiDl0F0JdRCR80VsOcUlHcu7pWeWRlOqQLHfDEsVx9YH/aif5AG4ehoCtTmg==
+  version "1.6.4"
+  resolved "https://registry.npmjs.org/b4a/-/b4a-1.6.4.tgz"
+  integrity sha512-fpWrvyVHEKyeEvbKZTVOeZF3VSKKWtJxFIxX/jaVPf+cLbGUSitjb49pHLqPV2BUNNZ0LcoeEGfE/YCpyDYHIw==
 
 babel-jest@^29.0.0, babel-jest@^29.7.0:
   version "29.7.0"
@@ -2423,40 +2535,7 @@ balanced-match@^1.0.0:
   resolved "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz"
   integrity sha512-3oSeUO0TMV67hN1AmbXsK4yaqU7tjiHlbxRDZOpH0KW9+CeX4bRAaX0Anxt0tx2MrpRpWwQaPwIlISEJhYU5Pw==
 
-bare-events@^2.0.0, bare-events@^2.2.0:
-  version "2.4.2"
-  resolved "https://registry.npmjs.org/bare-events/-/bare-events-2.4.2.tgz"
-  integrity sha512-qMKFd2qG/36aA4GwvKq8MxnPgCQAmBWmSyLWsJcbn8v03wvIPQ/hG1Ms8bPzndZxMDoHpxez5VOS+gC9Yi24/Q==
-
-bare-fs@^2.1.1:
-  version "2.3.1"
-  resolved "https://registry.npmjs.org/bare-fs/-/bare-fs-2.3.1.tgz"
-  integrity sha512-W/Hfxc/6VehXlsgFtbB5B4xFcsCl+pAh30cYhoFyXErf6oGrwjh8SwiPAdHgpmWonKuYpZgGywN0SXt7dgsADA==
-  dependencies:
-    bare-events "^2.0.0"
-    bare-path "^2.0.0"
-    bare-stream "^2.0.0"
-
-bare-os@^2.1.0:
-  version "2.4.0"
-  resolved "https://registry.npmjs.org/bare-os/-/bare-os-2.4.0.tgz"
-  integrity sha512-v8DTT08AS/G0F9xrhyLtepoo9EJBJ85FRSMbu1pQUlAf6A8T0tEEQGMVObWeqpjhSPXsE0VGlluFBJu2fdoTNg==
-
-bare-path@^2.0.0, bare-path@^2.1.0:
-  version "2.1.3"
-  resolved "https://registry.npmjs.org/bare-path/-/bare-path-2.1.3.tgz"
-  integrity sha512-lh/eITfU8hrj9Ru5quUp0Io1kJWIk1bTjzo7JH1P5dWmQ2EL4hFUlfI8FonAhSlgIfhn63p84CDY/x+PisgcXA==
-  dependencies:
-    bare-os "^2.1.0"
-
-bare-stream@^2.0.0:
-  version "2.1.3"
-  resolved "https://registry.npmjs.org/bare-stream/-/bare-stream-2.1.3.tgz"
-  integrity sha512-tiDAH9H/kP+tvNO5sczyn9ZAA7utrSMobyDchsnyyXBuUe2FSQWbxhtuHB8jwpHYYevVo2UJpcmvvjrbHboUUQ==
-  dependencies:
-    streamx "^2.18.0"
-
-"bargainmoose-ca@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/bargainmoose-ca":
+"bargainmoose-ca@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/bargainmoose-ca":
   version "0.0.1"
   resolved "file:packages/bargainmoose-ca"
   dependencies:
@@ -2486,9 +2565,9 @@ basic-auth@^2.0.1:
     safe-buffer "5.1.2"
 
 basic-ftp@^5.0.2:
-  version "5.0.5"
-  resolved "https://registry.npmjs.org/basic-ftp/-/basic-ftp-5.0.5.tgz"
-  integrity sha512-4Bcg1P8xhUuqcii/S0Z9wiHIrQVPMermM1any+MX5GeGD7faD3/msQUDGLol9wOcz4/jbg/WJnGqoJF6LiBdtg==
+  version "5.0.4"
+  resolved "https://registry.npmjs.org/basic-ftp/-/basic-ftp-5.0.4.tgz"
+  integrity sha512-8PzkB0arJFV4jJWSGOYR+OEic6aeKMu/osRhBULN6RY0ykby6LKhbmuQ5ublvaas5BOwboah5D87nrHyuh8PPA==
 
 bidi-js@^1.0.3:
   version "1.0.3"
@@ -2549,14 +2628,14 @@ brace-expansion@^2.0.1:
   dependencies:
     balanced-match "^1.0.0"
 
-braces@^3.0.3, braces@~3.0.2:
-  version "3.0.3"
-  resolved "https://registry.npmjs.org/braces/-/braces-3.0.3.tgz"
-  integrity sha512-yQbXgO/OSZVD2IsiLlro+7Hf6Q18EJrKSEsdoMzKePKXct3gvD8oLcOQdIzGupr5Fj+EDe8gO/lxc1BzfMpxvA==
+braces@^3.0.2, braces@~3.0.2:
+  version "3.0.2"
+  resolved "https://registry.npmjs.org/braces/-/braces-3.0.2.tgz"
+  integrity sha512-b8um+L1RzM3WDSzvhm6gIz1yfTbBt6YTlcEKAvsmqCZZFw46z626lVj9j1yEPW33H5H+lBQpZMP1k8l+78Ha0A==
   dependencies:
-    fill-range "^7.1.1"
+    fill-range "^7.0.1"
 
-"bravo-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/bravo-com":
+"bravo-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/bravo-com":
   version "0.0.1"
   resolved "file:packages/bravo-com"
   dependencies:
@@ -2686,7 +2765,16 @@ cachedir@2.3.0:
   resolved "https://registry.npmjs.org/cachedir/-/cachedir-2.3.0.tgz"
   integrity sha512-A+Fezp4zxnit6FanDmv9EqXNAi3vt9DWp51/71UEhXukb7QUuvtv9344h91dyAxuTLoSYJFU299qzR3tzwPAhw==
 
-call-bind@^1.0.0, call-bind@^1.0.2, call-bind@^1.0.4, call-bind@^1.0.5, call-bind@^1.0.7:
+call-bind@^1.0.0, call-bind@^1.0.2, call-bind@^1.0.4, call-bind@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.npmjs.org/call-bind/-/call-bind-1.0.5.tgz"
+  integrity sha512-C3nQxfFZxFRVoJoGKKI8y3MOEo129NQ+FgQ08iye+Mk4zNZZGdjfs06bVTr+DBSlA66Q2VEcMki/cUCP4SercQ==
+  dependencies:
+    function-bind "^1.1.2"
+    get-intrinsic "^1.2.1"
+    set-function-length "^1.1.1"
+
+call-bind@^1.0.7:
   version "1.0.7"
   resolved "https://registry.npmjs.org/call-bind/-/call-bind-1.0.7.tgz"
   integrity sha512-GHTSNSYICQ7scH7sZ+M2rFopRoLh8t2bLSW6BbgrtLsahOIB5iyAVJf9GjWK3cYTDaMj4XdBpM1cA6pIS0Kv2w==
@@ -2814,7 +2902,7 @@ chardet@^0.7.0:
   resolved "https://registry.npmjs.org/chardet/-/chardet-0.7.0.tgz"
   integrity sha512-mT8iDcrh03qDGRRmoA2hmBJnxpllMR+0/0qlzjqZES6NdiWDcZkCNAk4rPFZ9Q85r27unkiNNg8ZOiwZXBHwcA==
 
-"che-discodes-dailymail-co-uk@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/che-discodes-dailymail-co-uk":
+"che-discodes-dailymail-co-uk@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/che-discodes-dailymail-co-uk":
   version "0.0.1"
   resolved "file:packages/che-discodes-dailymail-co-uk"
   dependencies:
@@ -2871,14 +2959,13 @@ chokidar@^3.5.3:
   optionalDependencies:
     fsevents "~2.3.2"
 
-chromium-bidi@0.5.24:
-  version "0.5.24"
-  resolved "https://registry.npmjs.org/chromium-bidi/-/chromium-bidi-0.5.24.tgz"
-  integrity sha512-5xQNN2SVBdZv4TxeMLaI+PelrnZsHDhn8h2JtyriLr+0qHcZS8BMuo93qN6J1VmtmrgYP+rmcLHcbpnA8QJh+w==
+chromium-bidi@0.5.2:
+  version "0.5.2"
+  resolved "https://registry.npmjs.org/chromium-bidi/-/chromium-bidi-0.5.2.tgz"
+  integrity sha512-PbVOSddxgKyj+JByqavWMNqWPCoCaT6XK5Z1EFe168sxnB/BM51LnZEPXSbFcFAJv/+u2B4XNTs9uXxy4GW3cQ==
   dependencies:
     mitt "3.0.1"
-    urlpattern-polyfill "10.0.0"
-    zod "3.23.8"
+    urlpattern-polyfill "9.0.0"
 
 chrono-node@^2.7.3:
   version "2.7.4"
@@ -3030,7 +3117,7 @@ code-point-at@^1.0.0:
   resolved "https://registry.npmjs.org/code-point-at/-/code-point-at-1.1.0.tgz"
   integrity sha512-RpAVKQA5T63xEj6/giIbUEtZwJ4UFIc3ZtvEkiaUERylqe8xb5IvqcgOurZLahv93CLKfxcw5YI+DZcUBRyLXA==
 
-"codepromo-lexpress-fr@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/codepromo-lexpress-fr":
+"codepromo-lexpress-fr@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/codepromo-lexpress-fr":
   version "0.0.1"
   resolved "file:packages/codepromo-lexpress-fr"
   dependencies:
@@ -3169,15 +3256,15 @@ cookie-signature@1.0.6:
   resolved "https://registry.npmjs.org/cookie-signature/-/cookie-signature-1.0.6.tgz"
   integrity sha512-QADzlaHc8icV8I7vbaJXJwod9HWYp8uCqf1xa4OfNu1T7JVxQIrUgOWtHdNDtPiywmFbiS12VjotIXLrKM3orQ==
 
+cookie@^0.4.1, cookie@0.4.2:
+  version "0.4.2"
+  resolved "https://registry.npmjs.org/cookie/-/cookie-0.4.2.tgz"
+  integrity sha512-aSWTXFzaKWkvHO1Ny/s+ePFpvKsPnjc551iI41v3ny/ow6tBG5Vd+FuqGNhh1LxOmVzOlGUriIlOaokOvhaStA==
+
 cookie@^0.5.0:
   version "0.5.0"
   resolved "https://registry.npmjs.org/cookie/-/cookie-0.5.0.tgz"
   integrity sha512-YZ3GUyn/o8gfKJlnlX7g7xq4gyO6OSuhGPKaaGssGB2qgDUS0gPgtTvoyZLTt9Ab6dC4hfc9dV5arkvc/OCmrw==
-
-cookie@0.4.2:
-  version "0.4.2"
-  resolved "https://registry.npmjs.org/cookie/-/cookie-0.4.2.tgz"
-  integrity sha512-aSWTXFzaKWkvHO1Ny/s+ePFpvKsPnjc551iI41v3ny/ow6tBG5Vd+FuqGNhh1LxOmVzOlGUriIlOaokOvhaStA==
 
 cookie@0.6.0:
   version "0.6.0"
@@ -3225,7 +3312,7 @@ cosmiconfig@^7.0.0:
     path-type "^4.0.0"
     yaml "^1.10.0"
 
-cosmiconfig@^8.3.6, cosmiconfig@>=8.2:
+cosmiconfig@^8.3.6, cosmiconfig@>=8.2, cosmiconfig@8.3.6:
   version "8.3.6"
   resolved "https://registry.npmjs.org/cosmiconfig/-/cosmiconfig-8.3.6.tgz"
   integrity sha512-kcZ6+W5QzcJ3P1Mt+83OUv/oHFqZHIx8DuxG6eZ5RGMERoLqp4BuGjhHLYGK+Kf5XVkQvqBSmAy/nGWN3qDgEA==
@@ -3235,34 +3322,7 @@ cosmiconfig@^8.3.6, cosmiconfig@>=8.2:
     parse-json "^5.2.0"
     path-type "^4.0.0"
 
-cosmiconfig@9.0.0:
-  version "9.0.0"
-  resolved "https://registry.npmjs.org/cosmiconfig/-/cosmiconfig-9.0.0.tgz"
-  integrity sha512-itvL5h8RETACmOTFc4UfIyB2RfEHi71Ax6E/PivVxq9NseKbOWpeyHEOIbmAw1rs8Ak0VursQNww7lf7YtUwzg==
-  dependencies:
-    env-paths "^2.2.1"
-    import-fresh "^3.3.0"
-    js-yaml "^4.1.0"
-    parse-json "^5.2.0"
-
-"coupert-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/coupert-com":
-  version "0.0.1"
-  resolved "file:packages/coupert-com"
-  dependencies:
-    "@sentry/node" "^7.107.0"
-    "@sentry/types" "^8.24.0"
-    "@types/cheerio" "^0.22.34"
-    apify "3.1.14"
-    axios "^1.6.2"
-    cheerio "^1.0.0-rc.10"
-    chrono-node "^2.7.3"
-    crawlee "3.7.2"
-    html-entities "^2.4.0"
-    jsonpath "^1.1.1"
-    moment "^2.29.4"
-    node-html-parser "^6.1.11"
-
-"couponbind-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/couponbind-com":
+"couponbind-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/couponbind-com":
   version "0.0.1"
   resolved "file:packages/couponbind-com"
   dependencies:
@@ -3279,7 +3339,7 @@ cosmiconfig@9.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"coupons-businessinsider-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/businessinsider":
+"coupons-businessinsider-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/businessinsider":
   version "0.0.1"
   resolved "file:packages/businessinsider"
   dependencies:
@@ -3296,7 +3356,7 @@ cosmiconfig@9.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"coupons-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/coupons-com":
+"coupons-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/coupons-com":
   version "0.0.1"
   resolved "file:packages/coupons-com"
   dependencies:
@@ -3311,7 +3371,7 @@ cosmiconfig@9.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"coupons-hardwarezone-com-sg@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/coupons-hardwarezone-com-sg":
+"coupons-hardwarezone-com-sg@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/coupons-hardwarezone-com-sg":
   version "0.0.1"
   resolved "file:packages/coupons-hardwarezone-com-sg"
   dependencies:
@@ -3328,7 +3388,7 @@ cosmiconfig@9.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"coupons-nine-com-au@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/coupons-nine-com-au":
+"coupons-nine-com-au@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/coupons-nine-com-au":
   version "0.0.1"
   resolved "file:packages/coupons-nine-com-au"
   dependencies:
@@ -3345,7 +3405,7 @@ cosmiconfig@9.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"coupons-oneindia-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/coupons-oneindia-com":
+"coupons-oneindia-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/coupons-oneindia-com":
   version "0.0.1"
   resolved "file:packages/coupons-oneindia-com"
   dependencies:
@@ -3362,7 +3422,7 @@ cosmiconfig@9.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"couponzguru-sg@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/couponzguru-sg":
+"couponzguru-sg@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/couponzguru-sg":
   version "0.0.1"
   resolved "file:packages/couponzguru-sg"
   dependencies:
@@ -3379,7 +3439,7 @@ cosmiconfig@9.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"cp-sg@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/cp-sg":
+"cp-sg@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/cp-sg":
   version "0.0.1"
   resolved "file:packages/cp-sg"
   dependencies:
@@ -3396,7 +3456,7 @@ cosmiconfig@9.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-crawlee@3.7.2:
+crawlee@^3.0.0, crawlee@3.7.2:
   version "3.7.2"
   resolved "https://registry.npmjs.org/crawlee/-/crawlee-3.7.2.tgz"
   integrity sha512-Ro8NaqcyHpncdA5ZEhYXFP6bzIw0udjnSxhjmranAg/kXpgU6onZhbCyfCRI9CWc+xKI3XawqHZ5BdMd3r4HxA==
@@ -3433,6 +3493,13 @@ create-require@^1.1.0:
   version "1.1.1"
   resolved "https://registry.npmjs.org/create-require/-/create-require-1.1.1.tgz"
   integrity sha512-dcKFX3jn0MpIaXjisoRvexIJVEKzaq7z2rZKxf+MSr9TkdmHmsU4m2lcLojrj/FHl8mk5VxMmYA+ftRkP/3oKQ==
+
+cross-fetch@4.0.0:
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/cross-fetch/-/cross-fetch-4.0.0.tgz"
+  integrity sha512-e4a5N8lVvuLgAWgnCrLr2PP0YyDOTHa9H/Rj54dirp61qXnNq46m82bRhNqIA5VccJtWBvPTFRV3TtvHUKPB1g==
+  dependencies:
+    node-fetch "^2.6.12"
 
 cross-spawn@^7.0.0, cross-spawn@^7.0.2, cross-spawn@^7.0.3:
   version "7.0.3"
@@ -3484,7 +3551,7 @@ csv-stringify@^6.2.0:
   resolved "https://registry.npmjs.org/csv-stringify/-/csv-stringify-6.4.5.tgz"
   integrity sha512-SPu1Vnh8U5EnzpNOi1NDBL5jU5Rx7DVHr15DNg9LXDTAbQlAVAmEbVt16wZvEW9Fu9Qt4Ji8kmeCJ2B1+4rFTQ==
 
-"cupomgratis-net@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/cupomgratis-net":
+"cupomgratis-net@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/cupomgratis-net":
   version "0.0.1"
   resolved "file:packages/cupomgratis-net"
   dependencies:
@@ -3501,7 +3568,7 @@ csv-stringify@^6.2.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"cupon-cl@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/cupon-cl":
+"cupon-cl@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/cupon-cl":
   version "0.0.1"
   resolved "file:packages/cupon-cl"
   dependencies:
@@ -3516,7 +3583,7 @@ csv-stringify@^6.2.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"cuponation@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/cuponation":
+"cuponation@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/cuponation":
   version "0.0.1"
   resolved "file:packages/cuponation"
   dependencies:
@@ -3533,7 +3600,7 @@ csv-stringify@^6.2.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"cuponomia-com-br@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/cuponomia-com-br":
+"cuponomia-com-br@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/cuponomia-com-br":
   version "0.0.1"
   resolved "file:packages/cuponomia-com-br"
   dependencies:
@@ -3550,7 +3617,7 @@ csv-stringify@^6.2.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"cuponomico-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/cuponomico-com":
+"cuponomico-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/cuponomico-com":
   version "0.0.1"
   resolved "file:packages/cuponomico-com"
   dependencies:
@@ -3581,10 +3648,10 @@ cz-conventional-changelog@^3.3.0, cz-conventional-changelog@3.3.0:
   optionalDependencies:
     "@commitlint/load" ">6.1.1"
 
-data-uri-to-buffer@^6.0.2:
-  version "6.0.2"
-  resolved "https://registry.npmjs.org/data-uri-to-buffer/-/data-uri-to-buffer-6.0.2.tgz"
-  integrity sha512-7hvf7/GW8e86rW0ptuwS3OcBGDjIi6SZva7hCyWC0yYry2cOPmLIjXAUHI6DK2HsnwJd9ifmt57i8eV2n4YNpw==
+data-uri-to-buffer@^6.0.0:
+  version "6.0.1"
+  resolved "https://registry.npmjs.org/data-uri-to-buffer/-/data-uri-to-buffer-6.0.1.tgz"
+  integrity sha512-MZd3VlchQkp8rdend6vrx7MmVDJzSNTBvghvKjirLkD+WTChA3KUf0jkE68Q4UyctNqI11zZO9/x2Yx+ub5Cvg==
 
 data-urls@^5.0.0:
   version "5.0.0"
@@ -3599,7 +3666,7 @@ dayjs@^1.10.0, dayjs@^1.11.11:
   resolved "https://registry.npmjs.org/dayjs/-/dayjs-1.11.11.tgz"
   integrity sha512-okzr3f11N6WuqYtZSvm+F776mB41wRZMhKP+hc34YdW+KmtYYK9iqvHSwo2k9FEH3fhGXvOPV6yz2IcSrfRUDg==
 
-"dealspotr-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/dealspotr-com":
+"dealspotr-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/dealspotr-com":
   version "0.0.1"
   resolved "file:packages/dealspotr-com"
   dependencies:
@@ -3629,13 +3696,6 @@ debug@2.6.9:
   integrity sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==
   dependencies:
     ms "2.0.0"
-
-debug@4.3.5:
-  version "4.3.5"
-  resolved "https://registry.npmjs.org/debug/-/debug-4.3.5.tgz"
-  integrity sha512-pt0bNEmneDIvdL1Xsd9oDQ/wrQRkXDT4AUWlNZNPKvW5x/jyO9VFXkJUP07vQ2upmw5PlaITaPKc31jK13V+jg==
-  dependencies:
-    ms "2.1.2"
 
 decamelize@^1.1.1:
   version "1.2.0"
@@ -3691,7 +3751,16 @@ defer-to-connect@^2.0.0, defer-to-connect@^2.0.1:
   resolved "https://registry.npmjs.org/defer-to-connect/-/defer-to-connect-2.0.1.tgz"
   integrity sha512-4tvttepXG1VaYGrRibk5EwJd1t4udunSOVMdLSAL6mId1ix438oPwPZMALY41FCijukO1L0twNcGsdzS7dHgDg==
 
-define-data-property@^1.0.1, define-data-property@^1.1.4:
+define-data-property@^1.0.1, define-data-property@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.npmjs.org/define-data-property/-/define-data-property-1.1.1.tgz"
+  integrity sha512-E7uGkTzkk1d0ByLeSc6ZsFS79Axg+m1P/VsgYsxHgiuc3tFSj+MjMIwe90FC4lOAZzNBdY7kkO2P2wKdsQ1vgQ==
+  dependencies:
+    get-intrinsic "^1.2.1"
+    gopd "^1.0.1"
+    has-property-descriptors "^1.0.0"
+
+define-data-property@^1.1.4:
   version "1.1.4"
   resolved "https://registry.npmjs.org/define-data-property/-/define-data-property-1.1.4.tgz"
   integrity sha512-rBMvIzlpA8v6E+SJZoo++HAYqsLrkg7MSfIinMPFhmkorw7X+dOXVJQs+QT69zGkzMyfDnIMN2Wid1+NbL3T+A==
@@ -3752,7 +3821,7 @@ depd@~1.1.2:
   resolved "https://registry.npmjs.org/depd/-/depd-1.1.2.tgz"
   integrity sha512-7emPTl6Dpo6JRXOXjLRxck+FlLRX5847cLKEn00PLAgc3g2hTZZgr+e4c2v6QpSmLeFP3n5yUo7ft6avBK/5jQ==
 
-"descuentos-elmundo-es@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/descuentos-elmundo-es":
+"descuentos-elmundo-es@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/descuentos-elmundo-es":
   version "0.0.1"
   resolved "file:packages/descuentos-elmundo-es"
   dependencies:
@@ -3769,7 +3838,7 @@ depd@~1.1.2:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"descuentos-elpais-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/descuentos-elpais-com":
+"descuentos-elpais-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/descuentos-elpais-com":
   version "0.0.1"
   resolved "file:packages/descuentos-elpais-com"
   dependencies:
@@ -3786,7 +3855,7 @@ depd@~1.1.2:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"descuentos-milenio-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/descuentos-milenio-com":
+"descuentos-milenio-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/descuentos-milenio-com":
   version "0.0.1"
   resolved "file:packages/descuentos-milenio-com"
   dependencies:
@@ -3828,10 +3897,10 @@ detect-newline@^3.0.0:
   resolved "https://registry.npmjs.org/detect-newline/-/detect-newline-3.1.0.tgz"
   integrity sha512-TLz+x/vEXm/Y7P7wn1EJFNLxYpUD4TgMosxY6fAVJUnJMbupHBOncxyWUG9OpTaH9EBD7uFI5LfEgmMOc54DsA==
 
-devtools-protocol@*, devtools-protocol@0.0.1299070:
-  version "0.0.1299070"
-  resolved "https://registry.npmjs.org/devtools-protocol/-/devtools-protocol-0.0.1299070.tgz"
-  integrity sha512-+qtL3eX50qsJ7c+qVyagqi7AWMoQCBGNfoyJZMwm/NSXVqLYbuitrWEEIzxfUmTNy7//Xe8yhMmQ+elj3uAqSg==
+devtools-protocol@*, devtools-protocol@0.0.1203626:
+  version "0.0.1203626"
+  resolved "https://registry.npmjs.org/devtools-protocol/-/devtools-protocol-0.0.1203626.tgz"
+  integrity sha512-nEzHZteIUZfGCZtTiS1fRpC8UZmsfD1SiyPvaUNvS13dvKf666OAm8YTi0+Ca3n1nLEyu49Cy4+dPWpaHFJk9g==
 
 diff-sequences@^29.6.3:
   version "29.6.3"
@@ -3855,7 +3924,7 @@ dir-glob@^3.0.1:
   dependencies:
     path-type "^4.0.0"
 
-"discountcode-metro-co-uk@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/discountcode-metro-co-uk":
+"discountcode-metro-co-uk@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/discountcode-metro-co-uk":
   version "0.0.1"
   resolved "file:packages/discountcode-metro-co-uk"
   dependencies:
@@ -3872,7 +3941,7 @@ dir-glob@^3.0.1:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"discountspot-co-kr@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/discountspot-co-kr":
+"discountspot-co-kr@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/discountspot-co-kr":
   version "0.0.1"
   resolved "file:packages/discountspot-co-kr"
   dependencies:
@@ -3933,7 +4002,7 @@ domutils@^3.0.1, domutils@^3.1.0:
     domelementtype "^2.3.0"
     domhandler "^5.0.3"
 
-"dontpayfull-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/dontpayfull-com":
+"dontpayfull-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/dontpayfull-com":
   version "0.0.1"
   resolved "file:packages/dontpayfull-com"
   dependencies:
@@ -3975,7 +4044,7 @@ dotenv@^16.3.1, dotenv@^16.4.5:
   resolved "https://registry.npmjs.org/dotenv/-/dotenv-16.4.5.tgz"
   integrity sha512-ZmdL2rui+eB2YwhsWzjInR8LldtZHGDoQ1ugH85ppHKwpUHL7j7rN0Ti9NCnGiQbhaZ11FpR+7ao1dNsmduNUg==
 
-"drivereasy-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/drivereasy-com":
+"drivereasy-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/drivereasy-com":
   version "0.0.1"
   resolved "file:packages/drivereasy-com"
   dependencies:
@@ -4054,11 +4123,6 @@ entities@^4.2.0, entities@^4.4.0, entities@^4.5.0:
   version "4.5.0"
   resolved "https://registry.npmjs.org/entities/-/entities-4.5.0.tgz"
   integrity sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==
-
-env-paths@^2.2.1:
-  version "2.2.1"
-  resolved "https://registry.npmjs.org/env-paths/-/env-paths-2.2.1.tgz"
-  integrity sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==
 
 error-ex@^1.2.0, error-ex@^1.3.1:
   version "1.3.2"
@@ -4579,7 +4643,7 @@ fast-diff@^1.1.2:
   resolved "https://registry.npmjs.org/fast-diff/-/fast-diff-1.3.0.tgz"
   integrity sha512-VxPP4NqbUjj6MaAOafWeUn2cXWLcCtljklUtZf0Ind4XQ+QPtmA0b18zZy0jIQx+ExRVCR/ZQpBmik5lXshNsw==
 
-fast-fifo@^1.2.0, fast-fifo@^1.3.2:
+fast-fifo@^1.1.0, fast-fifo@^1.2.0:
   version "1.3.2"
   resolved "https://registry.npmjs.org/fast-fifo/-/fast-fifo-1.3.2.tgz"
   integrity sha512-/d9sfos4yxzpwkDkuN7k2SqFKtYNmCTzgfEpz82x34IM9/zc8KGxQoXg1liNC/izpRM/MBdt44Nmx41ZWqk+FQ==
@@ -4658,10 +4722,10 @@ file@^0.2.2:
   resolved "https://registry.npmjs.org/file/-/file-0.2.2.tgz"
   integrity sha512-gwabMtChzdnpDJdPEpz8Vr/PX0pU85KailuPV71Zw/un5yJVKvzukhB3qf6O3lnTwIe5CxlMYLh3jOK3w5xrLA==
 
-fill-range@^7.1.1:
-  version "7.1.1"
-  resolved "https://registry.npmjs.org/fill-range/-/fill-range-7.1.1.tgz"
-  integrity sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==
+fill-range@^7.0.1:
+  version "7.0.1"
+  resolved "https://registry.npmjs.org/fill-range/-/fill-range-7.0.1.tgz"
+  integrity sha512-qOo9F+dMUmC2Lcb4BbVvnKJxTPjCm+RRpe4gDuGrzkL7mEVl/djYSu2OdQ2Pa302N4oqkSg9ir6jaLWJ2USVpQ==
   dependencies:
     to-regex-range "^5.0.1"
 
@@ -4699,15 +4763,7 @@ find-up@^1.0.0:
     path-exists "^2.0.0"
     pinkie-promise "^2.0.0"
 
-find-up@^4.0.0:
-  version "4.1.0"
-  resolved "https://registry.npmjs.org/find-up/-/find-up-4.1.0.tgz"
-  integrity sha512-PpOwAdQ/YlXQ2vj8a3h8IipDuYRi3wceVQQGYWxNINccq40Anw7BlsEXCMbt1Zt+OLA6Fq9suIpIWD0OsnISlw==
-  dependencies:
-    locate-path "^5.0.0"
-    path-exists "^4.0.0"
-
-find-up@^4.1.0:
+find-up@^4.0.0, find-up@^4.1.0:
   version "4.1.0"
   resolved "https://registry.npmjs.org/find-up/-/find-up-4.1.0.tgz"
   integrity sha512-PpOwAdQ/YlXQ2vj8a3h8IipDuYRi3wceVQQGYWxNINccq40Anw7BlsEXCMbt1Zt+OLA6Fq9suIpIWD0OsnISlw==
@@ -4799,7 +4855,7 @@ flatted@^3.2.9:
   resolved "https://registry.npmjs.org/flatted/-/flatted-3.2.9.tgz"
   integrity sha512-36yxDn5H7OFZQla0/jFJmbIKTdZAQHngCedGxiMmpNfEZM0sdEeT+WczLQrjK6D7o2aiyLYDnkw0R3JK0Qv1RQ==
 
-follow-redirects@^1.15.6:
+follow-redirects@^1.14.0, follow-redirects@^1.15.6:
   version "1.15.6"
   resolved "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.15.6.tgz"
   integrity sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==
@@ -4850,7 +4906,7 @@ forwarded@0.2.0:
   resolved "https://registry.npmjs.org/forwarded/-/forwarded-0.2.0.tgz"
   integrity sha512-buRG0fpBtRHSTCOASe6hD258tEubFoRLb4ZNA6NxMVHNw2gOcwHo9wyablzMzOA5z9xA9L1KNjk/Nt6MT9aYow==
 
-"frcodespromo-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/frcodespromo-com":
+"frcodespromo-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/frcodespromo-com":
   version "0.0.1"
   resolved "file:packages/frcodespromo-com"
   dependencies:
@@ -4877,7 +4933,7 @@ from@~0:
   resolved "https://registry.npmjs.org/from/-/from-0.1.7.tgz"
   integrity sha512-twe20eF1OxVxp/ML/kq2p1uc6KvFK/+vs8WjEbeKmV2He22MKm7YF2ANIt+EOqhJ5L3K/SuuPhk0hWQDjOM23g==
 
-fs-extra@^11.0.0, fs-extra@^11.2.0:
+fs-extra@^11.0.0:
   version "11.2.0"
   resolved "https://registry.npmjs.org/fs-extra/-/fs-extra-11.2.0.tgz"
   integrity sha512-PmDi3uwK5nFuXh7XDTlVnS17xJS7vW36is2+w3xcv8SVxiB4NyATf4ctkVY5bkSjX0Y4nbvZCq1/EjtEyr9ktw==
@@ -4885,6 +4941,15 @@ fs-extra@^11.0.0, fs-extra@^11.2.0:
     graceful-fs "^4.2.0"
     jsonfile "^6.0.1"
     universalify "^2.0.0"
+
+fs-extra@^8.1.0:
+  version "8.1.0"
+  resolved "https://registry.npmjs.org/fs-extra/-/fs-extra-8.1.0.tgz"
+  integrity sha512-yhlQgA6mnOJUKOsRUFsgJdQCvkKhcz8tlZG5HBQfReYZy46OwLcY+Zia0mtdHsOo9y/hP+CxMN0TU9QxoOtG4g==
+  dependencies:
+    graceful-fs "^4.2.0"
+    jsonfile "^4.0.0"
+    universalify "^0.1.0"
 
 fs-extra@9.1.0:
   version "9.1.0"
@@ -4900,11 +4965,6 @@ fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.npmjs.org/fs.realpath/-/fs.realpath-1.0.0.tgz"
   integrity sha512-OO0pH2lK6a0hZnAdau5ItzHPI6pUlvI7jMVnxUQRtw4owF2wk8lOSabtGDCTP4Ggrg2MbGnWO9X8K1t4+fGMDw==
-
-fsevents@^2.3.2, fsevents@~2.3.2, fsevents@~2.3.3:
-  version "2.3.3"
-  resolved "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz"
-  integrity sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==
 
 function-bind@^1.1.1, function-bind@^1.1.2:
   version "1.1.2"
@@ -4926,7 +4986,7 @@ functions-have-names@^1.2.3:
   resolved "https://registry.npmjs.org/functions-have-names/-/functions-have-names-1.2.3.tgz"
   integrity sha512-xckBUXyTIqT97tq2x2AMb+g163b5JFysYk0x4qxNFwbfQkmNZoiRHb6sPzI9/QV33WeuvVYBUIiD4NzNIyqaRQ==
 
-"fyvor-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/fyvor-com":
+"fyvor-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/fyvor-com":
   version "0.0.1"
   resolved "file:packages/fyvor-com"
   dependencies:
@@ -4971,7 +5031,17 @@ get-east-asian-width@^1.0.0:
   resolved "https://registry.npmjs.org/get-east-asian-width/-/get-east-asian-width-1.2.0.tgz"
   integrity sha512-2nk+7SIVb14QrgXFHcm84tD4bKQz0RxPuMT8Ag5KPOq7J5fEmAg0UbXdTOSHqNuHSU28k55qnceesxXRZGzKWA==
 
-get-intrinsic@^1.0.2, get-intrinsic@^1.1.1, get-intrinsic@^1.1.3, get-intrinsic@^1.2.0, get-intrinsic@^1.2.1, get-intrinsic@^1.2.2, get-intrinsic@^1.2.4:
+get-intrinsic@^1.0.2, get-intrinsic@^1.1.1, get-intrinsic@^1.1.3, get-intrinsic@^1.2.0, get-intrinsic@^1.2.1, get-intrinsic@^1.2.2:
+  version "1.2.2"
+  resolved "https://registry.npmjs.org/get-intrinsic/-/get-intrinsic-1.2.2.tgz"
+  integrity sha512-0gSo4ml/0j98Y3lngkFEot/zhiCeWsbYIlZ+uZOVgzLyLaUw7wxUL+nCTP0XJvJg1AXulJRI3UJi8GsbDuxdGA==
+  dependencies:
+    function-bind "^1.1.2"
+    has-proto "^1.0.1"
+    has-symbols "^1.0.3"
+    hasown "^2.0.0"
+
+get-intrinsic@^1.2.4:
   version "1.2.4"
   resolved "https://registry.npmjs.org/get-intrinsic/-/get-intrinsic-1.2.4.tgz"
   integrity sha512-5uYhsJH8VJBTv7oslg4BznJYhDoRI6waYCxMmCdnTrcCrHA/fCFKoTFz2JKKE0HdDFUF7/oQuhzumXJK7paBRQ==
@@ -5022,20 +5092,22 @@ get-symbol-description@^1.0.0:
     call-bind "^1.0.2"
     get-intrinsic "^1.1.1"
 
-get-tsconfig@^4.7.3:
-  version "4.7.3"
+get-tsconfig@^4.7.5:
+  version "4.7.5"
+  resolved "https://registry.npmjs.org/get-tsconfig/-/get-tsconfig-4.7.5.tgz"
+  integrity sha512-ZCuZCnlqNzjb4QprAzXKdpp/gh6KTxSJuw3IBsPnV/7fV4NxC9ckB+vPTt8w7fJA0TaSD7c55BR47JD6MEDyDw==
   dependencies:
     resolve-pkg-maps "^1.0.0"
 
 get-uri@^6.0.1:
-  version "6.0.3"
-  resolved "https://registry.npmjs.org/get-uri/-/get-uri-6.0.3.tgz"
-  integrity sha512-BzUrJBS9EcUb4cFol8r4W3v1cPsSyajLSthNkz5BxbpDcHN5tIrM10E2eNvfnvBn3DaT3DUgx0OpsBKkaOpanw==
+  version "6.0.2"
+  resolved "https://registry.npmjs.org/get-uri/-/get-uri-6.0.2.tgz"
+  integrity sha512-5KLucCJobh8vBY1K07EFV4+cPZH3mrV9YeAruUseCQKHB58SGjjT2l9/eA9LD082IiuMjSlFJEcdJ27TXvbZNw==
   dependencies:
     basic-ftp "^5.0.2"
-    data-uri-to-buffer "^6.0.2"
+    data-uri-to-buffer "^6.0.0"
     debug "^4.3.4"
-    fs-extra "^11.2.0"
+    fs-extra "^8.1.0"
 
 glob-parent@^5.1.2, glob-parent@~5.1.2:
   version "5.1.2"
@@ -5208,7 +5280,7 @@ got@^13.0.0:
     p-cancelable "^3.0.0"
     responselike "^3.0.0"
 
-"grabon-in@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/grabon-in":
+"grabon-in@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/grabon-in":
   version "0.0.1"
   resolved "file:packages/grabon-in"
   dependencies:
@@ -5235,7 +5307,7 @@ graphemer@^1.4.0:
   resolved "https://registry.npmjs.org/graphemer/-/graphemer-1.4.0.tgz"
   integrity sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==
 
-"gratislandet-se@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/gratislandet-se":
+"gratislandet-se@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/gratislandet-se":
   version "0.0.1"
   resolved "file:packages/gratislandet-se"
   dependencies:
@@ -5252,7 +5324,7 @@ graphemer@^1.4.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"groupon-ie@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/groupon-ie":
+"groupon-ie@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/groupon-ie":
   version "0.0.1"
   resolved "file:packages/groupon-ie"
   dependencies:
@@ -5269,7 +5341,7 @@ graphemer@^1.4.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"gutscheine-blick-ch@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/gutscheine-blick-ch":
+"gutscheine-blick-ch@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/gutscheine-blick-ch":
   version "0.0.1"
   resolved "file:packages/gutscheine-blick-ch"
   dependencies:
@@ -5286,7 +5358,7 @@ graphemer@^1.4.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"gutscheine-chip-de@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/gutscheine-chip-de":
+"gutscheine-chip-de@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/gutscheine-chip-de":
   version "0.0.1"
   resolved "file:packages/gutscheine-chip-de"
   dependencies:
@@ -5303,7 +5375,7 @@ graphemer@^1.4.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"gutscheine-focus-de@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/gutscheine-focus-de":
+"gutscheine-focus-de@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/gutscheine-focus-de":
   version "0.0.1"
   resolved "file:packages/gutscheine-focus-de"
   dependencies:
@@ -5320,7 +5392,7 @@ graphemer@^1.4.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"gutscheine-kleinezeitung-at@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/gutscheine-kleinezeitung-at":
+"gutscheine-kleinezeitung-at@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/gutscheine-kleinezeitung-at":
   version "0.0.1"
   resolved "file:packages/gutscheine-kleinezeitung-at"
   dependencies:
@@ -5337,7 +5409,7 @@ graphemer@^1.4.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"gutscheine-sparwelt-de@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/gutscheine-sparwelt-de":
+"gutscheine-sparwelt-de@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/gutscheine-sparwelt-de":
   version "0.0.1"
   resolved "file:packages/gutscheine-sparwelt-de"
   dependencies:
@@ -5354,7 +5426,7 @@ graphemer@^1.4.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"gutscheinsammler-de@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/gutscheinsammler-de":
+"gutscheinsammler-de@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/gutscheinsammler-de":
   version "0.0.1"
   resolved "file:packages/gutscheinsammler-de"
   dependencies:
@@ -5364,23 +5436,6 @@ graphemer@^1.4.0:
     apify "3.1.14"
     axios "^1.6.2"
     cheerio "^1.0.0-rc.12"
-    chrono-node "^2.7.3"
-    crawlee "3.7.2"
-    html-entities "^2.4.0"
-    jsonpath "^1.1.1"
-    moment "^2.29.4"
-    node-html-parser "^6.1.11"
-
-"halincode-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/halincode-com":
-  version "0.0.1"
-  resolved "file:packages/halincode-com"
-  dependencies:
-    "@sentry/node" "^7.107.0"
-    "@sentry/types" "^8.24.0"
-    "@types/cheerio" "^0.22.34"
-    apify "3.1.14"
-    axios "^1.6.2"
-    cheerio "^1.0.0-rc.10"
     chrono-node "^2.7.3"
     crawlee "3.7.2"
     html-entities "^2.4.0"
@@ -5422,7 +5477,14 @@ has-flag@^4.0.0:
   resolved "https://registry.npmjs.org/has-flag/-/has-flag-4.0.0.tgz"
   integrity sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==
 
-has-property-descriptors@^1.0.0, has-property-descriptors@^1.0.2:
+has-property-descriptors@^1.0.0:
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/has-property-descriptors/-/has-property-descriptors-1.0.1.tgz"
+  integrity sha512-VsX8eaIewvas0xnvinAe9bw4WfIeODpGYikiWYLH+dma0Jw6KHYqWiWfhQlgOVK8D6PvjubK5Uc4P0iIhIcNVg==
+  dependencies:
+    get-intrinsic "^1.2.2"
+
+has-property-descriptors@^1.0.2:
   version "1.0.2"
   resolved "https://registry.npmjs.org/has-property-descriptors/-/has-property-descriptors-1.0.2.tgz"
   integrity sha512-55JNKuIW+vq4Ke1BjOTjM2YctQIvCT7GFzHwmfZPGo5wnrgkid0YQtnAleFSqumZm4az3n2BS+erby5ipJdgrg==
@@ -5581,10 +5643,10 @@ http-errors@~1.8.0:
     statuses ">= 1.5.0 < 2"
     toidentifier "1.0.1"
 
-http-proxy-agent@^7.0.0, http-proxy-agent@^7.0.1:
-  version "7.0.2"
-  resolved "https://registry.npmjs.org/http-proxy-agent/-/http-proxy-agent-7.0.2.tgz"
-  integrity sha512-T1gkAiYYDWYx3V5Bmyu7HcfcvL7mUrTWiM6yOfa3PIphViJ/gFPbvidQ+veqSOHci/PxBcDabeUNCzpOODJZig==
+http-proxy-agent@^7.0.0:
+  version "7.0.0"
+  resolved "https://registry.npmjs.org/http-proxy-agent/-/http-proxy-agent-7.0.0.tgz"
+  integrity sha512-+ZT+iBxVUQ1asugqnD6oWoRiS25AkjNfG085dKJGtGxkdwLQrMKU5wJr2bOOFAXzKcTuqq+7fZlTMgG3SRfIYQ==
   dependencies:
     agent-base "^7.1.0"
     debug "^4.3.4"
@@ -5605,10 +5667,16 @@ http2-wrapper@^2.1.10, http2-wrapper@^2.2.0:
     quick-lru "^5.1.1"
     resolve-alpn "^1.2.0"
 
-https-proxy-agent@^7.0.2, https-proxy-agent@^7.0.3:
-  version "7.0.4"
-  resolved "https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-7.0.4.tgz"
-  integrity sha512-wlwpilI7YdjSkWaQ/7omYBMTliDcmCN8OLihO6I9B86g06lMyAoqgoDpV0XqoaPOKj+0DIdAvnsWfyAAhmimcg==
+https-proxy-agent@^5.0.0:
+  version "5.0.1"
+  dependencies:
+    agent-base "6"
+    debug "4"
+
+https-proxy-agent@^7.0.2:
+  version "7.0.2"
+  resolved "https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-7.0.2.tgz"
+  integrity sha512-NmLNjm6ucYwtcUmL7JQC1ZQ57LmHP4lT15FQ8D61nak1rO6DH+fz5qNK2Ap5UN4ZapYICE3/0KodcLYSPsPbaA==
   dependencies:
     agent-base "^7.0.2"
     debug "4"
@@ -5635,7 +5703,7 @@ husky@^5.1.2:
   resolved "https://registry.npmjs.org/husky/-/husky-5.2.0.tgz"
   integrity sha512-AM8T/auHXRBxlrfPVLKP6jt49GCM2Zz47m8G3FOMsLmTv8Dj/fKVWE0Rh2d4Qrvmy131xEsdQnb3OXRib67PGg==
 
-"i-reductions-ch@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/i-reductions-ch":
+"i-reductions-ch@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/i-reductions-ch":
   version "0.0.1"
   resolved "file:packages/i-reductions-ch"
   dependencies:
@@ -5681,12 +5749,17 @@ ieee754@^1.1.13:
   resolved "https://registry.npmjs.org/ieee754/-/ieee754-1.2.1.tgz"
   integrity sha512-dcyqhDvX1C46lXZcVqCpK+FtMRQVdIMN6/Df5js2zouUsqG7I6sFxitIC+7KYK29KdXOLHdu9zL4sFnoVQnqaA==
 
-ignore@^5.2.0, ignore@^5.2.4:
+ignore@^5.2.0:
   version "5.3.0"
   resolved "https://registry.npmjs.org/ignore/-/ignore-5.3.0.tgz"
   integrity sha512-g7dmpshy+gD7mh88OC9NwSGTKoc3kyLAZQRU1mt53Aw/vnvfXnbC+F/7F7QoYVKbV+KNvJx8wArewKy1vXMtlg==
 
-"ilovebargain-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/ilovebargain-com":
+ignore@^5.2.4:
+  version "5.3.1"
+  resolved "https://registry.npmjs.org/ignore/-/ignore-5.3.1.tgz"
+  integrity sha512-5Fytz/IraMjqpwfd34ke28PTVMjZjJG2MPn5t7OE4eUCUNf8BAa7b5WUS9/Qvr6mwOQS7Mk6vdsMno5he+T8Xw==
+
+"ilovebargain-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/ilovebargain-com":
   version "0.0.1"
   resolved "file:packages/ilovebargain-com"
   dependencies:
@@ -5703,7 +5776,7 @@ ignore@^5.2.0, ignore@^5.2.4:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"iltalehti-fi@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/iltalehti-fi":
+"iltalehti-fi@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/iltalehti-fi":
   version "0.0.1"
   resolved "file:packages/iltalehti-fi"
   dependencies:
@@ -5924,20 +5997,22 @@ invert-kv@^1.0.0:
   resolved "https://registry.npmjs.org/invert-kv/-/invert-kv-1.0.0.tgz"
   integrity sha512-xgs2NH9AE66ucSq4cNG1nhSFghr5l6tdL15Pk+jl46bmmBapgoaY/AacXyaDznAqmGL99TiLSQgO/XazFSKYeQ==
 
-ip-address@^9.0.5:
-  version "9.0.5"
-  resolved "https://registry.npmjs.org/ip-address/-/ip-address-9.0.5.tgz"
-  integrity sha512-zHtQzGojZXTwZTHQqra+ETKd4Sn3vgi7uBmlPoXVWZqYvuKmtI0l/VZTjqGmJY9x88GGOaZ9+G9ES8hC4T4X8g==
-  dependencies:
-    jsbn "1.1.0"
-    sprintf-js "^1.1.3"
+ip@^1.1.8:
+  version "1.1.8"
+  resolved "https://registry.npmjs.org/ip/-/ip-1.1.8.tgz"
+  integrity sha512-PuExPYUiu6qMBQb4l06ecm6T6ujzhmh+MeJcW9wa89PoAz5pvd4zPgN5WJV104mb6S2T1AwNIAaB70JNrLQWhg==
+
+ip@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.npmjs.org/ip/-/ip-2.0.0.tgz"
+  integrity sha512-WKa+XuLG1A1R0UWhl2+1XQSi+fZWMsYKffMZTTYsiZaUD8k2yDAj5atimTUD2TZkyCkNEeYE5NhFZmupOGtjYQ==
 
 ipaddr.js@1.9.1:
   version "1.9.1"
   resolved "https://registry.npmjs.org/ipaddr.js/-/ipaddr.js-1.9.1.tgz"
   integrity sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==
 
-"iprice-sg@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/iprice-sg":
+"iprice-sg@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/iprice-sg":
   version "0.0.1"
   resolved "file:packages/iprice-sg"
   dependencies:
@@ -5961,11 +6036,6 @@ is-absolute@^1.0.0:
   dependencies:
     is-relative "^1.0.0"
     is-windows "^1.0.1"
-
-is-any-array@^2.0.0, is-any-array@^2.0.1:
-  version "2.0.1"
-  resolved "https://registry.npmjs.org/is-any-array/-/is-any-array-2.0.1.tgz"
-  integrity sha512-UtilS7hLRu++wb/WBAw9bNuP1Eg04Ivn1vERJck8zJthEvXCBEBpGR/33u/xLKWEQf95803oalHrVDptcAvFdQ==
 
 is-array-buffer@^3.0.1, is-array-buffer@^3.0.2:
   version "3.0.2"
@@ -6111,12 +6181,7 @@ is-number@^7.0.0:
   resolved "https://registry.npmjs.org/is-number/-/is-number-7.0.0.tgz"
   integrity sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng==
 
-is-obj@^1.0.1:
-  version "1.0.1"
-  resolved "https://registry.npmjs.org/is-obj/-/is-obj-1.0.1.tgz"
-  integrity sha512-l4RyHgRqGN4Y3+9JHVrNqO+tN0rV5My76uW5/nuO4K1b6vw5G8d/cmFjP9tRfEsdhZNt0IFdZuK/c2Vr4Nb+Qg==
-
-is-obj@^2.0.0:
+is-obj@^1.0.1, is-obj@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/is-obj/-/is-obj-2.0.0.tgz"
   integrity sha512-drqDG3cbczxxEJRoOXcOjtdp1J/lyp1mNn0xaznRs8+muBhgQcrnbspox5X5fOw0HnMnbfDzvnEMEtqDEJEo8w==
@@ -6722,6 +6787,12 @@ jiti@^1.19.1:
   resolved "https://registry.npmjs.org/jiti/-/jiti-1.21.0.tgz"
   integrity sha512-gFqAIbuKyyso/3G2qhiO2OM6shY6EPP/R0+mkDbyspxKazh8BXDC5FiFsUjlczgdNz/vfra0da2y+aHrusLG/Q==
 
+"joinhoney-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/joinhoney-com":
+  version "0.0.1"
+  resolved "file:packages/joinhoney-com"
+  dependencies:
+    crawlee "^3.0.0"
+
 jquery@^3.6.0:
   version "3.7.1"
   resolved "https://registry.npmjs.org/jquery/-/jquery-3.7.1.tgz"
@@ -6747,11 +6818,6 @@ js-yaml@^4.1.0:
   dependencies:
     argparse "^2.0.1"
 
-jsbn@1.1.0:
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/jsbn/-/jsbn-1.1.0.tgz"
-  integrity sha512-4bYVV3aAMtDTTu4+xsDYa6sy9GyJ69/amsu9sYF2zqjiEoZA5xJi3BrfX3uY+/IekIu7MwdObdbDWpoZdBv3/A==
-
 jsdom@^23.0.0:
   version "23.2.0"
   resolved "https://registry.npmjs.org/jsdom/-/jsdom-23.2.0.tgz"
@@ -6766,31 +6832,6 @@ jsdom@^23.0.0:
     http-proxy-agent "^7.0.0"
     https-proxy-agent "^7.0.2"
     is-potential-custom-element-name "^1.0.1"
-    parse5 "^7.1.2"
-    rrweb-cssom "^0.6.0"
-    saxes "^6.0.0"
-    symbol-tree "^3.2.4"
-    tough-cookie "^4.1.3"
-    w3c-xmlserializer "^5.0.0"
-    webidl-conversions "^7.0.0"
-    whatwg-encoding "^3.1.1"
-    whatwg-mimetype "^4.0.0"
-    whatwg-url "^14.0.0"
-    ws "^8.16.0"
-    xml-name-validator "^5.0.0"
-
-jsdom@^24.0.0:
-  version "24.0.0"
-  dependencies:
-    cssstyle "^4.0.1"
-    data-urls "^5.0.0"
-    decimal.js "^10.4.3"
-    form-data "^4.0.0"
-    html-encoding-sniffer "^4.0.0"
-    http-proxy-agent "^7.0.0"
-    https-proxy-agent "^7.0.2"
-    is-potential-custom-element-name "^1.0.1"
-    nwsapi "^2.2.7"
     parse5 "^7.1.2"
     rrweb-cssom "^0.6.0"
     saxes "^6.0.0"
@@ -6838,6 +6879,13 @@ json5@^2.2.2, json5@^2.2.3:
   version "2.2.3"
   resolved "https://registry.npmjs.org/json5/-/json5-2.2.3.tgz"
   integrity sha512-XmOWe7eyHYH14cLdVPoyg+GOH3rYX++KpzrylJwSW98t3Nk+U8XOl8FWKOgwtzdb8lXGf6zYwDUzeHMWfxasyg==
+
+jsonfile@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.npmjs.org/jsonfile/-/jsonfile-4.0.0.tgz"
+  integrity sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg==
+  optionalDependencies:
+    graceful-fs "^4.1.6"
 
 jsonfile@^6.0.1:
   version "6.1.0"
@@ -6942,7 +6990,7 @@ koa@^2.14.2:
     type-is "^1.6.16"
     vary "^1.1.2"
 
-"korting-nl@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/korting-nl":
+"korting-nl@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/korting-nl":
   version "0.0.1"
   resolved "file:packages/korting-nl"
   dependencies:
@@ -6959,7 +7007,7 @@ koa@^2.14.2:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"kortingscode-nl@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/kortingscode-nl":
+"kortingscode-nl@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/kortingscode-nl":
   version "0.0.1"
   resolved "file:packages/kortingscode-nl"
   dependencies:
@@ -6976,7 +7024,7 @@ koa@^2.14.2:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"kuplio-ro@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/kuplio-ro":
+"kuplio-ro@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/kuplio-ro":
   version "0.0.1"
   resolved "file:packages/kuplio-ro"
   dependencies:
@@ -7245,7 +7293,7 @@ loose-envify@^1.4.0:
   dependencies:
     js-tokens "^3.0.0 || ^4.0.0"
 
-"lovecoupons-com-sg@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/lovecoupons-com-sg":
+"lovecoupons-com-sg@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/lovecoupons-com-sg":
   version "0.0.1"
   resolved "file:packages/lovecoupons-com-sg"
   dependencies:
@@ -7279,7 +7327,12 @@ lowercase-keys@^3.0.0:
   resolved "https://registry.npmjs.org/lowercase-keys/-/lowercase-keys-3.0.0.tgz"
   integrity sha512-ozCC6gdQ+glXOQsveKD0YsDy8DSQFjDTz4zyzEHNV5+JP5D62LmfDZ6o1cycFx9ouG940M5dE8C8CTewdj2YWQ==
 
-lru-cache@*, lru-cache@^6.0.0:
+lru_map@^0.3.3:
+  version "0.3.3"
+  resolved "https://registry.npmjs.org/lru_map/-/lru_map-0.3.3.tgz"
+  integrity sha512-Pn9cox5CsMYngeDbmChANltQl+5pi6XmTrraMSzhPmMBbmgcxmqWry0U3PGapCU1yB4/LqCcom7qhHZiF/jGfQ==
+
+lru-cache@*:
   version "6.0.0"
   resolved "https://registry.npmjs.org/lru-cache/-/lru-cache-6.0.0.tgz"
   integrity sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==
@@ -7297,6 +7350,13 @@ lru-cache@^5.1.1:
   integrity sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==
   dependencies:
     yallist "^3.0.2"
+
+lru-cache@^6.0.0:
+  version "6.0.0"
+  resolved "https://registry.npmjs.org/lru-cache/-/lru-cache-6.0.0.tgz"
+  integrity sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==
+  dependencies:
+    yallist "^4.0.0"
 
 lru-cache@^7.14.1:
   version "7.18.3"
@@ -7354,7 +7414,7 @@ media-typer@0.3.0:
   resolved "https://registry.npmjs.org/media-typer/-/media-typer-0.3.0.tgz"
   integrity sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==
 
-"meliuz-com-br@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/meliuz-com-br":
+"meliuz-com-br@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/meliuz-com-br":
   version "0.0.1"
   resolved "file:packages/meliuz-com-br"
   dependencies:
@@ -7397,11 +7457,11 @@ methods@^1.1.2, methods@~1.1.2:
   integrity sha512-iclAHeNqNm68zFtnZ0e+1L2yUIdvzNoauKU4WBA3VvH/vPFieF7qfRlwUZU+DA9P9bPXIS90ulxoUoCH23sV2w==
 
 micromatch@^4.0.2, micromatch@^4.0.4:
-  version "4.0.8"
-  resolved "https://registry.npmjs.org/micromatch/-/micromatch-4.0.8.tgz"
-  integrity sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==
+  version "4.0.5"
+  resolved "https://registry.npmjs.org/micromatch/-/micromatch-4.0.5.tgz"
+  integrity sha512-DMy+ERcEW2q8Z2Po+WNXuw3c5YaUSFjAO5GsJqfEl7UjvtIuFKO6ZrKvcItdy98dwFI2N1tg3zNIdKaQT+aNdA==
   dependencies:
-    braces "^3.0.3"
+    braces "^3.0.2"
     picomatch "^2.3.1"
 
 mime-db@1.52.0:
@@ -7482,6 +7542,11 @@ mitt@3.0.1:
   resolved "https://registry.npmjs.org/mitt/-/mitt-3.0.1.tgz"
   integrity sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==
 
+mkdirp-classic@^0.5.2:
+  version "0.5.3"
+  resolved "https://registry.npmjs.org/mkdirp-classic/-/mkdirp-classic-0.5.3.tgz"
+  integrity sha512-gKLcREMhtuZRwRAfqP3RFW+TK4JqApVBtOIftVgjuABpAtpxhPGaDcfvbhNvD0B8iD1oUr/txX35NjcaY6Ns/A==
+
 mkdirp@^0.5.1, mkdirp@^0.5.4:
   version "0.5.6"
   resolved "https://registry.npmjs.org/mkdirp/-/mkdirp-0.5.6.tgz"
@@ -7494,48 +7559,12 @@ mkdirp@^3.0.1:
   resolved "https://registry.npmjs.org/mkdirp/-/mkdirp-3.0.1.tgz"
   integrity sha512-+NsyUUAZDmo6YVHzL/stxSu3t9YS1iljliy3BSDrXJ/dkn1KYdmtZODGGjLcc9XLgVVpH4KshHB8XmZgMhaBXg==
 
-ml-array-max@^1.2.4:
-  version "1.2.4"
-  resolved "https://registry.npmjs.org/ml-array-max/-/ml-array-max-1.2.4.tgz"
-  integrity sha512-BlEeg80jI0tW6WaPyGxf5Sa4sqvcyY6lbSn5Vcv44lp1I2GR6AWojfUvLnGTNsIXrZ8uqWmo8VcG1WpkI2ONMQ==
-  dependencies:
-    is-any-array "^2.0.0"
-
-ml-array-min@^1.2.3:
-  version "1.2.3"
-  resolved "https://registry.npmjs.org/ml-array-min/-/ml-array-min-1.2.3.tgz"
-  integrity sha512-VcZ5f3VZ1iihtrGvgfh/q0XlMobG6GQ8FsNyQXD3T+IlstDv85g8kfV0xUG1QPRO/t21aukaJowDzMTc7j5V6Q==
-  dependencies:
-    is-any-array "^2.0.0"
-
-ml-array-rescale@^1.3.7:
-  version "1.3.7"
-  resolved "https://registry.npmjs.org/ml-array-rescale/-/ml-array-rescale-1.3.7.tgz"
-  integrity sha512-48NGChTouvEo9KBctDfHC3udWnQKNKEWN0ziELvY3KG25GR5cA8K8wNVzracsqSW1QEkAXjTNx+ycgAv06/1mQ==
-  dependencies:
-    is-any-array "^2.0.0"
-    ml-array-max "^1.2.4"
-    ml-array-min "^1.2.3"
-
-ml-logistic-regression@^2.0.0:
-  version "2.0.0"
-  resolved "https://registry.npmjs.org/ml-logistic-regression/-/ml-logistic-regression-2.0.0.tgz"
-  integrity sha512-xHhB91ut8GRRbJyB1ZQfKsl1MHmE1PqMeRjxhks96M5BGvCbC9eEojf4KgRMKM2LxFblhVUcVzweAoPB48Nt0A==
-  dependencies:
-    ml-matrix "^6.5.0"
-
-ml-matrix@^6.5.0:
-  version "6.11.0"
-  dependencies:
-    is-any-array "^2.0.1"
-    ml-array-rescale "^1.3.7"
-
 moment@^2.29.4:
   version "2.30.1"
   resolved "https://registry.npmjs.org/moment/-/moment-2.30.1.tgz"
   integrity sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==
 
-"monbon-fr@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/monbon-fr":
+"monbon-fr@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/monbon-fr":
   version "0.0.1"
   resolved "file:packages/monbon-fr"
   dependencies:
@@ -7658,7 +7687,7 @@ node-addon-api@*:
   resolved "https://registry.npmjs.org/node-addon-api/-/node-addon-api-8.0.0.tgz"
   integrity sha512-ipO7rsHEBqa9STO5C5T10fj732ml+5kLN1cAG8/jdHd56ldQeGj3Q7+scUS+VHK/qy1zLEwC4wMK5+yM0btPvw==
 
-node-fetch@2.x:
+node-fetch@^2.6.12, node-fetch@2.x:
   version "2.7.0"
   resolved "https://registry.npmjs.org/node-fetch/-/node-fetch-2.7.0.tgz"
   integrity sha512-c4FRfUm/dbcWZ7U+1Wq0AwCyFL+3nt2bEw05wfxSz+DWpWsitgmSgYmy2dQdWyKC1694ELPqMs/YzUSNozLt8A==
@@ -7746,9 +7775,6 @@ number-is-nan@^1.0.0:
   resolved "https://registry.npmjs.org/number-is-nan/-/number-is-nan-1.0.1.tgz"
   integrity sha512-4jbtZXNAsfZbAHiiqjLPBiCl16dES1zI4Hpzzxw61Tk+loF+sBDBKx1ICKKKwIqQ7M0mFn1TmkN7euSncWgHiQ==
 
-nwsapi@^2.2.7:
-  version "2.2.9"
-
 object-assign@^4.1.1:
   version "4.1.1"
   resolved "https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz"
@@ -7834,7 +7860,7 @@ object.values@^1.1.6:
     define-properties "^1.2.0"
     es-abstract "^1.22.1"
 
-"offers-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/offers-com":
+"offers-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/offers-com":
   version "0.0.1"
   resolved "file:packages/offers-com"
   dependencies:
@@ -8054,11 +8080,12 @@ pac-proxy-agent@^7.0.1:
     socks-proxy-agent "^8.0.2"
 
 pac-resolver@^7.0.0:
-  version "7.0.1"
-  resolved "https://registry.npmjs.org/pac-resolver/-/pac-resolver-7.0.1.tgz"
-  integrity sha512-5NPgf87AT2STgwa2ntRMr45jTKrYBGkVU36yT0ig/n/GMAa3oPqhZfIQ2kMEimReg0+t9kZViDVZ83qfVUlckg==
+  version "7.0.0"
+  resolved "https://registry.npmjs.org/pac-resolver/-/pac-resolver-7.0.0.tgz"
+  integrity sha512-Fd9lT9vJbHYRACT8OhCbZBbxr6KRSawSovFpy8nDGshaK99S/EBhVIHp9+crhxrsZOuvLpgL1n23iyPg6Rl2hg==
   dependencies:
     degenerator "^5.0.0"
+    ip "^1.1.8"
     netmask "^2.0.2"
 
 packet-reader@1.0.0:
@@ -8170,12 +8197,7 @@ path-is-absolute@^1.0.0:
   resolved "https://registry.npmjs.org/path-is-absolute/-/path-is-absolute-1.0.1.tgz"
   integrity sha512-AVbw3UJ2e9bq64vSaS9Am0fje1Pa8pbGqTTsmXfaIiMpnr5DlDhfJOuLj9Sf95ZPVDAUerDfEk88MPmPe7UCQg==
 
-path-key@^3.0.0:
-  version "3.1.1"
-  resolved "https://registry.npmjs.org/path-key/-/path-key-3.1.1.tgz"
-  integrity sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==
-
-path-key@^3.1.0:
+path-key@^3.0.0, path-key@^3.1.0:
   version "3.1.1"
   resolved "https://registry.npmjs.org/path-key/-/path-key-3.1.1.tgz"
   integrity sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==
@@ -8236,7 +8258,7 @@ pause-stream@0.0.11:
   dependencies:
     through "~2.3"
 
-"pelando-com-br@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/pelando-com-br":
+"pelando-com-br@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/pelando-com-br":
   version "0.0.1"
   resolved "file:packages/pelando-com-br"
   dependencies:
@@ -8321,7 +8343,7 @@ picocolors@^1.0.0:
   resolved "https://registry.npmjs.org/picocolors/-/picocolors-1.0.0.tgz"
   integrity sha512-1fygroTLlHu66zi26VoTDv8yRgm0Fccecssto+MhsZ0D/DGW2sm8E8AjW7NU5VVTRt5GxbeZ5qBuJr+HyLYkjQ==
 
-"picodi-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/picodi-com":
+"picodi-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/picodi-com":
   version "0.0.1"
   resolved "file:packages/picodi-com"
   dependencies:
@@ -8422,7 +8444,7 @@ postgres-interval@^1.1.0:
   dependencies:
     xtend "^4.0.0"
 
-"poulpeo-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/poulpeo-com":
+"poulpeo-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/poulpeo-com":
   version "0.0.1"
   resolved "file:packages/poulpeo-com"
   dependencies:
@@ -8485,24 +8507,7 @@ progress@^2.0.3, progress@2.0.3:
   resolved "https://registry.npmjs.org/progress/-/progress-2.0.3.tgz"
   integrity sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==
 
-"promocodie-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/promocodie-com":
-  version "0.0.1"
-  resolved "file:packages/promocodie-com"
-  dependencies:
-    "@sentry/node" "^7.107.0"
-    "@sentry/types" "^8.24.0"
-    "@types/cheerio" "^0.22.34"
-    apify "3.1.14"
-    axios "^1.6.2"
-    cheerio "^1.0.0-rc.10"
-    chrono-node "^2.7.3"
-    crawlee "3.7.2"
-    html-entities "^2.4.0"
-    jsonpath "^1.1.1"
-    moment "^2.29.4"
-    node-html-parser "^6.1.11"
-
-"promotionalcodes-ie@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/promotionalcodes-ie":
+"promotionalcodes-ie@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/promotionalcodes-ie":
   version "0.0.1"
   resolved "file:packages/promotionalcodes-ie"
   dependencies:
@@ -8519,7 +8524,7 @@ progress@^2.0.3, progress@2.0.3:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"promotionalcodes-org-uk@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/promotionalcodes-org-uk":
+"promotionalcodes-org-uk@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/promotionalcodes-org-uk":
   version "0.0.1"
   resolved "file:packages/promotionalcodes-org-uk"
   dependencies:
@@ -8570,15 +8575,15 @@ proxy-addr@~2.0.7:
     forwarded "0.2.0"
     ipaddr.js "1.9.1"
 
-proxy-agent@6.4.0:
-  version "6.4.0"
-  resolved "https://registry.npmjs.org/proxy-agent/-/proxy-agent-6.4.0.tgz"
-  integrity sha512-u0piLU+nCOHMgGjRbimiXmA9kM/L9EHh3zL81xCdp7m+Y2pHIsnmbdDoEDoAz5geaonNR6q6+yOPQs6n4T6sBQ==
+proxy-agent@6.3.1:
+  version "6.3.1"
+  resolved "https://registry.npmjs.org/proxy-agent/-/proxy-agent-6.3.1.tgz"
+  integrity sha512-Rb5RVBy1iyqOtNl15Cw/llpeLH8bsb37gM1FUfKQ+Wck6xHlbAhWGUFiTRHtkjqGTA5pSHz6+0hrPW/oECihPQ==
   dependencies:
     agent-base "^7.0.2"
     debug "^4.3.4"
-    http-proxy-agent "^7.0.1"
-    https-proxy-agent "^7.0.3"
+    http-proxy-agent "^7.0.0"
+    https-proxy-agent "^7.0.2"
     lru-cache "^7.14.1"
     pac-proxy-agent "^7.0.1"
     proxy-from-env "^1.1.0"
@@ -8614,26 +8619,26 @@ punycode@^2.1.0, punycode@^2.1.1, punycode@^2.3.1:
   resolved "https://registry.npmjs.org/punycode/-/punycode-2.3.1.tgz"
   integrity sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==
 
-puppeteer-core@22.12.0:
-  version "22.12.0"
-  resolved "https://registry.npmjs.org/puppeteer-core/-/puppeteer-core-22.12.0.tgz"
-  integrity sha512-9gY+JwBW/Fp3/x9+cOGK7ZcwqjvtvY2xjqRqsAA0B3ZFMzBauVTSZ26iWTmvOQX2sk78TN/rd5rnetxVxmK5CQ==
+puppeteer-core@21.7.0:
+  version "21.7.0"
+  resolved "https://registry.npmjs.org/puppeteer-core/-/puppeteer-core-21.7.0.tgz"
+  integrity sha512-elPYPozrgiM3phSy7VDUJCVWQ07SPnOm78fpSaaSNFoQx5sur/MqhTSro9Wz8lOEjqCykGC6WRkwxDgmqcy1dQ==
   dependencies:
-    "@puppeteer/browsers" "2.2.3"
-    chromium-bidi "0.5.24"
-    debug "4.3.5"
-    devtools-protocol "0.0.1299070"
-    ws "8.17.1"
+    "@puppeteer/browsers" "1.9.1"
+    chromium-bidi "0.5.2"
+    cross-fetch "4.0.0"
+    debug "4.3.4"
+    devtools-protocol "0.0.1203626"
+    ws "8.16.0"
 
 puppeteer@*, "puppeteer@>= 9.x":
-  version "22.12.0"
-  resolved "https://registry.npmjs.org/puppeteer/-/puppeteer-22.12.0.tgz"
-  integrity sha512-kyUYI12SyJIjf9UGTnHfhNMYv4oVK321Jb9QZDBiGVNx5453SplvbdKI7UrF+S//3RtCneuUFCyHxnvQXQjpxg==
+  version "21.7.0"
+  resolved "https://registry.npmjs.org/puppeteer/-/puppeteer-21.7.0.tgz"
+  integrity sha512-Yy+UUy0b9siJezbhHO/heYUoZQUwyqDK1yOQgblTt0l97tspvDVFkcW9toBlnSvSfkDmMI3Dx9cZL6R8bDArHA==
   dependencies:
-    "@puppeteer/browsers" "2.2.3"
-    cosmiconfig "9.0.0"
-    devtools-protocol "0.0.1299070"
-    puppeteer-core "22.12.0"
+    "@puppeteer/browsers" "1.9.1"
+    cosmiconfig "8.3.6"
+    puppeteer-core "21.7.0"
 
 pure-rand@^6.0.0:
   version "6.1.0"
@@ -8684,7 +8689,7 @@ quick-lru@^7.0.0:
   resolved "https://registry.npmjs.org/quick-lru/-/quick-lru-7.0.0.tgz"
   integrity sha512-MX8gB7cVYTrYcFfAnfLlhRd0+Toyl8yX8uBx1MrX7K0jegiz9TumwOK27ldXrgDlHRdVi+MqU9Ssw6dr4BNreg==
 
-"rabatkoder-ekstrabladet-dk@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/rabatkoder-ekstrabladet-dk":
+"rabatkoder-ekstrabladet-dk@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/rabatkoder-ekstrabladet-dk":
   version "0.0.1"
   resolved "file:packages/rabatkoder-ekstrabladet-dk"
   dependencies:
@@ -8701,7 +8706,7 @@ quick-lru@^7.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"rabattkoder-expressen-se@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/rabattkoder-expressen-se":
+"rabattkoder-expressen-se@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/rabattkoder-expressen-se":
   version "0.0.1"
   resolved "file:packages/rabattkoder-expressen-se"
   dependencies:
@@ -8718,7 +8723,7 @@ quick-lru@^7.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"rabattkoder-tv2-no@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/rabattkoder-tv2-no":
+"rabattkoder-tv2-no@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/rabattkoder-tv2-no":
   version "0.0.1"
   resolved "file:packages/rabattkoder-tv2-no"
   dependencies:
@@ -8735,7 +8740,7 @@ quick-lru@^7.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"rabattsok-se@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/rabattsok-se":
+"rabattsok-se@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/rabattsok-se":
   version "0.0.1"
   resolved "file:packages/rabattsok-se"
   dependencies:
@@ -8752,7 +8757,7 @@ quick-lru@^7.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"radins-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/radins-com":
+"radins-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/radins-com":
   version "0.0.1"
   resolved "file:packages/radins-com"
   dependencies:
@@ -8950,25 +8955,7 @@ resolve.exports@^2.0.0:
   resolved "https://registry.npmjs.org/resolve.exports/-/resolve.exports-2.0.2.tgz"
   integrity sha512-X2UW6Nw3n/aMgDVy+0rSqgHlv39WZAlZrXCdnbyEiKm17DSqHX4MmQMaST3FbeWR5FTuRcUwYAziZajji0Y7mg==
 
-resolve@^1.10.0:
-  version "1.22.8"
-  resolved "https://registry.npmjs.org/resolve/-/resolve-1.22.8.tgz"
-  integrity sha512-oKWePCxqpd6FlLvGV1VU0x7bkPmmCNolxzjMf4NczoDnQcIWrAF+cPtZn5i6n+RfD2d9i0tzpKnG6Yk168yIyw==
-  dependencies:
-    is-core-module "^2.13.0"
-    path-parse "^1.0.7"
-    supports-preserve-symlinks-flag "^1.0.0"
-
-resolve@^1.20.0:
-  version "1.22.8"
-  resolved "https://registry.npmjs.org/resolve/-/resolve-1.22.8.tgz"
-  integrity sha512-oKWePCxqpd6FlLvGV1VU0x7bkPmmCNolxzjMf4NczoDnQcIWrAF+cPtZn5i6n+RfD2d9i0tzpKnG6Yk168yIyw==
-  dependencies:
-    is-core-module "^2.13.0"
-    path-parse "^1.0.7"
-    supports-preserve-symlinks-flag "^1.0.0"
-
-resolve@^1.22.4:
+resolve@^1.10.0, resolve@^1.20.0, resolve@^1.22.4:
   version "1.22.8"
   resolved "https://registry.npmjs.org/resolve/-/resolve-1.22.8.tgz"
   integrity sha512-oKWePCxqpd6FlLvGV1VU0x7bkPmmCNolxzjMf4NczoDnQcIWrAF+cPtZn5i6n+RfD2d9i0tzpKnG6Yk168yIyw==
@@ -9016,7 +9003,7 @@ restore-cursor@^4.0.0:
     onetime "^5.1.0"
     signal-exit "^3.0.2"
 
-"retailmenot-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/retailmenot-com":
+"retailmenot-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/retailmenot-com":
   version "0.0.1"
   resolved "file:packages/retailmenot-com"
   dependencies:
@@ -9163,7 +9150,7 @@ safe-regex-test@^1.0.0:
   resolved "https://registry.npmjs.org/safer-buffer/-/safer-buffer-2.1.2.tgz"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
 
-"save-up@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/save-up":
+"save-up@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/save-up":
   version "0.0.1"
   resolved "file:packages/save-up"
   dependencies:
@@ -9180,7 +9167,7 @@ safe-regex-test@^1.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"savings-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/savings-com":
+"savings-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/savings-com":
   version "0.0.1"
   resolved "file:packages/savings-com"
   dependencies:
@@ -9195,7 +9182,7 @@ safe-regex-test@^1.0.0:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"savvyspender-ie@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/savvyspender-ie":
+"savvyspender-ie@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/savvyspender-ie":
   version "0.0.1"
   resolved "file:packages/savvyspender-ie"
   dependencies:
@@ -9229,20 +9216,32 @@ semver-compare@^1.0.0:
   resolved "https://registry.npmjs.org/semver-compare/-/semver-compare-1.0.0.tgz"
   integrity sha512-YM3/ITh2MJ5MtzaM429anh+x2jiLVjqILF4m4oyQB18W7Ggea7BfqdH/wGMK7dDiMghv/6WG7znWMwUDzJiXow==
 
-semver@^6.3.0:
+semver@^6.3.0, semver@^6.3.1:
   version "6.3.1"
   resolved "https://registry.npmjs.org/semver/-/semver-6.3.1.tgz"
   integrity sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==
 
-semver@^6.3.1:
-  version "6.3.1"
-  resolved "https://registry.npmjs.org/semver/-/semver-6.3.1.tgz"
-  integrity sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==
+semver@^7.3.5:
+  version "7.6.2"
+  resolved "https://registry.npmjs.org/semver/-/semver-7.6.2.tgz"
+  integrity sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==
 
-semver@^7.3.5, semver@^7.3.7, semver@^7.5.3, semver@^7.5.4, semver@7.6.0:
-  version "7.6.0"
-  resolved "https://registry.npmjs.org/semver/-/semver-7.6.0.tgz"
-  integrity sha512-EnwXhrlwXMk9gKu5/flx5sv/an57AkRplG3hTK68W7FRDN+k+OWBj65M7719OkA82XLBxrcX0KSHj+X5COhOVg==
+semver@^7.3.7:
+  version "7.5.4"
+  resolved "https://registry.npmjs.org/semver/-/semver-7.5.4.tgz"
+  integrity sha512-1bCSESV6Pv+i21Hvpxp3Dx+pSD8lIPt8uVjRrxAUt/nbswYc+tK6Y2btiULjd4+fnq15PX+nqQDC7Oft7WkwcA==
+  dependencies:
+    lru-cache "^6.0.0"
+
+semver@^7.5.3:
+  version "7.6.2"
+  resolved "https://registry.npmjs.org/semver/-/semver-7.6.2.tgz"
+  integrity sha512-FNAIBWCx9qcRhoHcgcJ0gvU7SN1lYU2ZXuSfl04bSC5OpvDHFyJCjdNHomPXxjQlCBU67YW64PzY7/VIEH7F2w==
+
+semver@^7.5.4:
+  version "7.5.4"
+  resolved "https://registry.npmjs.org/semver/-/semver-7.5.4.tgz"
+  integrity sha512-1bCSESV6Pv+i21Hvpxp3Dx+pSD8lIPt8uVjRrxAUt/nbswYc+tK6Y2btiULjd4+fnq15PX+nqQDC7Oft7WkwcA==
   dependencies:
     lru-cache "^6.0.0"
 
@@ -9294,6 +9293,16 @@ set-blocking@^2.0.0:
   resolved "https://registry.npmjs.org/set-blocking/-/set-blocking-2.0.0.tgz"
   integrity sha512-KiKBS8AnWGEyLzofFfmvKwpdPzqiy16LvQfK3yv/fVH7Bj13/wl3JSR1J+rfgRE9q7xUJK4qvgS8raSOeLUehw==
 
+set-function-length@^1.1.1:
+  version "1.1.1"
+  resolved "https://registry.npmjs.org/set-function-length/-/set-function-length-1.1.1.tgz"
+  integrity sha512-VoaqjbBJKiWtg4yRcKBQ7g7wnGnLV3M8oLvVWwOk2PdYY6PEFegR1vezXR0tw6fZGF9csVakIRjrJiy2veSBFQ==
+  dependencies:
+    define-data-property "^1.1.1"
+    get-intrinsic "^1.2.1"
+    gopd "^1.0.1"
+    has-property-descriptors "^1.0.0"
+
 set-function-length@^1.2.1:
   version "1.2.2"
   resolved "https://registry.npmjs.org/set-function-length/-/set-function-length-1.2.2.tgz"
@@ -9320,7 +9329,7 @@ setprototypeof@1.2.0:
   resolved "https://registry.npmjs.org/setprototypeof/-/setprototypeof-1.2.0.tgz"
   integrity sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==
 
-"shared@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/shared":
+"shared@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/shared":
   version "1.0.0"
   resolved "file:packages/shared"
   dependencies:
@@ -9340,24 +9349,7 @@ shebang-regex@^3.0.0:
   resolved "https://registry.npmjs.org/shebang-regex/-/shebang-regex-3.0.0.tgz"
   integrity sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==
 
-"shopback-co-kr@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/shopback-co-kr":
-  version "0.0.1"
-  resolved "file:packages/shopback-co-kr"
-  dependencies:
-    "@sentry/node" "^7.107.0"
-    "@sentry/types" "^8.24.0"
-    "@types/cheerio" "^0.22.34"
-    apify "3.1.14"
-    axios "^1.6.2"
-    cheerio "^1.0.0-rc.10"
-    chrono-node "^2.7.3"
-    crawlee "3.7.2"
-    html-entities "^2.4.0"
-    jsonpath "^1.1.1"
-    moment "^2.29.4"
-    node-html-parser "^6.1.11"
-
-"shopper-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/shopper-com":
+"shopper-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/shopper-com":
   version "0.0.1"
   resolved "file:packages/shopper-com"
   dependencies:
@@ -9393,7 +9385,7 @@ signal-exit@^4.0.1:
   resolved "https://registry.npmjs.org/signal-exit/-/signal-exit-4.1.0.tgz"
   integrity sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==
 
-"singacoupons-net@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/singacoupons-net":
+"singacoupons-net@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/singacoupons-net":
   version "0.0.1"
   resolved "file:packages/singacoupons-net"
   dependencies:
@@ -9457,20 +9449,20 @@ snake-case@^3.0.4:
     tslib "^2.0.3"
 
 socks-proxy-agent@^8.0.2:
-  version "8.0.3"
-  resolved "https://registry.npmjs.org/socks-proxy-agent/-/socks-proxy-agent-8.0.3.tgz"
-  integrity sha512-VNegTZKhuGq5vSD6XNKlbqWhyt/40CgoEw8XxD6dhnm8Jq9IEa3nIa4HwnM8XOqU0CdB0BwWVXusqiFXfHB3+A==
+  version "8.0.2"
+  resolved "https://registry.npmjs.org/socks-proxy-agent/-/socks-proxy-agent-8.0.2.tgz"
+  integrity sha512-8zuqoLv1aP/66PHF5TqwJ7Czm3Yv32urJQHrVyhD7mmA6d61Zv8cIXQYPTWwmg6qlupnPvs/QKDmfa4P/qct2g==
   dependencies:
-    agent-base "^7.1.1"
+    agent-base "^7.0.2"
     debug "^4.3.4"
     socks "^2.7.1"
 
 socks@^2.7.1:
-  version "2.8.3"
-  resolved "https://registry.npmjs.org/socks/-/socks-2.8.3.tgz"
-  integrity sha512-l5x7VUUWbjVFbafGLxPWkYsHIhEvmF85tbIeFZWc8ZPtoMyybuEhL7Jye/ooC4/d48FgOjSJXgsF/AJPYCW8Zw==
+  version "2.7.1"
+  resolved "https://registry.npmjs.org/socks/-/socks-2.7.1.tgz"
+  integrity sha512-7maUZy1N7uo6+WVEX6psASxtNlKaNVMlGQKkG/63nEDdLOWNbiUMoLK7X4uYoLhQstau72mLgfEWcXcwsaHbYQ==
   dependencies:
-    ip-address "^9.0.5"
+    ip "^2.0.0"
     smart-buffer "^4.2.0"
 
 source-map-js@^1.0.1:
@@ -9491,7 +9483,7 @@ source-map@^0.6.0, source-map@^0.6.1, source-map@~0.6.1:
   resolved "https://registry.npmjs.org/source-map/-/source-map-0.6.1.tgz"
   integrity sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==
 
-"sparheld-gmbh@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/sparheld-gmbh":
+"sparheld-gmbh@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/sparheld-gmbh":
   version "0.0.1"
   resolved "file:packages/sparheld-gmbh"
   dependencies:
@@ -9508,7 +9500,7 @@ source-map@^0.6.0, source-map@^0.6.1, source-map@~0.6.1:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"sparpedia@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/sparpedia":
+"sparpedia@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/sparpedia":
   version "0.0.1"
   resolved "file:packages/sparpedia"
   dependencies:
@@ -9525,7 +9517,7 @@ source-map@^0.6.0, source-map@^0.6.1, source-map@~0.6.1:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"sparwelt-de@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/sparwelt-de":
+"sparwelt-de@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/sparwelt-de":
   version "0.0.1"
   resolved "file:packages/sparwelt-de"
   dependencies:
@@ -9564,9 +9556,9 @@ spdx-expression-parse@^3.0.0:
     spdx-license-ids "^3.0.0"
 
 spdx-license-ids@^3.0.0:
-  version "3.0.20"
-  resolved "https://registry.npmjs.org/spdx-license-ids/-/spdx-license-ids-3.0.20.tgz"
-  integrity sha512-jg25NiDV/1fLtSgEgyvVyDunvaNHbuwF9lfNV17gSmPFAlYzdfNBlLtLzXTevwkPj7DhGbmN9VnmJIgLnhvaBw==
+  version "3.0.18"
+  resolved "https://registry.npmjs.org/spdx-license-ids/-/spdx-license-ids-3.0.18.tgz"
+  integrity sha512-xxRs31BqRYHwiMzudOrpSiHtZ8i/GeionCBDSilhYRj+9gIcI8wCZTlXZKu9vZIVqViP3dcp9qE5G6AlIaD+TQ==
 
 split@0.3:
   version "0.3.3"
@@ -9579,11 +9571,6 @@ split2@^4.1.0:
   version "4.2.0"
   resolved "https://registry.npmjs.org/split2/-/split2-4.2.0.tgz"
   integrity sha512-UcjcJOWknrNkF6PLX83qcHM6KHgVKNkV62Y8a5uYDVv9ydGQVwAHMKqHdJje1VTWpljG0WYpCDhrCdAOYH4TWg==
-
-sprintf-js@^1.1.3:
-  version "1.1.3"
-  resolved "https://registry.npmjs.org/sprintf-js/-/sprintf-js-1.1.3.tgz"
-  integrity sha512-Oo+0REFV59/rz3gfJNKQiBlwfHaSESl1pcGyABQsnnIfWOFt6JNj5gCog2U6MLZ//IGYD+nA8nI+mTShREReaA==
 
 sprintf-js@~1.0.2:
   version "1.0.3"
@@ -9643,16 +9630,13 @@ streamsearch@^1.1.0:
   resolved "https://registry.npmjs.org/streamsearch/-/streamsearch-1.1.0.tgz"
   integrity sha512-Mcc5wHehp9aXz1ax6bZUyY5afg9u2rv5cqQI3mRrYkGC8rW2hM02jWuwjtL++LS5qinSyhj2QfLyNsuc+VsExg==
 
-streamx@^2.15.0, streamx@^2.18.0:
-  version "2.18.0"
-  resolved "https://registry.npmjs.org/streamx/-/streamx-2.18.0.tgz"
-  integrity sha512-LLUC1TWdjVdn1weXGcSxyTR3T4+acB6tVGXT95y0nGbca4t4o/ng1wKAGTljm9VicuCVLvRlqFYXYy5GwgM7sQ==
+streamx@^2.15.0:
+  version "2.15.6"
+  resolved "https://registry.npmjs.org/streamx/-/streamx-2.15.6.tgz"
+  integrity sha512-q+vQL4AAz+FdfT137VF69Cc/APqUbxy+MDOImRrMvchJpigHj9GksgDU2LYbO9rx7RX6osWgxJB2WxhYv4SZAw==
   dependencies:
-    fast-fifo "^1.3.2"
+    fast-fifo "^1.1.0"
     queue-tick "^1.0.1"
-    text-decoder "^1.1.0"
-  optionalDependencies:
-    bare-events "^2.2.0"
 
 string_decoder@^1.1.1:
   version "1.3.0"
@@ -9672,11 +9656,6 @@ string-argv@0.3.1:
   version "0.3.1"
   resolved "https://registry.npmjs.org/string-argv/-/string-argv-0.3.1.tgz"
   integrity sha512-a1uQGz7IyVy9YwhqjZIZu1c8JO8dNIe20xBmSS6qu9kv++k3JGzCVmprbNN5Kn+BgzD5E7YYwg1CcjuJMRNsvg==
-
-string-comparison@^1.3.0:
-  version "1.3.0"
-  resolved "https://registry.npmjs.org/string-comparison/-/string-comparison-1.3.0.tgz"
-  integrity sha512-46aD+slEwybxAMPRII83ATbgMgTiz5P8mVd7Z6VJsCzSHFjdt1hkAVLeFxPIyEb11tc6ihpJTlIqoO0MCF6NPw==
 
 string-length@^4.0.1:
   version "4.0.2"
@@ -9892,27 +9871,25 @@ symbol-tree@^3.2.4:
   resolved "https://registry.npmjs.org/symbol-tree/-/symbol-tree-3.2.4.tgz"
   integrity sha512-9QNk5KwDF+Bvz+PyObkmSYjI5ksVUYtjW7AU22r2NKcfLJcXp96hkDWU3+XndOsUb+AQ9QhfzfCT2O+CNWT5Tw==
 
-tar-fs@3.0.5:
-  version "3.0.5"
-  resolved "https://registry.npmjs.org/tar-fs/-/tar-fs-3.0.5.tgz"
-  integrity sha512-JOgGAmZyMgbqpLwct7ZV8VzkEB6pxXFBVErLtb+XCOqzc6w1xiWKI9GVd6bwk68EX7eJ4DWmfXVmq8K2ziZTGg==
+tar-fs@3.0.4:
+  version "3.0.4"
+  resolved "https://registry.npmjs.org/tar-fs/-/tar-fs-3.0.4.tgz"
+  integrity sha512-5AFQU8b9qLfZCX9zp2duONhPmZv0hGYiBPJsyUdqMjzq/mqVpy/rEUSeHk1+YitmxugaptgBh5oDGU3VsAJq4w==
   dependencies:
+    mkdirp-classic "^0.5.2"
     pump "^3.0.0"
     tar-stream "^3.1.5"
-  optionalDependencies:
-    bare-fs "^2.1.1"
-    bare-path "^2.1.0"
 
 tar-stream@^3.1.5:
-  version "3.1.7"
-  resolved "https://registry.npmjs.org/tar-stream/-/tar-stream-3.1.7.tgz"
-  integrity sha512-qJj60CXt7IU1Ffyc3NJMjh6EkuCFej46zUqJ4J7pqYlThyd9bO0XBTmcOIhSzZJVWfsLks0+nle/j538YAW9RQ==
+  version "3.1.6"
+  resolved "https://registry.npmjs.org/tar-stream/-/tar-stream-3.1.6.tgz"
+  integrity sha512-B/UyjYwPpMBv+PaFSWAmtYjwdrlEaZQEhMIBFNC5oEG8lpiW8XjcSdmEaClj28ArfKScKHs2nshz3k2le6crsg==
   dependencies:
     b4a "^1.6.4"
     fast-fifo "^1.2.0"
     streamx "^2.15.0"
 
-"tecmundo-com-br@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/tecmundo-com-br":
+"tecmundo-com-br@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/tecmundo-com-br":
   version "0.0.1"
   resolved "file:packages/tecmundo-com-br"
   dependencies:
@@ -9942,13 +9919,6 @@ test-exclude@^6.0.0:
     "@istanbuljs/schema" "^0.1.2"
     glob "^7.1.4"
     minimatch "^3.0.4"
-
-text-decoder@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/text-decoder/-/text-decoder-1.1.0.tgz"
-  integrity sha512-TmLJNj6UgX8xcUZo4UDStGQtDiTzF7BzWlzn9g7UWrjkpHr5uJTK1ld16wZ3LXb2vb6jH8qU89dW5whuMdXYdw==
-  dependencies:
-    b4a "^1.6.4"
 
 text-table@^0.2.0:
   version "0.2.0"
@@ -10013,7 +9983,7 @@ toidentifier@1.0.1:
   resolved "https://registry.npmjs.org/toidentifier/-/toidentifier-1.0.1.tgz"
   integrity sha512-o5sSPKEkg/DIQNmH43V0/uerLrpzVedkUh8tGNvaeXpfpuwjKenlSox/2O/BTlZUtEe+JG7s5YhEz608PlAHRA==
 
-"topbargains-com-au@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/topbargains-com-au":
+"topbargains-com-au@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/topbargains-com-au":
   version "0.0.1"
   resolved "file:packages/topbargains-com-au"
   dependencies:
@@ -10111,10 +10081,20 @@ tslib@^1.8.1:
   resolved "https://registry.npmjs.org/tslib/-/tslib-1.14.1.tgz"
   integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
 
-tslib@^2.0.1, tslib@^2.0.3, tslib@^2.1.0, tslib@^2.3.1, tslib@^2.4.0, tslib@^2.4.1, tslib@^2.5.0, tslib@^2.6.2:
+tslib@^1.9.3:
+  version "1.14.1"
+  resolved "https://registry.npmjs.org/tslib/-/tslib-1.14.1.tgz"
+  integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
+
+tslib@^2.0.1, tslib@^2.1.0, tslib@^2.3.1, tslib@^2.4.0, tslib@^2.4.1, tslib@^2.5.0, tslib@^2.6.2:
   version "2.6.2"
   resolved "https://registry.npmjs.org/tslib/-/tslib-2.6.2.tgz"
   integrity sha512-AEYxH93jGFPn/a2iVAwW87VuUIkR1FVUKB77NwMF7nBTDkDrrT/Hpt/IrCJ0QXhW27jTBDcf5ZY7w6RiqTMw2Q==
+
+tslib@^2.0.3:
+  version "2.6.3"
+  resolved "https://registry.npmjs.org/tslib/-/tslib-2.6.3.tgz"
+  integrity sha512-xNvxJEOUiWPGhUuUdQgAJPKOOJfGnIyKySOc09XkKsgdUV/3E2zvwZYdejjmRgPCgcym1juLH3226yA7sEFJKQ==
 
 tsscmp@1.0.6:
   version "1.0.6"
@@ -10129,14 +10109,16 @@ tsutils@^3.21.0:
     tslib "^1.8.1"
 
 tsx@^4.4.0:
-  version "4.9.0"
+  version "4.11.0"
+  resolved "https://registry.npmjs.org/tsx/-/tsx-4.11.0.tgz"
+  integrity sha512-vzGGELOgAupsNVssAmZjbUDfdm/pWP4R+Kg8TVdsonxbXk0bEpE1qh0yV6/QxUVXaVlNemgcPajGdJJ82n3stg==
   dependencies:
     esbuild "~0.20.2"
-    get-tsconfig "^4.7.3"
+    get-tsconfig "^4.7.5"
   optionalDependencies:
     fsevents "~2.3.3"
 
-type-check@^0.4.0, type-check@~0.4.0:
+type-check@^0.4.0:
   version "0.4.0"
   resolved "https://registry.npmjs.org/type-check/-/type-check-0.4.0.tgz"
   integrity sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==
@@ -10149,6 +10131,13 @@ type-check@~0.3.2:
   integrity sha512-ZCmOJdvOWDBYJlzAoFkC+Q0+bUyEOS1ltgp1MGU03fqHG+dbi9tBFU2Rd9QKiDZFAYrhPh2JUf7rZRIuHRKtOg==
   dependencies:
     prelude-ls "~1.1.2"
+
+type-check@~0.4.0:
+  version "0.4.0"
+  resolved "https://registry.npmjs.org/type-check/-/type-check-0.4.0.tgz"
+  integrity sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==
+  dependencies:
+    prelude-ls "^1.2.1"
 
 type-detect@4.0.8:
   version "4.0.8"
@@ -10242,10 +10231,15 @@ typescript@~5.4.0:
   resolved "https://registry.npmjs.org/typescript/-/typescript-5.4.5.tgz"
   integrity sha512-vcI4UpRgg81oIRUFwR0WSIHKt11nJ7SAVlYNIu+QpqeyXP+gpQJy/Z4+F0aGxSE4MqwjyXvW/TzgkLAx2AGHwQ==
 
+typescript@~5.5.0:
+  version "5.5.4"
+  resolved "https://registry.npmjs.org/typescript/-/typescript-5.5.4.tgz"
+  integrity sha512-Mtq29sKDAEYP7aljRgtPOpTvOfbwRWlS6dPRzwjdE+C0R4brX/GUyhHSecbHMFLNBLcJIPt9nl9yG5TZ1weH+Q==
+
 uglify-js@^3.1.4:
-  version "3.17.4"
-  resolved "https://registry.npmjs.org/uglify-js/-/uglify-js-3.17.4.tgz"
-  integrity sha512-T9q82TJI9e/C1TAxYvfb16xO120tMVFZrGA3f9/P4424DNu6ypK103y0GPFVa17yotwSyZW5iYXgjYHkGrJW/g==
+  version "3.18.0"
+  resolved "https://registry.npmjs.org/uglify-js/-/uglify-js-3.18.0.tgz"
+  integrity sha512-SyVVbcNBCk0dzr9XL/R/ySrmYf0s372K6/hFklzgcp2lBFyXtw4I7BOdDjlLhE1aVqaI/SHWXWmYdlZxuyF38A==
 
 uhyphen@^0.2.0:
   version "0.2.0"
@@ -10297,10 +10291,20 @@ undici-types@~5.26.4:
   resolved "https://registry.npmjs.org/undici-types/-/undici-types-5.26.5.tgz"
   integrity sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==
 
+undici-types@~6.19.2:
+  version "6.19.8"
+  resolved "https://registry.npmjs.org/undici-types/-/undici-types-6.19.8.tgz"
+  integrity sha512-ve2KP6f/JnbPBFyobGHuerC9g1FYGn/F8n1LWTwNxCEzd6IfqTwUQcNXgEtmmQ6DlRrC1hrSrBnCZPokRrDHjw==
+
 unicode-9.0.0@0.7.0:
   version "0.7.0"
   resolved "https://registry.npmjs.org/unicode-9.0.0/-/unicode-9.0.0-0.7.0.tgz"
   integrity sha512-aqL0GQ3LB2nC3ZEKBZ93hfn7QY80sVGk+OT9Sc6lTxl4wRiwzUBRlAjJB9Fe4+5XydXOV+tb8udp5oRBoED5Tw==
+
+universalify@^0.1.0:
+  version "0.1.2"
+  resolved "https://registry.npmjs.org/universalify/-/universalify-0.1.2.tgz"
+  integrity sha512-rBJeI5CXAlmy1pV+617WB9J63U6XcazHHF2f2dbJix4XzpUF0RS3Zbj0FGIOCAva5P/d/GBOYaACQ1w+0azUkg==
 
 universalify@^0.2.0:
   version "0.2.0"
@@ -10354,10 +10358,10 @@ url-parse@^1.5.3:
     querystringify "^2.1.1"
     requires-port "^1.0.0"
 
-urlpattern-polyfill@10.0.0:
-  version "10.0.0"
-  resolved "https://registry.npmjs.org/urlpattern-polyfill/-/urlpattern-polyfill-10.0.0.tgz"
-  integrity sha512-H/A06tKD7sS1O1X2SshBVeA5FLycRpjqiBeqGKmBwBDBy28EnRjORxTNe269KSSr5un5qyWi1iL61wLxpd+ZOg==
+urlpattern-polyfill@9.0.0:
+  version "9.0.0"
+  resolved "https://registry.npmjs.org/urlpattern-polyfill/-/urlpattern-polyfill-9.0.0.tgz"
+  integrity sha512-WHN8KDQblxd32odxeIgo83rdVDE2bvdkb86it7bMhYZwWKJz0+O0RK/eZiHYnM+zgt/U7hAHOlCQGfjjvSkw2g==
 
 util-deprecate@^1.0.1, util-deprecate@~1.0.1:
   version "1.0.2"
@@ -10416,7 +10420,7 @@ vary@^1.1.2, vary@~1.1.2:
   resolved "https://registry.npmjs.org/vary/-/vary-1.1.2.tgz"
   integrity sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==
 
-"vouchercloud@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/vouchercloud":
+"vouchercloud@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/vouchercloud":
   version "0.0.1"
   resolved "file:packages/vouchercloud"
   dependencies:
@@ -10433,7 +10437,7 @@ vary@^1.1.2, vary@~1.1.2:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"vouchercodes@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/vouchercodes":
+"vouchercodes@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/vouchercodes":
   version "0.0.1"
   resolved "file:packages/vouchercodes"
   dependencies:
@@ -10450,7 +10454,7 @@ vary@^1.1.2, vary@~1.1.2:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"vouchercodesuae-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/vouchercodesuae-com":
+"vouchercodesuae-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/vouchercodesuae-com":
   version "0.0.1"
   resolved "file:packages/vouchercodesuae-com"
   dependencies:
@@ -10467,7 +10471,7 @@ vary@^1.1.2, vary@~1.1.2:
     moment "^2.29.4"
     node-html-parser "^6.1.11"
 
-"voucherpages-ie@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/voucherpages-ie":
+"voucherpages-ie@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/voucherpages-ie":
   version "0.0.1"
   resolved "file:packages/voucherpages-ie"
   dependencies:
@@ -10491,7 +10495,7 @@ w3c-xmlserializer@^5.0.0:
   dependencies:
     xml-name-validator "^5.0.0"
 
-"wagjag-com-coupons@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/wagjag-com-coupons":
+"wagjag-com-coupons@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/wagjag-com-coupons":
   version "0.0.1"
   resolved "file:packages/wagjag-com-coupons"
   dependencies:
@@ -10532,7 +10536,7 @@ webidl-conversions@^7.0.0:
   resolved "https://registry.npmjs.org/webidl-conversions/-/webidl-conversions-7.0.0.tgz"
   integrity sha512-VwddBukDzu71offAQR975unBIGqfKZpM+8ZX6ySk8nYhVoo5CYaZyzt3YBvYtRtO+aoGlqxPg/B87NGVZ/fu6g==
 
-"wethrift-com@file:/Users/aminembarki/Desktop/workspace/lexis.solutions/apify-scrapers/packages/wethrift-com":
+"wethrift-com@file:/home/rafaelmarcano/Documentos/apify-scrapers/packages/wethrift-com":
   version "0.0.1"
   resolved "file:packages/wethrift-com"
   dependencies:
@@ -10719,14 +10723,14 @@ write-file-atomic@^4.0.2:
     signal-exit "^3.0.7"
 
 ws@^7.5.9:
-  version "7.5.10"
-  resolved "https://registry.npmjs.org/ws/-/ws-7.5.10.tgz"
-  integrity sha512-+dbF1tHwZpXcbOJdVOkzLDxZP1ailvSxM6ZweXTegylPny803bFhA+vqBYw4s31NSAk4S2Qz+AKXK9a4wkdjcQ==
+  version "7.5.9"
+  resolved "https://registry.npmjs.org/ws/-/ws-7.5.9.tgz"
+  integrity sha512-F+P9Jil7UiSKSkppIiD94dN07AwvFixvLIj1Og1Rl9GGMuNipJnV9JzjD6XuqmAeiswGvUmNLjr5cFuXwNS77Q==
 
-ws@^8.16.0, ws@8.17.1:
-  version "8.17.1"
-  resolved "https://registry.npmjs.org/ws/-/ws-8.17.1.tgz"
-  integrity sha512-6XQFvXTkbfUOZOKKILFG1PDK2NDQs4azKQl26T0YS5CxqWLgXajbPZ+h4gZekJyRqFU8pvnbAbbs/3TgRPy+GQ==
+ws@^8.16.0, ws@8.16.0:
+  version "8.16.0"
+  resolved "https://registry.npmjs.org/ws/-/ws-8.16.0.tgz"
+  integrity sha512-HS0c//TP7Ina87TfiPUz1rQzMhHrl/SG2guqRcTOIUYD2q8uhUdNHZYJUaQ8aTGPzCh+c6oawMKW35nFl1dxyQ==
 
 xml-name-validator@^5.0.0:
   version "5.0.0"
@@ -10855,8 +10859,3 @@ yocto-queue@^0.1.0:
   version "0.1.0"
   resolved "https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
-
-zod@3.23.8:
-  version "3.23.8"
-  resolved "https://registry.npmjs.org/zod/-/zod-3.23.8.tgz"
-  integrity sha512-XBx9AXhXktjUqnepgTiE5flcKIYWi/rme0Eaj+5Y0lftuGBq+jyRu/md4WnuxqgP1ubdpNCsYEYPxrzVHD8d6g==
