@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import 'reflect-metadata'; // Required for routing-controllers
 
+import compression from 'compression';
 import { validationMetadatasToSchemas } from 'class-validator-jsonschema';
 
 import express, { Express } from 'express';
@@ -63,6 +64,9 @@ app.use(Sentry.Handlers.tracingHandler());
 
 // Set the limit to 50MB
 app.use(json({ limit: '5mb' }));
+
+// Implement response compression to reduce payload size
+app.use(compression());
 
 const routingControllersOptions: RoutingControllersOptions = {
   controllers: [

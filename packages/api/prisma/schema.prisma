@@ -65,6 +65,10 @@ model Coupon {
   @@index([code])
   @@index([shouldBeFake])
   @@index([isExclusive])
+  @@index([merchantName])
+  @@index([isExpired])
+  @@index([sourceUrl])
+  @@index([lastSeenAt])
 
 }
 
@@ -79,6 +83,9 @@ model Source {
   coupons      Coupon[]
   runs         ProcessedRun[]
   maxStartUrls Int?
+
+  @@index([name])
+  @@index([apifyActorId])
 }
 
 model SourceDomain {
@@ -90,6 +97,10 @@ model SourceDomain {
   proxyCountryCode  String?
 
   coupons           Coupon[]
+
+  @@index([reliability])
+  @@index([domain])
+  @@index([apifyActorId])
 }
 
 // Maps to a single Apify actor run
@@ -132,6 +143,7 @@ model TargetLocale {
   merchants      Merchant[]
 
   @@unique([countryCode, languageCode])
+  @@index([locale])
 }
 
 // Maps to a page we want to scrape using an Apify actor

@@ -137,15 +137,28 @@ export class CouponsController {
       where.locale = locale;
     }
 
-    const offset = (page - 1) * pageSize;
     const [totalResults, data] = await Promise.all([
       prisma.coupon.count({ where }),
       prisma.coupon.findMany({
-        skip: offset,
+        skip: (page - 1) * pageSize,
         take: pageSize,
-        where: where,
+        where,
         orderBy: { lastSeenAt: 'desc' },
-        include: {
+        select: {
+          id: true,
+          merchantName: true,
+          isShown: true,
+          isExclusive: true,
+          shouldBeFake: true,
+          isExpired: true,
+          code: true,
+          domain: true,
+          sourceUrl: true,
+          locale: true,
+          archivedAt: true,
+          lastSeenAt: true,
+          startDateAt: true,
+          expiryDateAt: true,
           source_relation: {
             select: { name: true, isActive: true, apifyActorId: true },
           },
