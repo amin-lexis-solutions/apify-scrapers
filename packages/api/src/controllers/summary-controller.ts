@@ -225,8 +225,6 @@ export class SummaryController {
       .reduce((sum, row) => sum + row._count._all, 0);
 
     const sourceUrls = new Set(result.map((row) => row.sourceUrl));
-    const totalTargetPages = sourceUrls.size;
-
     const targetPagesMap = new Map<
       string,
       {
@@ -267,12 +265,34 @@ export class SummaryController {
       }
     });
 
+    const relatedTargetPages = await prisma.targetPage.findMany({
+      where: {
+        domain: sourceDomain.domain,
+        url: {
+          notIn: Array.from(sourceUrls),
+        },
+      },
+    });
+
+    relatedTargetPages.forEach((row) => {
+      if (!targetPagesMap.has(row.url)) {
+        targetPagesMap.set(row.url, {
+          url: row.url,
+          lastCrawled: null,
+          totalItems: 0,
+          nonExpiredItems: 0,
+        });
+      }
+    });
+
     const targetPagesList = Array.from(targetPagesMap.values()).map((page) => ({
       ...page,
       lastCrawled: page.lastCrawled
         ? page.lastCrawled.replace('T', ' ').replace('Z', ' UTC')
         : null,
     }));
+
+    const totalTargetPages = sourceUrls.size + relatedTargetPages.length;
 
     const formattedResult = {
       locale,
