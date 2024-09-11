@@ -16,6 +16,15 @@ declare global {
       ANOMALY_DETECTION_DAYS?: number;
       APIFY_DAILY_COST_LIMIT_USD: number;
       SENTRY_LOGGING?: string;
+      SMTP_HOST: string;
+      SMTP_PORT: number;
+      SMTP_USER: string;
+      SMTP_PASS: string;
+      EMAIL_TO: string;
+      EMAIL_FROM: string;
+      API_RATE_LIMIT_WINDOW_IN_MS: number;
+      API_RATE_LIMIT: number;
+      ENABLE_EMAILS: string;
       APITALLY_CLIENT_ID?: string;
     }
   }
