@@ -109,7 +109,6 @@ export async function prepareCheerioScraper(
     requestHandler: router,
     requestQueue,
     maxRequestRetries: args?.maxRequestRetries || 3,
-    retryOnBlocked: true,
     failedRequestHandler: async ({ request, error }) => {
       // Log the error to Sentry
       Sentry.captureException(error, {
