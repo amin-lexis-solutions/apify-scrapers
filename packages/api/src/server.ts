@@ -34,7 +34,6 @@ import { apiLimiter } from '../config/apiRateLimit';
 // Create a single Express app instance
 const app: Express = express();
 
-
 // Trust the first proxy
 app.set('trust proxy', 1);
 // Rate limit requests to the API

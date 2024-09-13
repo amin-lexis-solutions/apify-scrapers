@@ -63,7 +63,12 @@ export class CouponsController {
     const where: Prisma.CouponWhereInput = {};
 
     if (merchantName) {
-      where.merchantName = merchantName;
+      where.merchant_relation = {
+        name: {
+          contains: merchantName,
+          mode: 'insensitive',
+        },
+      };
     }
 
     if (reliability !== null) {
@@ -73,11 +78,16 @@ export class CouponsController {
     }
 
     // Return only items with a active merchant
-    if (
-      show_disabled_merchants === undefined ||
-      show_disabled_merchants === false
-    ) {
-      where.merchant_relation = { disabledAt: null };
+    if (show_disabled_merchants) {
+      where.merchant_relation = {
+        ...where.merchant_relation,
+        disabledAt: { not: null } as any,
+      };
+    } else {
+      where.merchant_relation = {
+        ...where.merchant_relation,
+        disabledAt: null as any,
+      };
     }
 
     if (isShown !== undefined) {
@@ -187,6 +197,8 @@ export class CouponsController {
     // Format the expiryDateAt field for each item in the data array
     const formattedData = data.map((item) => ({
       ...item,
+      merchantName: item.merchant_relation.name,
+      merchantNameOnSite: item.merchantName,
       startDateAt: item.startDateAt
         ? dayjs(item.startDateAt).format('YYYY-MM-DD')
         : null,
