@@ -78,12 +78,10 @@ export class CouponsController {
     }
 
     // Return only items with a active merchant
-    if (show_disabled_merchants) {
-      where.merchant_relation = {
-        ...where.merchant_relation,
-        disabledAt: { not: null } as any,
-      };
-    } else {
+    if (
+      show_disabled_merchants === undefined ||
+      show_disabled_merchants === false
+    ) {
       where.merchant_relation = {
         ...where.merchant_relation,
         disabledAt: null as any,
@@ -150,6 +148,7 @@ export class CouponsController {
     const [totalResults, data] = await Promise.all([
       prisma.coupon.count({ where }),
       prisma.coupon.findMany({
+
         skip: (page - 1) * pageSize,
         take: pageSize,
         where,
