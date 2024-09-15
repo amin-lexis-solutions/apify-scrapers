@@ -3,7 +3,7 @@ import { ElementHandle } from 'puppeteer';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import { ItemResult, generateHash } from 'shared/helpers';
+import { ItemResult } from 'shared/helpers';
 import { preProcess, postProcess } from 'shared/hooks';
 
 export const router = Router.create<PuppeteerCrawlingContext>();
@@ -34,13 +34,7 @@ async function process(
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateHash(
-    item.merchantName,
-    item.title,
-    item.sourceUrl
-  );
-
-  return { generatedHash, validator, hasCode, itemUrl: '' };
+  return { validator, hasCode, itemUrl: '' };
 }
 router.addHandler(Label.listing, async (context) => {
   const { request, page, log } = context;

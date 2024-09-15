@@ -3,7 +3,7 @@ import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { sleep, generateItemId, ItemResult } from 'shared/helpers';
+import { sleep, ItemResult } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -65,13 +65,7 @@ function processItem(item: any, $cheerio: cheerio.Root): ItemResult {
     ? `https://s.picodi.com/${countryCode}/api/offers/${item.idInSite}/v2`
     : '';
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
-  return { generatedHash, hasCode, itemUrl, validator };
+  return { hasCode, itemUrl, validator };
 }
 
 export const router = createCheerioRouter();

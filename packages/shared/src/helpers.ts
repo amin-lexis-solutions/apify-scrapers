@@ -7,7 +7,6 @@ import { DataValidator } from './data-validator';
 import { Dataset, log } from 'apify';
 
 export type ItemResult = {
-  generatedHash: string;
   hasCode: boolean;
   itemUrl?: string;
   validator: DataValidator;
@@ -36,33 +35,14 @@ export async function fetchSentryUrl() {
   }
 }
 
-export function generateItemId(
-  merchantName?: string | null,
-  idInSite?: string | null,
-  sourceUrl?: string
-): string {
-  const normalizedMerchant = merchantName ? normalizeString(merchantName) : '';
-  const normalizedTitle = idInSite ? normalizeString(idInSite) : '';
-
-  const normalizedUrl = sourceUrl
-    ? normalizeString(getMerchantDomainFromUrl(sourceUrl))
-    : '';
-
-  const combinedString = `${normalizedMerchant}|${normalizedTitle}|${normalizedUrl}`;
-
-  const hash = crypto.createHash('sha256');
-  hash.update(combinedString);
-  return hash.digest('hex');
-}
-
 // Generates a hash from merchant name, voucher title, and source URL
 export function generateHash(
   merchantName: string,
-  itemTitle: string,
+  itemIdentifier: string,
   sourceUrl: string
 ): string {
   const normalizedMerchant = normalizeString(merchantName);
-  const normalizedTitle = normalizeString(itemTitle);
+  const normalizedTitle = normalizeString(itemIdentifier);
   const normalizedUrl = normalizeString(sourceUrl);
 
   const combinedString = `${normalizedMerchant}|${normalizedTitle}|${normalizedUrl}`;

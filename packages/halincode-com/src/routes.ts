@@ -3,7 +3,6 @@ import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
 } from 'shared/helpers';
@@ -34,13 +33,7 @@ function processItem(item) {
   validator.addValue('isShown', true);
   validator.addValue('code', item.code);
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
-  return { generatedHash, hasCode: item.hasCode, itemUrl: '', validator };
+  return { hasCode: item.hasCode, itemUrl: '', validator };
 }
 
 router.addHandler(Label.listing, async (context) => {

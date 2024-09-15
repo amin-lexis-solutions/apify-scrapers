@@ -6,7 +6,6 @@ import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
   getMerchantDomainFromUrl,
-  generateHash,
   ItemResult,
 } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
@@ -68,13 +67,7 @@ async function processItem(item: any, $cheerio: cheerio.Root) {
 
   hasCode ? validator.addValue('code', code) : null;
 
-  const generatedHash = generateHash(
-    item.merchantName,
-    item.title,
-    item.sourceUrl
-  );
-
-  return { generatedHash, hasCode, validator, itemUrl: '' };
+  return { hasCode, validator, itemUrl: '' };
 }
 
 export const router = createCheerioRouter();

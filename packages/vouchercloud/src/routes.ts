@@ -1,16 +1,11 @@
 import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import {
-  sleep,
-  generateItemId,
-  ItemResult,
-  getMerchantDomainFromUrl,
-} from 'shared/helpers';
+import { sleep, ItemResult, getMerchantDomainFromUrl } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
-//TODO : Actor to investigate later
+// TODO : Actor to investigate later
 function processItem(item: any, $cheerio: any): ItemResult {
   // Create a new DataValidator instance
   const validator = new DataValidator();
@@ -25,21 +20,15 @@ function processItem(item: any, $cheerio: any): ItemResult {
   validator.addValue('isExpired', !$cheerio.Available);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
   if ($cheerio.OfferType !== 'OnlineCode') {
-    return { generatedHash, hasCode: false, itemUrl: '', validator };
+    return { hasCode: false, itemUrl: '', validator };
   }
 
   const parsedUrl = new URL(item.sourceUrl);
 
   const itemUrl = `https://${parsedUrl.hostname}/redeem-out/${item.idInSite}?nonInteraction=False&showInterstitial=False`;
 
-  return { generatedHash, hasCode: true, itemUrl, validator };
+  return { hasCode: true, itemUrl, validator };
 }
 
 export const router = createCheerioRouter();

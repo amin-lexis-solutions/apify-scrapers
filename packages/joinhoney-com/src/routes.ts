@@ -3,7 +3,6 @@ import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
 } from 'shared/helpers';
@@ -32,16 +31,14 @@ function processItem(item: any) {
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(item.merchantName, '', item.sourceUrl);
-
-  validator.addValue('idInSite', generatedHash);
+  validator.addValue('idInSite', null);
   validator.addValue('code', item.code);
 
   const hasCode = !!item?.code;
 
-  return { generatedHash, hasCode, itemUrl: '', validator };
+  return { hasCode, itemUrl: '', validator };
 }
-
+// TODO: to inspect it's not working as expected
 router.addHandler(Label.listing, async (context) => {
   const { request, $, log } = context;
   if (request.userData.label !== Label.listing) return;

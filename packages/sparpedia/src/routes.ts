@@ -3,12 +3,7 @@ import cheerio from 'cheerio';
 import * as he from 'he';
 import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import {
-  processAndStoreData,
-  sleep,
-  generateItemId,
-  ItemResult,
-} from 'shared/helpers';
+import { sleep, ItemResult } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -52,13 +47,7 @@ function processItem(item: any, $cheerio: cheerio.Root): ItemResult {
   validator.addValue('isExclusive', isExclusive);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
-  return { generatedHash, hasCode, itemUrl, validator };
+  return { hasCode, itemUrl, validator };
 }
 
 export const router = createCheerioRouter();
@@ -227,8 +216,17 @@ router.addHandler(Label.getCode, async (context) => {
     // Add the decoded code to the validator's data
     validator.addValue('code', code);
 
-    // Process and store the data
-    await processAndStoreData(validator, context);
+    try {
+      await postProcess(
+        {
+          SaveDataHandler: { validator },
+        },
+        context
+      );
+    } catch (error: any) {
+      log.warning(`Post-Processing Error : ${error.message}`);
+      return;
+    }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

@@ -4,7 +4,6 @@ import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
 import {
   formatDateTime,
-  generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
 } from 'shared/helpers';
@@ -34,17 +33,11 @@ function processItem(item: any) {
   validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
   item?.hasCode && validator.addValue('code', item.code);
 
   const itemUrl = `${item.sourceUrl}#d-${item.idInSite}`;
 
-  return { generatedHash, hasCode: item?.hasCode, itemUrl, validator };
+  return { hasCode: item?.hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {

@@ -4,7 +4,6 @@ import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
 } from 'shared/helpers';
@@ -35,9 +34,7 @@ function processItem(merchantName, merchantDomain, item, sourceUrl) {
   validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(merchantName, item.idPool, sourceUrl);
-
-  return { generatedHash, hasCode: true, itemUrl: item.url, validator };
+  return { hasCode: true, itemUrl: item.url, validator };
 }
 // TODO: To inspect later Missing merchantName & code
 router.addHandler(Label.listing, async (context) => {

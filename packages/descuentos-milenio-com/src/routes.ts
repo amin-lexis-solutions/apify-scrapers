@@ -2,11 +2,7 @@ import * as cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import {
-  generateHash,
-  ItemResult,
-  getMerchantDomainFromUrl,
-} from 'shared/helpers';
+import { ItemResult, getMerchantDomainFromUrl } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -17,8 +13,6 @@ async function processItem(item: any, $cheerioElement: cheerio.Root) {
   // Extract the code
   const code = $cheerioElement('p.code')?.text();
 
-  const dataId = generateHash(item.merchantName, item.title, item.sourceUrl);
-
   const validator = new DataValidator();
 
   // Add required and optional values to the validator
@@ -26,14 +20,14 @@ async function processItem(item: any, $cheerioElement: cheerio.Root) {
   validator.addValue('merchantName', item.merchantName);
   validator.addValue('domain', item.merchantDomain);
   validator.addValue('title', item.title);
-  validator.addValue('idInSite', dataId);
+  validator.addValue('idInSite', null);
   validator.addValue('description', description);
   validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
   code ? validator.addValue('code', code) : null;
 
-  return { generatedHash: dataId, validator, itemUrl: '', hasCode: !!code };
+  return { validator, itemUrl: '', hasCode: !!code };
 }
 
 // Export the router function that determines which handler to use based on the request label

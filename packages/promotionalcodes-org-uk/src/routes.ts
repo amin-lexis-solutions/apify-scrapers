@@ -3,7 +3,7 @@ import cheerio from 'cheerio';
 import { createCheerioRouter, log } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { generateHash, ItemResult } from 'shared/helpers';
+import { ItemResult } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -12,8 +12,6 @@ async function processItem(item: any, $cheerio: cheerio.Root) {
 
   const hasCode = !!elemCode;
 
-  const idInSite = generateHash(item.merchantName, item.title, item.sourceUrl);
-
   const validator = new DataValidator();
 
   // Add required and optional values to the validator
@@ -21,7 +19,7 @@ async function processItem(item: any, $cheerio: cheerio.Root) {
   validator.addValue('merchantName', item.merchantName);
   validator.addValue('domain', item.merchantDomain);
   validator.addValue('title', item.title);
-  validator.addValue('idInSite', idInSite);
+  validator.addValue('idInSite', item?.idInSite || null);
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
@@ -29,13 +27,7 @@ async function processItem(item: any, $cheerio: cheerio.Root) {
 
   hasCode ? validator.addValue('code', code) : null;
 
-  const generatedHash = generateHash(
-    item.merchantName,
-    item.title,
-    item.sourceUrl
-  );
-
-  return { generatedHash, validator, hasCode, itemUrl: '' };
+  return { validator, hasCode, itemUrl: '' };
 }
 
 export const router = createCheerioRouter();

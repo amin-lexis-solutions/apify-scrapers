@@ -1,13 +1,7 @@
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import {
-  processAndStoreData,
-  sleep,
-  getMerchantDomainFromUrl,
-  generateItemId,
-  ItemResult,
-} from 'shared/helpers';
+import { sleep, getMerchantDomainFromUrl, ItemResult } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -108,9 +102,7 @@ function processItem(
     ? `https://www.sparwelt.de/hinge/vouchercodes/${idInSite}`
     : '';
 
-  const generatedHash = generateItemId(merchantName, idInSite, sourceUrl);
-
-  return { generatedHash, hasCode, itemUrl, validator };
+  return { hasCode, itemUrl, validator };
 }
 
 export const router = createCheerioRouter();
@@ -300,7 +292,19 @@ router.addHandler(Label.getCode, async (context) => {
     validator.addValue('code', code);
 
     // Process and store the data
-    await processAndStoreData(validator, context);
+    try {
+      await postProcess(
+        {
+          SaveDataHandler: {
+            validator,
+          },
+        },
+        context
+      );
+    } catch (error: any) {
+      log.warning(`Post-Processing Error : ${error.message}`);
+      return;
+    }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

@@ -2,10 +2,9 @@ import * as cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import { ItemHashMap, ItemResult } from 'shared/helpers';
+import { ItemResult } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
-import { generateHash } from 'shared/helpers';
 
 async function processItem(item: any, $cheerioElement: cheerio.Root) {
   // Extract the description
@@ -51,18 +50,13 @@ async function processItem(item: any, $cheerioElement: cheerio.Root) {
 
   code ? validator.addValue('code', code) : null;
 
-  const generatedHash = generateHash(
-    item.merchantName,
-    item.title,
-    item.sourceUrl
-  );
-
-  return { generatedHash, validator, itemUrl: '', hasCode };
+  return { validator, itemUrl: '', hasCode };
 }
 
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
 
+// TODO: Bug in finding merchant name to resolve
 router.addHandler(Label.listing, async (context) => {
   const { request, body, log } = context;
   if (request.userData.label !== Label.listing) return;
@@ -105,8 +99,6 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
     let result: ItemResult;
 
     for (const item of items) {
@@ -138,12 +130,6 @@ router.addHandler(Label.listing, async (context) => {
       };
 
       result = await processItem(itemData, $cheerio);
-
-      if (result.hasCode) {
-        itemsWithCode[result.generatedHash] = result;
-        idsToCheck.push(result.generatedHash);
-        continue;
-      }
 
       try {
         await postProcess(

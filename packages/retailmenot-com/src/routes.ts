@@ -1,11 +1,7 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import {
-  generateItemId,
-  ItemResult,
-  getMerchantDomainFromUrl,
-} from 'shared/helpers';
+import { ItemResult, getMerchantDomainFromUrl } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -131,10 +127,8 @@ router.addHandler(Label.listing, async (context) => {
       validator.addValue('isExpired', isExpired);
       validator.addValue('isShown', true);
 
-      // Generate a unique hash for the coupon using merchant name, unique ID, and request URL
-      const generatedHash = generateItemId(merchantName, idInSite, request.url);
       // Create a result object containing generated hash, code availability, coupon URL, and validator data
-      result = { generatedHash, hasCode, itemUrl, validator };
+      result = { hasCode, itemUrl, validator };
       // If the coupon has a code, store its details in the itemsWithCode object
       if (result.hasCode) {
         if (!result?.itemUrl) continue;

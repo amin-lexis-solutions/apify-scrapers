@@ -3,11 +3,7 @@ import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
-import {
-  generateItemId,
-  ItemResult,
-  getMerchantDomainFromUrl,
-} from 'shared/helpers';
+import { ItemResult, getMerchantDomainFromUrl } from 'shared/helpers';
 import { postProcess, preProcess } from 'shared/hooks';
 
 export const router = createCheerioRouter();
@@ -51,15 +47,8 @@ function processItem(item: any, couponElement: cheerio.Root): ItemResult {
 
   const hasCode = !!code;
 
-  // Generate a hash for the coupon
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
   // Return the coupon item result
-  return { generatedHash, hasCode, itemUrl: '', validator };
+  return { hasCode, itemUrl: '', validator };
 }
 // Handler function for processing coupon listings
 router.addHandler(Label.listing, async (context) => {

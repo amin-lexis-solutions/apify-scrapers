@@ -4,7 +4,6 @@ import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
 import {
   formatDateTime,
-  generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
 } from 'shared/helpers';
@@ -33,13 +32,11 @@ function processItem(merchantName, merchantDomain, item, sourceUrl) {
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(merchantName, item.idInSite, sourceUrl);
-
   const itemUrl = `https://www.groupon.ie/discount-codes/redemption/${idInSite}?merchant=${encodeURI(
     merchantName
   )}&linkType=MerchantPage`;
 
-  return { generatedHash, hasCode: item.hasCode, itemUrl, validator };
+  return { hasCode: item.hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {

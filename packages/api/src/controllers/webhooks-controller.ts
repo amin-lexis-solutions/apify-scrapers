@@ -23,7 +23,7 @@ import {
   TestWebhookRequestBody,
   WebhookRequestBody,
 } from '../utils/validators';
-import { generateItemId } from 'shared/helpers';
+import { generateHash } from 'shared/helpers';
 
 const updatableFields: (keyof Coupon)[] = [
   'domain',
@@ -202,10 +202,10 @@ export class WebhooksController {
     const couponsIds: string[] = [];
 
     for (const item of scrapedData) {
-      const id = generateItemId(
-        item?.merchantName,
-        item?.idInSite,
-        item?.sourceUrl
+      const id = generateHash(
+        item.merchantName,
+        item.idInSite || item.title,
+        item.sourceUrl
       );
       couponsIds.push(id);
       sourceUrlsSet.add(item.sourceUrl);

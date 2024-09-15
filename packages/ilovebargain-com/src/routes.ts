@@ -4,11 +4,10 @@ import cheerio from 'cheerio';
 
 import { DataValidator } from 'shared/data-validator';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
-import { generateItemId, ItemResult } from 'shared/helpers';
 import { postProcess, preProcess } from 'shared/hooks';
 
 export const router = createCheerioRouter();
-
+// TODO: Review this actor
 router.addHandler(Label.listing, async (context) => {
   const { request, $, crawler } = context;
 
@@ -91,8 +90,6 @@ router.addHandler(Label.details, async (context) => {
     logger.error(`merchantName not found ${request.url}`);
     return;
   }
-  // Extract validCoupons
-  let result: ItemResult;
 
   for (const item of items) {
     const $cheerio = cheerio.load(item);
@@ -114,7 +111,6 @@ router.addHandler(Label.details, async (context) => {
     }
 
     const code = $cheerio('.-code-container')?.attr('data-clipboard-text');
-    const itemUrl = request.url;
 
     // Create a DataValidator instance and populate it with coupon data
     const validator = new DataValidator();
@@ -129,19 +125,11 @@ router.addHandler(Label.details, async (context) => {
     validator.addValue('isExpired', false);
     validator.addValue('isShown', true);
 
-    // Generate a unique hash for the coupon using merchant name, unique ID, and request URL
-    const generatedHash = generateItemId(merchantName, idInSite, request.url);
-
-    const hasCode = !!code;
-
-    // Create a result object containing generated hash, code availability, coupon URL, and validator data
-    result = { generatedHash, hasCode, itemUrl, validator };
-
     try {
       await postProcess(
         {
           SaveDataHandler: {
-            validator: result.validator,
+            validator: validator,
           },
         },
         context

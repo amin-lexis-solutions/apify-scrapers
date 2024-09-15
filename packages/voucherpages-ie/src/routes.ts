@@ -4,7 +4,6 @@ import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
 import {
   formatDateTime,
-  generateItemId,
   ItemResult,
   getMerchantDomainFromUrl,
 } from 'shared/helpers';
@@ -35,15 +34,10 @@ function processItem(merchantName, merchantDomain, voucher, sourceUrl) {
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(
-    merchantName,
-    voucher.idInSite,
-    sourceUrl
-  );
-
-  return { generatedHash, hasCode: voucher.hasCode, itemUrl: '', validator };
+  return { hasCode: voucher.hasCode, itemUrl: '', validator };
 }
 
+// TODO: to inspect  non index page it's not working as expected
 router.addHandler(Label.listing, async (context) => {
   const { request, $, enqueueLinks, log } = context;
   if (request.userData.label !== Label.listing) return;

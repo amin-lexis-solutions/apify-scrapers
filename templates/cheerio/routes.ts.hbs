@@ -1,151 +1,124 @@
-import { createCheerioRouter } from 'crawlee';
-import { Label } from 'shared/actor-utils';
+import { createCheerioRouter, log } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
-import {
-  formatDateTime,
-  generateItemId,
-  getMerchantDomainFromUrl,
-  ItemResult,
-  ItemHashMap,
-  checkItemsIds,
-  logError,
-} from 'shared/helpers';
+import { logger } from 'shared/logger';
+import { ItemResult } from 'shared/helpers';
+import { Label } from 'shared/actor-utils';
+import { postProcess, preProcess } from 'shared/hooks';
 
-import { preProcess, postProcess } from 'shared/hooks';
-
-// Export the router function that determines which handler to use based on the request label
-export const router = createCheerioRouter();
-
-function processItem(merchantName, merchantDomain, voucher, sourceUrl) {
+function processItem(item: any, $cheerio: any): ItemResult {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
-  // TODO: Change idInSite to the correct value
-  const idInSite = voucher?.idPool?.replace('us_', '');
   // Add required values to the validator
-  validator.addValue('sourceUrl', sourceUrl);
-  validator.addValue('merchantName', merchantName);
-  validator.addValue('title', voucher.title);
-  validator.addValue('idInSite', idInSite);
-
-  // Add optional values to the validator
-  validator.addValue('domain', merchantDomain);
-  validator.addValue('description', voucher.description);
-  validator.addValue('termsAndConditions', voucher.termsAndConditions);
-  validator.addValue('expiryDateAt', formatDateTime(voucher.endTime));
-  validator.addValue('startDateAt', formatDateTime(voucher.startTime));
-  validator.addValue('isExclusive', voucher.exclusiveVoucher);
-  validator.addValue('isExpired', voucher.isExpired);
+  validator.addValue('sourceUrl', item.sourceUrl);
+  validator.addValue('merchantName', item.merchantName);
+  validator.addValue('domain', item.merchantDomain);
+  validator.addValue('title', item.title);
+  validator.addValue('idInSite', item.idInSite);
+  validator.addValue('isExclusive', item.isExclusive);
+  validator.addValue('isExpired', !$cheerio.Available);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(
-    merchantName,
-    voucher.idPool,
-    sourceUrl
-  );
+  const parsedUrl = new URL(item.sourceUrl);
 
-  const hasCode = voucher?.type === 'code';
+  const itemUrl = `TODO: Implement itemUrl`;
 
-  // TODO: Change the URL to the correct one
-  const itemUrl = `https://exmple.com/${voucher.idPool}`;
-
-  return { generatedHash, hasCode, itemUrl, validator };
+  return { hasCode: item.code, itemUrl, validator };
 }
 
+export const router = createCheerioRouter();
+
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, enqueueLinks, log } = context;
+  const { request, $, crawler, log } = context;
+
   if (request.userData.label !== Label.listing) return;
 
   try {
-    // TODO: Implement the logic to extract the merchant name, domain, clientId, countryCode, and vouchers from the pag
+    // Extracting request and body from context
 
-    const merchantName = ''; // TODO: Extract the merchant name from the page
+    log.info(`Processing URL: ${request.url}`);
+
+
+    const merchantName = "TODO: Extract merchantName";
 
     if (!merchantName) {
-      logError(`MerchantName not found ${request.url}`);
+      logger.error('Unable to find merchant name');
       return;
     }
 
-    const merchantUrl = ''; // TODO: Extract the merchant URL from the page
-    const merchantDomain = getMerchantDomainFromUrl(merchantUrl);
+    const merchantUrl = "TODO: Extract merchantUrl";
 
-    merchantDomain
-      ? log.info(
-          `Merchant Name: ${merchantName} - merchantDomain: ${merchantDomain}`
-        )
-      : log.warning('merchantDomain not found');
+    if (!merchantUrl) {
+      log.warning('Unable to find merchantUrl');
+    }
 
-    const currentItems = []; // TODO: Extract the items from the page
-    const expiredItems = []; // TODO: Extract the expired items from the page (if any)
-    const items = [...currentItems, ...expiredItems];
+    const merchantDomain = merchantUrl
+      ? getMerchantDomainFromUrl(merchantUrl)
+      : null;
+
+    const items = "TODO: Extract items";
 
     try {
       await preProcess(
         {
           AnomalyCheckHandler: {
-            url: request.url,
             items,
+          },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
           },
         },
         context
       );
-    } catch (error) {
-      logError(`Preprocess Error: ${error}`);
+    } catch (error: any) {
+      logger.error(`Pre-Processing Error : ${error.message}`, error);
       return;
     }
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
-    for (const item of items) {
-      if (!item?.title) {
-        logError('Coupon title not found in item');
-        continue;
-      }
-      if (!item?.idPool) {
-        logError('idInSite not found in item');
-        continue;
-      }
-      const result: ItemResult = processItem(
-        merchantName,
-        merchantDomain,
-        item,
-        request.url
-      );
+    let result: ItemResult;
 
-      if (!result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
+    for (const element of items) {
+
+      if (!element.idInSite) {
+        logger.error(`not idInSite found in item`);
+        continue;
+      }
+
+      if (!element.title) {
+        logger.error(`not title found in item`);
+        continue;
+      }
+
+      result = processItem(element, $);
+
+      if (result.hasCode) {
+        if (!result.itemUrl) continue;
+        // Add the coupon URL to the request queue
+        await crawler.requestQueue.addRequest(
+          {
+            url: result.itemUrl,
+            userData: {
+              ...request.userData,
+              label: Label.getCode,
+              validatorData: result.validator.getData(),
             },
-            context
-          );
-        } catch (error) {
-          log.error(`Postprocess Error: ${error}`);
-        }
+          },
+          { forefront: true }
+        );
         continue;
       }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
-    }
-
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length > 0) {
-      for (const id of nonExistingIds) {
-        const result: ItemResult = itemsWithCode[id];
-        // TODO: Implement the logic to enqueue the coupon URL to get the code if needed otherwise save the data
-        await enqueueLinks({
-          urls: [result.itemUrl],
-          userData: {
-            ...request.userData,
-            label: Label.getCode,
-            validatorData: result.validator.getData(),
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
           },
-        });
+          context
+        );
+      } catch (error: any) {
+        log.warning(`Post-Processing Error : ${error.message}`);
+        return;
       }
     }
   } finally {
@@ -154,43 +127,37 @@ router.addHandler(Label.listing, async (context) => {
   }
 });
 
-// TODO: Implement the handler for the getCode label if needed
 router.addHandler(Label.getCode, async (context) => {
-  // Destructure objects from the context
-  const { request, $, log } = context;
+  // context includes request, body, etc.
+  const { request, body } = context;
+
+  if (request.userData.label !== Label.getCode) return;
 
   try {
-    log.info(`GetCode ${request.url}`);
-    // Extract validator data from request's user data
+
+    // Retrieve validatorData from request's userData
     const validatorData = request.userData.validatorData;
-    // Create a new DataValidator instance
+
+    // Create a new DataValidator instance and load the data
     const validator = new DataValidator();
-    // Load validator data
     validator.loadData(validatorData);
 
-    // TODO: Implement the logic to extract the code from the page
 
-    // Get the code value from the JSON response
-    const code = null; // TODO: Extract the code from the response
+    const code = "TODO: Implement code extraction";
+    log.info(`Found code: ${code}\n    at: ${request.url}`);
 
-    if (!code) {
-      log.warning('No code found');
-    }
-
-    // Add the code value to the validator
+    // Assuming the code should be added to the validator's data
     validator.addValue('code', code);
 
-    try {
-      await postProcess(
-        {
-          SaveDataHandler: { validator },
+    // Process and store the data
+    await postProcess(
+      {
+        SaveDataHandler: {
+          validator,
         },
-        context
-      );
-    } catch (error) {
-      log.error(`Postprocess Error: ${error}`);
-      return;
-    }
+      },
+      context
+    );
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.

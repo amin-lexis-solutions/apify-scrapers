@@ -4,7 +4,6 @@ import { logger } from 'shared/logger';
 import {
   sleep,
   getMerchantDomainFromUrl,
-  generateItemId,
   ItemResult,
   formatDateTime,
 } from './helpers';
@@ -94,18 +93,16 @@ function processItem(
   validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(merchantName, idInSite, sourceUrl);
-
   // code must be checked to decide the next step
   const codeType = checkVoucherCode(item.code);
 
   if (codeType.isEmpty) {
-    return { generatedHash, hasCode: false, itemUrl: '', validator };
+    return { hasCode: false, itemUrl: '', validator };
   }
 
   if (!codeType.startsWithDots) {
     validator.addValue('code', codeType.code);
-    return { generatedHash, hasCode: false, itemUrl: '', validator };
+    return { hasCode: false, itemUrl: '', validator };
   }
 
   const retailerId = nextData.query.clientId;
@@ -115,7 +112,7 @@ function processItem(
 
   const itemUrl = `${assetsBaseUrl}/api/voucher/country/${retailerCountry}/client/${retailerId}/id/${idPool}`;
 
-  return { generatedHash, hasCode: true, itemUrl, validator };
+  return { hasCode: true, itemUrl, validator };
 }
 
 export const router = createCheerioRouter();

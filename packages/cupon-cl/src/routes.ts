@@ -4,7 +4,6 @@ import { logger } from 'shared/logger';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
 } from 'shared/helpers';
@@ -34,19 +33,14 @@ function processItem(item) {
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
   const hasCode = item.hasCode;
 
   const itemUrl = `https://cupon.cl/modals/coupon_clickout?id=${item.idInSite}`;
 
-  return { generatedHash, hasCode, itemUrl, validator };
+  return { hasCode, itemUrl, validator };
 }
 
+// TODO: convert to cheerio
 router.addHandler(Label.listing, async (context) => {
   const { request, page, enqueueLinks, log } = context;
   if (request.userData.label !== Label.listing) return;
@@ -175,11 +169,12 @@ router.addHandler(Label.listing, async (context) => {
 });
 
 router.addHandler(Label.getCode, async (context) => {
-  // Destructure objects from the context
-  const { request, page, log } = context;
-
-  log.info(`GetCode ${request.url}`);
   try {
+    // Destructure objects from the context
+    const { request, page, log } = context;
+
+    log.info(`GetCode ${request.url}`);
+
     log.info(`GetCode ${request.url}`);
     // Extract validator data from request's user data
     const validatorData = request.userData.validatorData;

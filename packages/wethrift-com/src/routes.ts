@@ -1,7 +1,7 @@
 import { createPuppeteerRouter, sleep } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
-import { generateItemId, getMerchantDomainFromUrl } from 'shared/helpers';
+import { getMerchantDomainFromUrl } from 'shared/helpers';
 import { preProcess, postProcess } from 'shared/hooks';
 
 // Export the router function that determines which handler to use based on the request label
@@ -23,9 +23,8 @@ function processItem(merchantName, merchantDomain, item, sourceUrl) {
   validator.addValue('isShown', true);
 
   const hasCode = item.code ? true : false;
-  const generatedHash = generateItemId(merchantName, item.idInSite, sourceUrl);
 
-  return { generatedHash, hasCode, validator };
+  return { hasCode, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {

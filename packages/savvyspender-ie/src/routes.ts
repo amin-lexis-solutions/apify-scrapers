@@ -2,7 +2,7 @@ import { createPuppeteerRouter, sleep } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import { formatDateTime, generateItemId, ItemResult } from 'shared/helpers';
+import { formatDateTime, ItemResult } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
 
@@ -30,13 +30,11 @@ function processItem(merchantName, merchantDomain, item, sourceUrl) {
   validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(merchantName, item.idPool, sourceUrl);
-
   const hasCode = item?.type === 'code';
 
   const itemUrl = item.itemUrl;
 
-  return { generatedHash, hasCode, itemUrl, validator };
+  return { hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {

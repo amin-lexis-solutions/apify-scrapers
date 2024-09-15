@@ -3,7 +3,6 @@ import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
 } from 'shared/helpers';
@@ -43,13 +42,11 @@ function processItem(
   validator.addValue('isExpired', voucher.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(merchantName, voucher.idPool, sourceUrl);
-
   const hasCode = voucher?.type === 'code';
 
   const itemUrl = `https://coupons.businessinsider.com/api/voucher/country/${countryCode}/client/${clientId}/id/${voucher.idPool}`;
 
-  return { generatedHash, hasCode, itemUrl, validator };
+  return { hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {

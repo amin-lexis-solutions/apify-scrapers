@@ -1,7 +1,7 @@
 import { createCheerioRouter } from 'crawlee';
 import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
-import { generateItemId, ItemResult } from 'shared/helpers';
+import { ItemResult } from 'shared/helpers';
 import { DataValidator } from 'shared/data-validator';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -34,15 +34,8 @@ function processItem(item: any, $cheerioElement: cheerio.Root): ItemResult {
 
   hasCode ? validator.addValue('code', code) : null;
 
-  // Generate a hash for the coupon
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
   // Return the coupon item result
-  return { generatedHash, hasCode, itemUrl: '', validator };
+  return { hasCode, itemUrl: '', validator };
 }
 // Handler function for processing coupon listings
 router.addHandler(Label.listing, async (context) => {

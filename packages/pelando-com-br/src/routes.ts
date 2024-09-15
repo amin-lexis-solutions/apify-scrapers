@@ -2,11 +2,7 @@ import { logger } from 'shared/logger';
 import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
-import {
-  getMerchantDomainFromUrl,
-  generateHash,
-  ItemResult,
-} from 'shared/helpers';
+import { getMerchantDomainFromUrl, ItemResult } from 'shared/helpers';
 import { DataValidator } from 'shared/data-validator';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -31,13 +27,7 @@ async function processItem(item: any, $cheerio: cheerio.Root) {
 
   code ? validator.addValue('code', code) : null;
 
-  const generatedHash = generateHash(
-    item.merchantName,
-    item.title,
-    item.sourceUrl
-  );
-
-  return { generatedHash, validator, hasCode: !!code, itemUrl: '' };
+  return { validator, hasCode: !!code, itemUrl: '' };
 }
 
 export const router = createCheerioRouter();
@@ -121,7 +111,7 @@ router.addHandler(Label.listing, async (context) => {
           .replace(/[\s\t\r\n]+/g, ' ')
       );
 
-      const idInSite = generateHash(merchantName, title, request.url);
+      const idInSite = null;
 
       const itemData = {
         title,

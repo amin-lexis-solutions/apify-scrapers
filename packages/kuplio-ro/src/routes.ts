@@ -3,7 +3,7 @@ import cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import { ItemResult, generateHash } from 'shared/helpers';
+import { ItemResult } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -66,13 +66,7 @@ async function processItem(item: any, $cheerio: cheerio.Root) {
 
   code ? validator.addValue('code', code) : null;
 
-  const generatedHash = generateHash(
-    item.merchantName,
-    item.title,
-    item.sourceUrl
-  );
-
-  return { generatedHash, hasCode, itemUrl: '', validator };
+  return { hasCode, itemUrl: '', validator };
 }
 
 export const router = createCheerioRouter();

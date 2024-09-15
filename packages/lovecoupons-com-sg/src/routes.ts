@@ -3,12 +3,7 @@ import cheerio from 'cheerio';
 import { createCheerioRouter, log } from 'crawlee';
 import * as he from 'he';
 import { DataValidator } from 'shared/data-validator';
-import {
-  sleep,
-  getMerchantDomainFromUrl,
-  generateItemId,
-  ItemResult,
-} from 'shared/helpers';
+import { sleep, getMerchantDomainFromUrl, ItemResult } from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -68,13 +63,7 @@ function processItem(item: any, $cheerio: cheerio.Root): ItemResult {
   validator.addValue('isExpired', false);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
-  return { generatedHash, hasCode, itemUrl, validator };
+  return { hasCode, itemUrl, validator };
 }
 
 export const router = createCheerioRouter();

@@ -6,7 +6,6 @@ import { DataValidator } from 'shared/data-validator';
 import { ItemResult } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
-import { generateHash } from 'shared/helpers';
 
 async function processItem(item: any, $cheerioElement: cheerio.Root) {
   const elementDataType = $cheerioElement('*').first().attr('data-type');
@@ -32,13 +31,7 @@ async function processItem(item: any, $cheerioElement: cheerio.Root) {
 
   hasCode ? validator.addValue('code', code) : null;
 
-  const generatedHash = generateHash(
-    item.merchantName,
-    item.title,
-    item.sourceUrl
-  );
-
-  return { generatedHash, validator, hasCode, itemUrl: '' };
+  return { validator, hasCode, itemUrl: '' };
 }
 
 export const router = createCheerioRouter();

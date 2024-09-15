@@ -1,7 +1,7 @@
 import { PuppeteerCrawlingContext, Router } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import { generateItemId, ItemResult, formatDateTime } from 'shared/helpers';
+import { ItemResult, formatDateTime } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -22,13 +22,7 @@ function processItem(item: any) {
 
   const itemUrl = `https://www.poulpeo.com/o.htm?c=${item.idInSite}`;
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
-
-  return { generatedHash, hasCode: item.hasCode, itemUrl, validator };
+  return { hasCode: item.hasCode, itemUrl, validator };
 }
 router.addHandler(Label.listing, async (context) => {
   const { page, request, enqueueLinks, log } = context;

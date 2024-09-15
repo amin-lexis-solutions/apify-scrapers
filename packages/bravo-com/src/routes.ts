@@ -2,7 +2,6 @@ import { createCheerioRouter } from 'crawlee';
 import { logger } from 'shared/logger';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
-import { generateItemId } from 'shared/helpers';
 import { postProcess, preProcess } from 'shared/hooks';
 
 export const router = createCheerioRouter();
@@ -30,13 +29,7 @@ router.addHandler(Label.listing, async (context) => {
 
     if (hasCode) validator.addValue('code', item.code);
 
-    const generatedHash = generateItemId(
-      item.merchantName,
-      item.idInSite,
-      item.sourceUrl
-    );
-
-    return { generatedHash, hasCode, validator };
+    return { hasCode, validator };
   };
 
   try {

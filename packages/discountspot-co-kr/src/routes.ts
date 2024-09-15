@@ -3,7 +3,6 @@ import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
 } from 'shared/helpers';
@@ -35,15 +34,9 @@ function processItem(item: any) {
   validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(
-    item?.merchantName,
-    item?.idInSite,
-    item?.sourceUrl
-  );
-
   const itemUrl = ''; // code static HTML
 
-  return { generatedHash, hasCode: item?.hasCode, itemUrl, validator };
+  return { hasCode: item?.hasCode, itemUrl, validator };
 }
 // TODO Broken Actor always Return the same coupon code for all items in the page
 router.addHandler(Label.listing, async (context) => {

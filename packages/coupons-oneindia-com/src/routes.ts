@@ -5,7 +5,6 @@ import { DataValidator } from 'shared/data-validator';
 import {
   ItemResult,
   formatDateTime,
-  generateItemId,
   getMerchantDomainFromUrl,
 } from 'shared/helpers';
 import { postProcess, preProcess } from 'shared/hooks';
@@ -35,17 +34,11 @@ function processItem(item): ItemResult {
   validator.addValue('isExpired', item?.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    idInSite,
-    item.sourceUrl
-  );
-
   const hasCode = item?.type.includes('code');
 
   const itemUrl = `https://coupons.oneindia.com/api/voucher/country/in/client/${item?.retailerId}/id/${item?.idPool}`;
 
-  return { generatedHash, hasCode, itemUrl, validator };
+  return { hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {

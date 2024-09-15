@@ -2,7 +2,7 @@ import { createCheerioRouter } from 'crawlee';
 import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import { formatDateTime, generateItemId, ItemResult } from 'shared/helpers';
+import { formatDateTime, ItemResult } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
 
@@ -29,12 +29,10 @@ function processItem(merchantName, merchantDomain, item, sourceUrl) {
   validator.addValue('isShown', true);
   validator.addValue('code', item.code);
 
-  const generatedHash = generateItemId(merchantName, item.title, sourceUrl);
-
   // there not idInSite in page - lets generate it
-  validator.addValue('idInSite', generatedHash);
+  validator.addValue('idInSite', null);
 
-  return { generatedHash, hasCode: !!item.code, itemUrl: '', validator };
+  return { hasCode: !!item.code, itemUrl: '', validator };
 }
 
 router.addHandler(Label.listing, async (context) => {

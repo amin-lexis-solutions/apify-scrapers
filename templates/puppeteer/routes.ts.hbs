@@ -3,12 +3,8 @@ import { Label } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
 import {
   formatDateTime,
-  generateItemId,
   getMerchantDomainFromUrl,
   ItemResult,
-  ItemHashMap,
-  checkItemsIds,
-  logError,
 } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
@@ -16,11 +12,15 @@ import { preProcess, postProcess } from 'shared/hooks';
 // Export the router function that determines which handler to use based on the request label
 export const router = createPuppeteerRouter();
 
-function processItem(merchantName, merchantDomain, voucher, sourceUrl) {
+function processItem(
+  merchantName,
+  domain,
+  voucher,
+  sourceUrl
+) {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
-  // TODO: Change idInSite to the correct value
   const idInSite = voucher?.idPool?.replace('us_', '');
   // Add required values to the validator
   validator.addValue('sourceUrl', sourceUrl);
@@ -29,7 +29,7 @@ function processItem(merchantName, merchantDomain, voucher, sourceUrl) {
   validator.addValue('idInSite', idInSite);
 
   // Add optional values to the validator
-  validator.addValue('domain', merchantDomain);
+  validator.addValue('domain', domain);
   validator.addValue('description', voucher.description);
   validator.addValue('termsAndConditions', voucher.termsAndConditions);
   validator.addValue('expiryDateAt', formatDateTime(voucher.endTime));
@@ -38,18 +38,11 @@ function processItem(merchantName, merchantDomain, voucher, sourceUrl) {
   validator.addValue('isExpired', voucher.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(
-    merchantName,
-    voucher.idPool,
-    sourceUrl
-  );
-
   const hasCode = voucher?.type === 'code';
 
-  // TODO: Change the URL to the correct one
-  const itemUrl = `https://exemple.com/${voucher.idPool}`;
+  const itemUrl = `TODO - Replace with the correct URL`;
 
-  return { generatedHash, hasCode, itemUrl, validator };
+  return { hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {
@@ -57,25 +50,9 @@ router.addHandler(Label.listing, async (context) => {
   if (request.userData.label !== Label.listing) return;
 
   try {
-    // TODO: Implement the logic to extract the merchant name, domain, clientId, countryCode, and vouchers from the pag
 
-    const merchantName = ''; // TODO: Extract the merchant name from the page
 
-    if (!merchantName) {
-      logError(`Merchant name not found ${request.url}`);
-      return;
-    }
-
-    const merchantUrl = ''; // TODO: Extract the merchant URL from the page
-    const merchantDomain = getMerchantDomainFromUrl(merchantUrl);
-
-    merchantDomain
-      ? log.info(`Merchant Name: ${merchantName} - Domain: ${merchantDomain}`)
-      : log.warning('merchantDomain not found');
-
-    const currentItems = []; // TODO: Extract the items from the page
-    const expiredItems = []; // TODO: Extract the expired items from the page (if any)
-    const items = [...currentItems, ...expiredVouchers];
+    const items = "TODO - Replace with the correct selector";
 
     try {
       await preProcess(
@@ -84,34 +61,45 @@ router.addHandler(Label.listing, async (context) => {
             url: request.url,
             items,
           },
+          IndexPageHandler: {
+            indexPageSelectors: request.userData.pageSelectors,
+          },
         },
         context
       );
     } catch (error) {
-      logError(`Preprocess Error: ${error}`);
+      log.error(`Preprocess Error: ${error}`);
       return;
     }
 
-    const itemsWithCode: ItemHashMap = {};
-    const idsToCheck: string[] = [];
+    const merchantName = "TODO - Replace with the correct selector";
+    const domain =  "TODO - Replace with the correct selector";
+
+    log.info(`Merchant Name: ${merchantName} - Domain: ${domain}`);
+
     for (const item of items) {
-      if (!item?.title) {
-        logError('Coupon title not found in item');
-        continue;
-      }
-      if (!item?.idPool) {
-        logError('idInSite not found in item');
-        continue;
-      }
       const result: ItemResult = processItem(
         merchantName,
-        merchantDomain,
+        domain,
         item,
         request.url
       );
 
-      if (!result.hasCode) {
-        try {
+      if (result.hasCode) {
+          if (!result.itemUrl) continue;
+
+      await enqueueLinks({
+        urls: [result.itemUrl],
+        userData: {
+          ...request.userData,
+          label: Label.getCode,
+          validatorData: result.validator.getData(),
+        },
+      });
+        continue;
+      }
+
+      try {
           await postProcess(
             {
               SaveDataHandler: {
@@ -123,28 +111,7 @@ router.addHandler(Label.listing, async (context) => {
         } catch (error) {
           log.error(`Postprocess Error: ${error}`);
         }
-        continue;
-      }
-      itemsWithCode[result.generatedHash] = result;
-      idsToCheck.push(result.generatedHash);
-    }
 
-    // Check if the coupons already exist in the database
-    const nonExistingIds = await checkItemsIds(idsToCheck);
-
-    if (nonExistingIds.length > 0) {
-      for (const id of nonExistingIds) {
-        const result: ItemResult = itemsWithCode[id];
-        // TODO: Implement the logic to enqueue the coupon URL to get the code if needed otherwise save the data
-        await enqueueLinks({
-          urls: [result.itemUrl],
-          userData: {
-            ...request.userData,
-            label: Label.getCode,
-            validatorData: result.validator.getData(),
-          },
-        });
-      }
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
@@ -152,7 +119,7 @@ router.addHandler(Label.listing, async (context) => {
   }
 });
 
-// TODO: Implement the handler for the getCode label if needed
+
 router.addHandler(Label.getCode, async (context) => {
   // Destructure objects from the context
   const { request, page, log } = context;
@@ -165,14 +132,11 @@ router.addHandler(Label.getCode, async (context) => {
     const validator = new DataValidator();
     // Load validator data
     validator.loadData(validatorData);
-
-    // TODO: Implement the logic to extract the code from the page
-
-    // Get the code value from the JSON response
-    const code = null; // TODO: Extract the code from the response
+    const code = "TODO: Implement code extraction";
 
     if (!code) {
-      log.warning('No code found');
+      log.error('No code found');
+      return;
     }
 
     // Add the code value to the validator

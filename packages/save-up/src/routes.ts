@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import { ItemResult, generateHash } from 'shared/helpers';
+import { ItemResult } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
 
@@ -34,15 +34,9 @@ async function processItem(item: any, $cheerio: cheerio.Root) {
     validator.addValue('code', code);
   }
 
-  const generatedHash = generateHash(
-    item.merchantName,
-    item.title,
-    item.sourceUrl
-  );
+  validator.addValue('idInSite', null);
 
-  validator.addValue('idInSite', generatedHash);
-
-  return { generatedHash, validator, hasCode: !!code, itemUrl: '' };
+  return { validator, hasCode: !!code, itemUrl: '' };
 }
 
 // Export the router function that determines which handler to use based on the request label
