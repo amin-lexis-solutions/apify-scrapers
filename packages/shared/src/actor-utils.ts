@@ -208,7 +208,11 @@ export async function preparePuppeteerScraper(
         await page.setRequestInterception(true);
 
         await page.on('request', (req) => {
-          if (['image', 'stylesheet', 'font'].includes(req.resourceType())) {
+          if (
+            ['image', 'stylesheet', 'font', 'media'].includes(
+              req.resourceType()
+            )
+          ) {
             req.abort();
           } else {
             req.continue();

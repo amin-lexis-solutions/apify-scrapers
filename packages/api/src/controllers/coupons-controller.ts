@@ -148,7 +148,6 @@ export class CouponsController {
     const [totalResults, data] = await Promise.all([
       prisma.coupon.count({ where }),
       prisma.coupon.findMany({
-
         skip: (page - 1) * pageSize,
         take: pageSize,
         where,
@@ -159,7 +158,7 @@ export class CouponsController {
           description: true,
           idInSite: true,
           domain: true,
-          merchantName: true,
+          merchantNameOnSite: true,
           merchantId: true,
           termsAndConditions: true,
           expiryDateAt: true,
@@ -195,9 +194,8 @@ export class CouponsController {
 
     // Format the expiryDateAt field for each item in the data array
     const formattedData = data.map((item) => ({
-      ...item,
       merchantName: item.merchant_relation.name,
-      merchantNameOnSite: item.merchantName,
+      ...item,
       startDateAt: item.startDateAt
         ? dayjs(item.startDateAt).format('YYYY-MM-DD')
         : null,

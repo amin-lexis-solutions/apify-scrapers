@@ -1,20 +1,15 @@
 import { logger } from 'shared/logger';
-import { createPuppeteerRouter, sleep } from 'crawlee';
-import { Label } from 'shared/actor-utils';
+import { createCheerioRouter } from 'crawlee';
+import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { DataValidator } from 'shared/data-validator';
-import {
-  formatDateTime,
-  generateItemId,
-  getMerchantDomainFromUrl,
-  ItemResult,
-} from 'shared/helpers';
+import { formatDateTime } from 'shared/helpers';
 
 import { preProcess, postProcess } from 'shared/hooks';
 
 // Export the router function that determines which handler to use based on the request label
-export const router = createPuppeteerRouter();
+export const router = createCheerioRouter();
 
-function processItem(item) {
+function processItem(item: any) {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
@@ -34,31 +29,100 @@ function processItem(item) {
   validator.addValue('isExpired', item.isExpired);
   validator.addValue('isShown', true);
 
-  const generatedHash = generateItemId(
-    item.merchantName,
-    item.idInSite,
-    item.sourceUrl
-  );
+  const itemUrl = `https://www.acties.nl/store-offer/ajax-popup/${item.idInSite}/${item.storeId}`;
 
-  const itemUrl = `https://www.acties.nl/${item.merchantName}#coupon-${item.idInSite}`;
-
-  return { generatedHash, hasCode: item.hasCode, itemUrl, validator };
+  return { hasCode: item.hasCode, itemUrl, validator };
 }
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, page, enqueueLinks, log } = context;
-  if (request.userData.label !== Label.listing) return;
-
-  await page.setJavaScriptEnabled(true);
+  const { request, $, crawler, log } = context;
+  if (request.userData.label !== Label.listing || !crawler.requestQueue) return;
 
   try {
-    const currentItems = [
-      ...(await page.$$('section.active article')),
-      ...(await page.$$('section.related-offers article')),
-    ];
-    const expiredItems = await page.$$('section.expired article');
+    log.info(`Listing ${request.url}`);
 
-    const items = [...currentItems, ...expiredItems];
+    const scriptContent = $('script')
+      .filter((i, el) => {
+        const htmlContent = $(el).html()?.trim();
+        return !!htmlContent && htmlContent.startsWith('window._store');
+      })
+      .html();
+
+    let pageDataJson: any = null;
+
+    if (scriptContent) {
+      // Extract the JSON part of the script content
+      const pageDataMatch = scriptContent.match(
+        /window\._store\s*=\s*(\{[^;]+\});/
+      );
+
+      if (pageDataMatch && pageDataMatch[1]) {
+        const jsonString = pageDataMatch[1];
+
+        try {
+          pageDataJson = JSON.parse(jsonString);
+        } catch (error) {
+          logger.error('Failed to parse JSON from window._store:', error);
+          return;
+        }
+      } else {
+        logger.error('window._store not found in the script');
+        return;
+      }
+    } else {
+      logger.error('Script content not found');
+      return;
+    }
+
+    if (!pageDataJson || !pageDataJson?.id) {
+      logger.error('Page data not found or missing id');
+      return;
+    }
+
+    const merchantName =
+      $('#store-logo').attr('title')?.trim() || pageDataJson?.slug || null;
+
+    if (!merchantName) {
+      logger.error(`Merchant name not found ${request.url}`);
+      return;
+    }
+
+    const merchantDomain =
+      $('#store-topbar .link').text() ||
+      $('#store-topbar li[clas]').text() ||
+      null;
+
+    merchantDomain
+      ? log.info(`Merchant Name: ${merchantName} - Domain: ${merchantDomain}`)
+      : log.warning(`Merchant Domain not found for ${request.url}`);
+
+    const items = $('section.active article, section.expired article')
+      .map((_, el) => {
+        const $el = $(el);
+        let expiryDateAt: string | null = $el.find('.date-end').text().trim();
+        if (expiryDateAt === 'Verloopt morgen') {
+          expiryDateAt =
+            new Date(new Date().setDate(new Date().getDate() + 1))
+              .toISOString()
+              .split('T')[0] || null;
+        }
+        return {
+          storeId: pageDataJson.id,
+          sourceUrl: request.url,
+          merchantName,
+          merchantDomain,
+          title: $el.find('h3').text().trim(),
+          idInSite: $el.attr('data-offer-id'),
+          description: $el.find('.details').text().trim(),
+          termsAndConditions: $el.find('.terms').text().trim(),
+          expiryDateAt,
+          startDateAt: null,
+          isExclusive: $el.hasClass('special'),
+          isExpired: $el.hasClass('expired'),
+          hasCode: $el.hasClass('coupon'),
+        };
+      })
+      .get() as any[] | [];
 
     try {
       await preProcess(
@@ -78,121 +142,47 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const merchantName = await page.evaluate(() =>
-      document.querySelector('#store-topbar img')?.getAttribute('title')
-    );
-
-    if (!merchantName) {
-      logger.error(`Merchant name not found ${request.url}`);
-      return;
-    }
-
-    const merchantUrl = await page.evaluate(() => {
-      const fullPath = document.querySelector('#store-topbar .link span')
-        ?.textContent;
-
-      return `https://${fullPath}`;
-    });
-
-    const merchantDomain = merchantUrl
-      ? getMerchantDomainFromUrl(merchantUrl)
-      : null;
-
-    merchantDomain
-      ? log.info(`Merchant Name: ${merchantName} - Domain: ${merchantDomain}`)
-      : log.warning(`Merchant Domain not found for ${request.url}`);
-
-    const itemsWithCode: ItemResult[] = [];
-
     for (const item of items) {
-      const title = await page.evaluate((node) => {
-        return node?.querySelector('h3')?.textContent;
-      }, item);
-
-      if (!title) {
-        logger.error('Coupon title not found in item');
+      if (!item.title || !item.merchantName || !item.idInSite) {
+        log.warning('Item title or merchantName not found');
         continue;
       }
 
-      const idInSite = await page.evaluate((node) => {
-        return node?.getAttribute('data-offer-id');
-      }, item);
+      const result = processItem(item);
 
-      if (!idInSite) {
-        logger.error('idInSite not found in item');
-        continue;
-      }
+      if (result.hasCode) {
+        if (!result.itemUrl) continue;
 
-      const hasCode = await page.evaluate((node) => {
-        return !!node?.querySelector('.code');
-      }, item);
-
-      const isExpired = await page.evaluate((node) => {
-        return node?.parentElement?.className.includes('expired');
-      }, item);
-
-      const description = await page.evaluate((node) => {
-        return node?.querySelector('.offer-info .details')?.textContent?.trim();
-      }, item);
-
-      const termsAndConditions = await page.evaluate(
-        (node) => node?.querySelector('.offer-info .terms')?.textContent,
-        item
-      );
-
-      const isExclusive = await page.evaluate(
-        (node) =>
-          node
-            ?.querySelector('.details .coupon-tag')
-            ?.textContent?.includes('Exclusieve'),
-        item
-      );
-
-      const itemData = {
-        title,
-        idInSite,
-        merchantDomain,
-        merchantName,
-        hasCode,
-        isExpired,
-        description,
-        isExclusive,
-        termsAndConditions,
-        sourceUrl: request.url,
-      };
-
-      const result: ItemResult = processItem(itemData);
-
-      if (!result.hasCode) {
-        try {
-          await postProcess(
-            {
-              SaveDataHandler: {
-                validator: result.validator,
-              },
+        await crawler.requestQueue.addRequest(
+          {
+            url: result.itemUrl,
+            userData: {
+              ...request.userData,
+              label: Label.getCode,
+              validatorData: result.validator.getData(),
             },
-            context
-          );
-        } catch (error) {
-          log.error(`Postprocess Error: ${error}`);
-        }
+            headers: {
+              ...CUSTOM_HEADERS,
+              'X-Requested-With': 'XMLHttpRequest',
+            },
+          },
+          { forefront: true }
+        );
         continue;
       }
-      itemsWithCode.push(result);
-    }
 
-    for (const item of itemsWithCode) {
-      await sleep(100);
-      if (!item.itemUrl) continue;
-
-      await enqueueLinks({
-        urls: [item.itemUrl],
-        userData: {
-          ...request.userData,
-          label: Label.getCode,
-          validatorData: item.validator.getData(),
-        },
-      });
+      try {
+        await postProcess(
+          {
+            SaveDataHandler: {
+              validator: result.validator,
+            },
+          },
+          context
+        );
+      } catch (error) {
+        log.error(`Postprocess Error: ${error}`);
+      }
     }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
@@ -203,7 +193,7 @@ router.addHandler(Label.listing, async (context) => {
 // TODO: Implement the handler for the getCode label if needed
 router.addHandler(Label.getCode, async (context) => {
   // Destructure objects from the context
-  const { request, page, log } = context;
+  const { request, $, log } = context;
 
   try {
     log.info(`GetCode ${request.url}`);
@@ -214,16 +204,17 @@ router.addHandler(Label.getCode, async (context) => {
     // Load validator data
     validator.loadData(validatorData);
 
-    await page.waitForSelector('#popup');
-    // Get the code value from the JSON response
-    const code = await page.evaluate(() => {
-      return document
-        .querySelector('#popup .code-box .copy-code')
-        ?.getAttribute('data-clipboard-text');
-    });
+    const code =
+      $('.copy-code').attr('data-clipboard-text') ||
+      $('.code-select').text().trim() ||
+      null;
 
     if (!code) {
       log.warning('No code found');
+    }
+
+    if (code && code.includes(' ')) {
+      log.warning(`Code contains spaces, to inspect: ${code}`);
     }
 
     // Add the code value to the validator
