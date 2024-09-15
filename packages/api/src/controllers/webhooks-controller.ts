@@ -398,7 +398,7 @@ export class WebhooksController {
       merchantId,
       idInSite: item.idInSite,
       domain: item.domain || null,
-      merchantName: item.merchantName,
+      merchantNameOnSite: item.merchantName,
       title: item.title || null,
       description: item.description || null,
       termsAndConditions: item.termsAndConditions || null,

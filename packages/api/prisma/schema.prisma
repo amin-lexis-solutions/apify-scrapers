@@ -27,7 +27,7 @@ model Coupon {
   apifyActorId       String
   idInSite           String
   domain             String?
-  merchantName       String
+  merchantNameOnSite String
   merchantId         String
   title              String
   description        String?
@@ -65,7 +65,7 @@ model Coupon {
   @@index([code])
   @@index([shouldBeFake])
   @@index([isExclusive])
-  @@index([merchantName])
+  @@index([merchantNameOnSite])
   @@index([isExpired])
   @@index([sourceUrl])
   @@index([lastSeenAt])

@@ -48,7 +48,8 @@ const updateCouponsBatch = async (
           data: {
             merchantId: targetPage.merchant.id,
             locale: targetPage.merchant.locale || coupon.locale,
-            merchantName: targetPage.merchant.name || coupon.merchantName,
+            merchantNameOnSite:
+              targetPage.merchant.name || coupon.merchantNameOnSite,
             domain: targetPage.merchant.domain || coupon.domain,
           },
         });
