@@ -34,7 +34,7 @@
     "start:dev": "ts-node -r tsconfig-paths/register src/main.ts",
     "build": "tsc && tsc-alias",
     "test": "jest",
-    "start:prod": "node dist/drivereasy-com1/src/main.js"
+    "start:prod": "node dist/drivereasy-com/src/main.js"
   },
   "author": "Lexis Solutions",
   "license": "ISC",
