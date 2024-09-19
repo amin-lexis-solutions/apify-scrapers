@@ -8,7 +8,7 @@ export default [
       {
         domain: 'i-reductions.ch',
         locales: [Locale.fr_CH],
-        proxyCountryCode: 'CH',
+        // proxyCountryCode: 'CH',
       },
     ],
     name: path.basename(__filename, path.extname(__filename)),
