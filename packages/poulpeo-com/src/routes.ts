@@ -1,44 +1,104 @@
-import { PuppeteerCrawlingContext, Router } from 'crawlee';
+import { createCheerioRouter } from 'crawlee';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
 import { ItemResult, formatDateTime } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
+import jp from 'jsonpath';
 
-// Export the router function that determines which handler to use based on the request label
-const router = Router.create<PuppeteerCrawlingContext>();
-
-function processItem(item: any) {
+function processItem(item: any): ItemResult {
+  // Create a new DataValidator instance
   const validator = new DataValidator();
 
-  validator.addValue('merchantName', item.merchantName);
-  validator.addValue('title', item.title);
+  // Add required values to the validator
   validator.addValue('sourceUrl', item.sourceUrl);
-  validator.addValue('isShown', true);
-  validator.addValue('isExpired', false);
-  validator.addValue('expiryDateAt', formatDateTime(item.expiryDateAt));
-  validator.addValue('idInSite', item.idInSite);
+  validator.addValue('merchantName', item.merchantName);
+  validator.addValue('description', item.description);
   validator.addValue('termsAndConditions', item.termsAndConditions);
+  validator.addValue('expiryDateAt', formatDateTime(item.expiryDateAt));
+  validator.addValue('domain', item.merchantDomain);
+  validator.addValue('code', item.code);
+  validator.addValue('title', item.title);
+  validator.addValue('idInSite', item.idInSite);
+  validator.addValue('isExclusive', item.isExclusive);
+  validator.addValue('isExpired', item.isExpired);
+  validator.addValue('isShown', true);
 
-  const itemUrl = `https://www.poulpeo.com/o.htm?c=${item.idInSite}`;
-
-  return { hasCode: item.hasCode, itemUrl, validator };
+  return { hasCode: item.code, itemUrl: '', validator };
 }
+
+export const router = createCheerioRouter();
+
 router.addHandler(Label.listing, async (context) => {
-  const { page, request, enqueueLinks, log } = context;
+  const { request, $, log } = context;
 
   if (request.userData.label !== Label.listing) return;
 
-  async function getMerchantName(page) {
-    return await page.evaluate(() => {
-      return document.querySelector('.m-pageHeader__title')?.textContent;
-    });
-  }
-
   try {
-    log.info(`Listing ${request.url}`);
+    // Extracting request and body from context
 
-    const items = await page.$$('.-horizontal.m-offer');
+    log.info(`Processing URL: ${request.url}`);
+
+    const scriptContent =
+      $('script[type="application/ld+json"]').first().text() || '{}';
+
+    const jsonData = JSON.parse(scriptContent) || {};
+
+    const merchantName =
+      jp.query(jsonData, `$..[?(@['@type'] == 'LocalBusiness')]['name']`)[0] ||
+      $('.m-pageHeader__logo img , ').attr('alt') ||
+      $('.m-merchantReviewsHeader__logo img').attr('alt');
+
+    if (!merchantName) {
+      logger.error('Unable to find merchant name');
+      return;
+    }
+
+    const merchantDomain = null;
+
+    const items =
+      $('.m-offer')
+        .map((index, element) => {
+          const $element = $(element);
+
+          // Extract Base64-encoded string and decode it to JSON
+          const base64Redirections = $element.attr('data-redirections');
+          const couponJson = base64Redirections
+            ? JSON.parse(
+                Buffer.from(base64Redirections, 'base64').toString('utf-8')
+              )
+            : null;
+
+          // Extract code from the payload
+          const code = couponJson
+            ? jp.query(
+                couponJson,
+                `$..[?(@['t'] == 'clipboard')]['c'].value`
+              )[0] || null
+            : null;
+
+          // Extract terms and conditions
+          const termsAndConditions = $element.find('.m-offer__details').text();
+
+          // Extract and format expiring date
+          const expiringDateMatch = termsAndConditions.match(
+            /(\d{2}\/\d{2}\/\d{4})/
+          );
+          const expiryDateAt = expiringDateMatch ? expiringDateMatch[1] : '';
+
+          // Return the structured item
+          return {
+            title: $element.find('.m-offer__title').text(),
+            idInSite: $element.attr('data-offer-id'),
+            code,
+            sourceUrl: request.url,
+            merchantName,
+            merchantDomain,
+            termsAndConditions,
+            expiryDateAt,
+          };
+        })
+        .get() || [];
 
     try {
       await preProcess(
@@ -57,78 +117,17 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const merchantName = await getMerchantName(page);
-
-    if (!merchantName) {
-      logger.error('merchan name not found');
-      return;
-    }
-
-    // Extract items
     let result: ItemResult;
 
     for (const element of items) {
-      const codeElement = await element.$(
-        '.m-offer__action .a-btnSlide__truncateCode'
-      );
-
-      const title = await page.evaluate(
-        (node) => node.querySelector('.m-offer__title')?.textContent,
-        element
-      );
-
-      if (!title) {
-        log.warning(`not couponTitle found in item`);
-        continue;
-      }
-
-      const idInSite = await page.evaluate((block) => {
-        return (
-          block?.getAttribute('data-offer-id') ||
-          block?.getAttribute('id')?.replace('r', '')
+      if (!element.idInSite || !element.title) {
+        logger.warning(
+          `Skipping item with missing data idInSite: ${element.idInSite} title: ${element.title} \n ${request.url}`
         );
-      }, element);
-
-      if (!idInSite) {
-        log.warning(`not idInSite found in item`);
         continue;
       }
 
-      const expiryDateAt = await page.evaluate((node) => {
-        const details = node?.querySelector('.m-offer__details')?.innerHTML;
-        const match = details?.match(/(\d{2})\/(\d{2})\/(\d{4})/);
-        return match?.[0];
-      }, element);
-
-      const termsAndConditions = await page.evaluate((node) => {
-        return node?.querySelector('.m-offer__details')?.textContent;
-      }, element);
-
-      const itemData = {
-        merchantName,
-        title,
-        termsAndConditions,
-        idInSite,
-        expiryDateAt,
-        hasCode: !!codeElement,
-        sourceUrl: request.url,
-      };
-
-      result = processItem(itemData);
-
-      if (result.hasCode) {
-        if (!result.itemUrl) continue;
-        await enqueueLinks({
-          urls: [result.itemUrl],
-          userData: {
-            ...request.userData,
-            label: Label.getCode,
-            validatorData: result.validator.getData(),
-          },
-          forefront: true,
-        });
-        continue;
-      }
+      result = processItem(element);
 
       try {
         await postProcess(
@@ -140,7 +139,7 @@ router.addHandler(Label.listing, async (context) => {
           context
         );
       } catch (error: any) {
-        logger.error(`Post-Processing Error : ${error.message}`, error);
+        log.warning(`Post-Processing Error : ${error.message}`);
         return;
       }
     }
@@ -149,49 +148,3 @@ router.addHandler(Label.listing, async (context) => {
     // since we want the Apify actor to end successfully and not waste resources by retrying.
   }
 });
-
-router.addHandler(Label.getCode, async (context) => {
-  const { page, request, log } = context;
-
-  if (request.userData.label !== Label.getCode) return;
-
-  log.info(`GetCode ${request.url}`);
-
-  await page.waitForNavigation();
-
-  try {
-    const validatorData = request.userData.validatorData;
-    const validator = new DataValidator();
-    validator.loadData(validatorData);
-
-    const code = await page.evaluate(() =>
-      document.querySelector('.coupon-panel #ic')?.getAttribute('value')
-    );
-
-    const description = await page.evaluate(() => {
-      return document
-        .querySelector("[data-panel-name='Offer'] .items-center p")
-        ?.textContent?.trim();
-    });
-
-    if (code) {
-      validator.addValue('code', code);
-    }
-
-    validator.addValue('description', description);
-
-    await postProcess(
-      {
-        SaveDataHandler: {
-          validator,
-        },
-      },
-      context
-    );
-  } finally {
-    // We don't catch so that the error is logged in Sentry, but use finally
-    // since we want the Apify actor to end successfully and not waste resources by retrying.
-  }
-});
-
-export { router };

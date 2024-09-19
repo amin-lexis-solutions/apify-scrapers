@@ -8,7 +8,6 @@ export default [
       {
         domain: 'poulpeo.com',
         locales: [Locale.fr_FR],
-        proxyCountryCode: 'FR',
       },
     ],
     maxStartUrls: 500,
