@@ -8,7 +8,6 @@ export default [
       {
         domain: 'acties.nl',
         locales: [Locale.nl_NL],
-        proxyCountryCode: 'NL',
       },
     ],
     name: path.basename(__filename, path.extname(__filename)),
