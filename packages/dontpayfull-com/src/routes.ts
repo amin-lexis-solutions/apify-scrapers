@@ -51,7 +51,10 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const merchantName = $('.store-title strong').text() || null;
+    const merchantName =
+      $('.store-title strong').text() ||
+      $('.store-hop').attr('data-store') ||
+      null;
 
     if (!merchantName) {
       logger.error(`MerchantName not found ${request.url}`);
