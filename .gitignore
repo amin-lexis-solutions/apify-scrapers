@@ -11,3 +11,4 @@ test-volumes
 packages/api/src/crons/.env.cron
 package-lock.json
 .secrets
+.DS_Store

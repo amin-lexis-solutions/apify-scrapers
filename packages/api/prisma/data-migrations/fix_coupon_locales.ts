@@ -41,14 +41,14 @@ async function main() {
     select: {
       id: true,
       url: true,
-      locale: true,
+      locale_relation: true,
     },
   });
 
   const targetPageUrlToLocale: Record<string, string> = {};
 
   targetPages.forEach((page) => {
-    targetPageUrlToLocale[page.url] = page.locale.locale;
+    targetPageUrlToLocale[page.url] = page.locale_relation.locale;
   });
 
   const batchSize = 1000;

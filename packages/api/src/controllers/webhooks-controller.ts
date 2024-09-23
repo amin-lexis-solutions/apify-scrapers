@@ -798,7 +798,7 @@ export class WebhooksController {
           apifyRunId: actorRunId,
           domain: new URL(item.url).hostname.replace('www.', ''),
           verified_locale: null as string | null,
-          locale: { connect: { id: localeId } },
+          locale_relation: { connect: { id: localeId } },
           merchant: { connect: { id: merchantId } },
         };
 

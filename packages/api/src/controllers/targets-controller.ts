@@ -250,7 +250,7 @@ export class TargetsController {
             ],
           },
           include: {
-            locale: true,
+            locale_relation: true,
           },
         });
         return pages;
