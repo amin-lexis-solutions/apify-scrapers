@@ -32,11 +32,11 @@ const processMerchants = async () => {
   for (let i = 0; i < merchants.length; i += BATCH_SIZE) {
     const merchantBatch = merchants.slice(i, i + BATCH_SIZE);
     const updatePromises = merchantBatch.map(async (merchant) => {
-      const localeId = merchant.locale_relation.id;
+      const locale = merchant.locale_relation.locale;
       const { count } = await prisma.targetPage.updateMany({
         where: {
           searchTerm: { startsWith: merchant.name },
-          localeId,
+          locale,
         },
         data: { merchantId: merchant.id },
       });

@@ -159,7 +159,7 @@ export class SummaryController {
     const countTargetPages = await prisma.$queryRaw<TargetPagesRow[]>`
         SELECT  count(tp.*), tl."locale" from "TargetLocale" tl
         left join "TargetPage" tp
-        on tp."localeId" = tl."id" and tp."domain" in (select "domain" from "SourceDomain")
+        on tp."locale" = tl."locale" and tp."domain" in (select "domain" from "SourceDomain")
         GROUP by tl."locale"
     `;
     // append localesSummary with count of targetPages
@@ -232,6 +232,7 @@ export class SummaryController {
         lastCrawled: string | null;
         totalItems: number;
         nonExpiredItems: number;
+        markedAsNonIndexAt?: Date | null;
       }
     >();
 
@@ -268,6 +269,10 @@ export class SummaryController {
     const relatedTargetPages = await prisma.targetPage.findMany({
       where: {
         domain: sourceDomain.domain,
+        locale,
+        disabledAt: null,
+        locale_relation: { isActive: true },
+        merchant: { disabledAt: null },
         url: {
           notIn: Array.from(sourceUrls),
         },

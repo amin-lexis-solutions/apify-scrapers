@@ -167,7 +167,7 @@ export class WebhookRequestBody {
   sourceId?: string;
 
   @IsString()
-  localeId: string;
+  locale: string;
 }
 
 export class SerpWebhookRequestBody {
@@ -184,7 +184,7 @@ export class SerpWebhookRequestBody {
   sourceId?: string;
 
   @IsString()
-  localeId: string;
+  locale: string;
 
   @IsBoolean()
   @IsOptional()

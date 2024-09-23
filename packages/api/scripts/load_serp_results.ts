@@ -118,7 +118,7 @@ export const main = async () => {
   const invalidUrls: string[] = [];
 
   for (const runId of actorsRuns) {
-    let localeId: any = null;
+    let locale: string | null = null;
     const filePath = path.join(folder, `${runId}.json`);
 
     let apifyActorRuns: any;
@@ -156,15 +156,15 @@ export const main = async () => {
     });
     for (const chunk of chunkedData) {
       const promises = chunk.map(async (item: any) => {
-        if (!localeId) {
-          const locale = locales.find(
+        if (!locale) {
+          const localeObject = locales.find(
             (item_locale) =>
               item_locale.locale ===
               `${item.searchQuery.languageCode}_${item.searchQuery.countryCode}`
           );
 
-          if (locale) {
-            localeId = locale.id;
+          if (localeObject) {
+            locale = localeObject.locale;
           } else {
             console.error(
               `Locale not found: ${item.searchQuery.languageCode}_${item.searchQuery.countryCode}`
@@ -189,13 +189,18 @@ export const main = async () => {
           searchDomain: item.searchQuery.domain,
           apifyRunId: runId,
           domain: new URL(item.url).hostname.replace('www.', ''),
-          locale_relation: { connect: { id: localeId } },
+          locale_relation: { connect: { locale: locale } },
           verified_locale: null as string | null,
         };
 
         try {
           await prisma.targetPage.upsert({
-            where: { url: data.url },
+            where: {
+              url_locale: {
+                url: data.url,
+                locale: locale,
+              },
+            },
             create: { ...data },
             update: { ...data, updatedAt: new Date() },
           });

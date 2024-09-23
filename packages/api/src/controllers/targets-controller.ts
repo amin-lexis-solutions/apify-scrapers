@@ -98,7 +98,7 @@ export class TargetsController {
           : '')
     );
 
-    const localeIdWithoutRunHistory = await prisma.targetLocale
+    const localeWithoutRunHistory = await prisma.targetLocale
       .findMany({
         where: {
           isActive: true,
@@ -106,9 +106,9 @@ export class TargetsController {
         },
         take: localesCount,
       })
-      .then((locales) => locales.map((locale) => locale.id));
+      .then((locales) => locales.map((locale) => locale.locale));
 
-    const localeIdsOldestFirst = await prisma.targetLocale
+    const localesOldestFirst = await prisma.targetLocale
       .findMany({
         where: {
           isActive: true,
@@ -118,22 +118,18 @@ export class TargetsController {
           },
         },
         orderBy: { lastSerpRunAt: 'asc' },
-        take: localesCount - localeIdWithoutRunHistory.length,
+        take: localesCount - localeWithoutRunHistory.length,
       })
-      .then((locales) => locales.map((locale) => locale.id));
+      .then((locales) => locales.map((locale) => locale.locale));
 
-    const localeIdsToRun = localeIdWithoutRunHistory.concat(
-      localeIdsOldestFirst
-    );
+    const localesToRun = localeWithoutRunHistory.concat(localesOldestFirst);
 
-    console.log(
-      'Final list of locales to run' + JSON.stringify(localeIdsToRun)
-    );
+    console.log('Final list of locales to run' + JSON.stringify(localesToRun));
 
     const locales = await prisma.targetLocale.findMany({
       where: {
-        id: {
-          in: localeIdsToRun,
+        locale: {
+          in: localesToRun,
         },
       },
     });
@@ -203,7 +199,14 @@ export class TargetsController {
       include: {
         domains: true,
       },
-      orderBy: { name: 'desc' },
+      orderBy: [
+        {
+          lastRunAt: {
+            sort: 'asc',
+            nulls: 'first',
+          },
+        },
+      ],
     });
 
     console.log(`There are ${sources.length} sources (actors) not run today.`);
@@ -227,8 +230,6 @@ export class TargetsController {
         break;
       }
 
-      console.log(availableRunsMessage);
-
       const sourceDomains = source.domains.map((domain) => domain.domain);
 
       // Find the target pages for the source that have not been scraped in the  last 30 days
@@ -247,11 +248,20 @@ export class TargetsController {
                   },
                 ],
               },
+              { locale_relation: { isActive: true } },
             ],
           },
           include: {
             locale_relation: true,
           },
+          orderBy: [
+            {
+              lastApifyRunAt: {
+                sort: 'asc',
+                nulls: 'first',
+              },
+            },
+          ],
         });
         return pages;
       };
@@ -271,12 +281,14 @@ export class TargetsController {
       const pages = await getPages(sourceDomains);
       const pagesByDomains = await groupPagesByDomains(pages);
 
+      console.log(
+        `\n${source.name} [${source.apifyActorId}]: ${pages.length} target pages.`
+      );
+
       const sourceIdentification = `${source.name} with Apify actor ID ${source.apifyActorId}`;
 
       if (!pages.length) {
-        console.log(
-          `There are no target pages for scrape by ${sourceIdentification}. We will try again tomorrow.`
-        );
+        console.log(`We will try again tomorrow.`);
 
         await prisma.source.update({
           where: { id: source.id },
@@ -288,6 +300,8 @@ export class TargetsController {
 
       const startActor = async (pagesByDomains: Record<string, any[]>) => {
         for (const [domain, pages] of Object.entries(pagesByDomains)) {
+          console.log(`- Domain: ${domain} \n  - ${pages.length} pages.`);
+
           const startUrlsPerActorRun = source.maxStartUrls || 1_000;
 
           const actorRunsCountNeededForSource = Math.ceil(
@@ -300,14 +314,8 @@ export class TargetsController {
             );
             continue;
           }
-          if (pages.length > startUrlsPerActorRun) {
-            console.log(
-              `Starting ${sourceIdentification} for ${pages.length} start URLs.` +
-                `Will be chunking the start URLs in groups of ${startUrlsPerActorRun}.`
-            );
-          }
 
-          const localeId = pages[0]?.localeId;
+          const locale = pages[0].locale;
 
           const currentSourceData = source.domains.filter(
             (item) => item.domain == domain
@@ -327,14 +335,15 @@ export class TargetsController {
             const pagesChunk = pages.slice(i, i + startUrlsPerActorRun);
 
             console.log(
-              `Scheduling an actor run for ${sourceIdentification} with ${pagesChunk.length} start URLs.`
+              `  - Scheduling a run with ${pagesChunk.length} start URLs.`
             );
             const inputData = pagesChunk.map((data: any) => ({
               url: data.url,
               metadata: {
                 targetPageId: data.id,
                 targetPageUrl: data.url,
-                verifyLocale: data.verified_locale,
+                verifyLocale:
+                  data.verified_locale || data.locale_relation.locale,
                 merchantId: data.merchantId,
               },
             }));
@@ -358,7 +367,7 @@ export class TargetsController {
                         'ACTOR.RUN.ABORTED',
                       ],
                       requestUrl: `${process.env.BASE_URL}webhooks/coupons`,
-                      payloadTemplate: `{"sourceId":"${source.id}","localeId":"${localeId}","resource":{{resource}},"eventData":{{eventData}} }`,
+                      payloadTemplate: `{"sourceId":"${source.id}","locale":"${locale}","resource":{{resource}},"eventData":{{eventData}} }`,
                       headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
                     },
                   ],
@@ -379,7 +388,7 @@ export class TargetsController {
               Sentry.captureException(e, {
                 extra: {
                   sourceId: source.id,
-                  localeId: localeId,
+                  locale: locale,
                   targetIds: targetIds,
                   startUrls: inputData,
                 },
@@ -484,7 +493,7 @@ export class TargetsController {
                   'ACTOR.RUN.ABORTED',
                 ],
                 requestUrl: `${process.env.BASE_URL}webhooks/serp`,
-                payloadTemplate: `{"localeId":"${targetLocale.id}","resource":{{resource}},"eventData":{{eventData}},"removeDuplicates":false}`,
+                payloadTemplate: `{"locale":"${targetLocale.locale}","resource":{{resource}},"eventData":{{eventData}},"removeDuplicates":false}`,
                 headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
               },
             ],
@@ -627,7 +636,7 @@ async function findSerpForLocaleAndMerchants(
                 'ACTOR.RUN.ABORTED',
               ],
               requestUrl: `${process.env.BASE_URL}webhooks/serp`,
-              payloadTemplate: `{"localeId":"${locale.id}","resource":{{resource}},"eventData":{{eventData}}}`,
+              payloadTemplate: `{"locale":"${locale.locale}","resource":{{resource}},"eventData":{{eventData}}}`,
               headersTemplate: `{"Authorization":"Bearer ${process.env.API_SECRET}"}`,
             },
           ],

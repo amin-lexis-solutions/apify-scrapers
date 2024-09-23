@@ -202,11 +202,10 @@ export class WebhooksController {
     const couponsIds: string[] = [];
 
     for (const item of scrapedData) {
-      const id = generateHash(
-        item.merchantName,
-        item.idInSite || item.title,
-        item.sourceUrl
-      );
+      const identifier = `${item.idInSite || item.title}|${
+        item.metadata.verifiedLocale
+      }`;
+      const id = generateHash(item.merchantName, identifier, item.sourceUrl);
       couponsIds.push(id);
       sourceUrlsSet.add(item.sourceUrl);
 
@@ -655,7 +654,7 @@ export class WebhooksController {
   ): Promise<StandardResponse> {
     const { defaultDatasetId, status, startedAt } = webhookData.resource;
     const actorRunId = webhookData.eventData.actorRunId;
-    const { localeId, removeDuplicates = false } = webhookData;
+    const { locale, removeDuplicates = false } = webhookData;
 
     if (status !== 'SUCCEEDED') {
       return new StandardResponse(
@@ -667,7 +666,7 @@ export class WebhooksController {
     setTimeout(async () => {
       const run = await prisma.processedRun.create({
         data: {
-          localeId,
+          locale,
           actorRunId,
           status,
         },
@@ -683,7 +682,7 @@ export class WebhooksController {
 
       const merchants = await prisma.merchant.findMany({
         where: {
-          locale_relation: { id: localeId },
+          locale: { equals: locale },
           disabledAt: null,
         },
         orderBy: { updatedAt: 'desc' },
@@ -692,7 +691,7 @@ export class WebhooksController {
       const validData = this.prepareSerpData(
         filteredData,
         actorRunId,
-        localeId,
+        locale,
         merchants
       ); // Prepare the data for storage
 
@@ -702,7 +701,12 @@ export class WebhooksController {
       for (const item of validData) {
         try {
           await prisma.targetPage.upsert({
-            where: { url: item.url },
+            where: {
+              url_locale: {
+                url: item.url,
+                locale: locale,
+              },
+            },
             create: {
               ...item,
               lastApifyRunAt: null,
@@ -777,7 +781,7 @@ export class WebhooksController {
   private prepareSerpData(
     data: ApifyGoogleSearchResult[],
     actorRunId: string,
-    localeId: string,
+    locale: string,
     merchants: any[]
   ) {
     return data
@@ -798,7 +802,7 @@ export class WebhooksController {
           apifyRunId: actorRunId,
           domain: new URL(item.url).hostname.replace('www.', ''),
           verified_locale: null as string | null,
-          locale_relation: { connect: { id: localeId } },
+          locale_relation: { connect: { locale: locale } },
           merchant: { connect: { id: merchantId } },
         };
 

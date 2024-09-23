@@ -108,6 +108,7 @@ model ProcessedRun {
   id                  String    @id @default(uuid())
   apifyActorId        String?
   localeId            String?
+  locale              String?
   actorRunId          String    @unique
   startedAt           DateTime  @default(now())
   endedAt             DateTime?
@@ -122,8 +123,8 @@ model ProcessedRun {
   costInUsdMicroCents Int       @default(0)
   retriesCount        Int       @default(0)
   payload             Json?
-  source_relation       Source?       @relation(fields: [apifyActorId], references: [apifyActorId])
-  targetLocale TargetLocale? @relation(fields: [localeId], references: [id])
+  source_relation     Source?       @relation(fields: [apifyActorId], references: [apifyActorId])
+  locale_relation     TargetLocale? @relation(fields: [locale], references: [locale])
 }
 
 // Maps to a locale we are targeting
@@ -149,7 +150,7 @@ model TargetLocale {
 // Maps to a page we want to scrape using an Apify actor
 model TargetPage {
   id                 String    @id @default(uuid())
-  url                String    @unique
+  url                String
   domain             String
   title              String
   searchTerm         String
@@ -159,17 +160,18 @@ model TargetPage {
   lastApifyRunAt     DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @default(now())
-  localeId           String
-  locale             String?
+  locale             String
   markedAsNonIndexAt DateTime?
   disabledAt         DateTime?
   verified_locale    String? // e.g. en_US
   merchantId         String
-  locale_relation TargetLocale @relation(fields: [localeId], references: [id])
+  locale_relation TargetLocale @relation(fields: [locale], references: [locale])
   merchant Merchant? @relation(fields: [merchantId], references: [id])
-  @@index([localeId])
+  @@index([locale])
   @@index([merchantId])
   @@index([url])
+
+  @@unique([url, locale])
 }
 
 // Tracking for coupon counts over time to detect anomalies in target pages

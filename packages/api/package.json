@@ -28,6 +28,7 @@
     "scripts:serp-cost": "ts-node -r tsconfig-paths/register  scripts/serp-run-cost.ts",
     "scripts:load-serp": "ts-node -r tsconfig-paths/register  scripts/load_serp_results.ts",
     "scripts:tests": "ts-node -r tsconfig-paths/register  scripts/automated-tests.ts",
+    "scripts:migrate-coupons-ids": "ts-node -r tsconfig-paths/register scripts/migrate-coupons-ids.ts",
     "scripts:sync-merchants-data": "ts-node -r tsconfig-paths/register scripts/sync-merchants-data.ts",
     "scripts:migrate-old-sources": "ts-node -r tsconfig-paths/register scripts/migrate-old-sources.ts",
     "scripts:match-merchants-and-target-pages": "ts-node -r tsconfig-paths/register scripts/match-merchants-and-target-pages.ts",
