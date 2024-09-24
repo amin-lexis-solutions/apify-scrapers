@@ -67,7 +67,7 @@
   },
   "homepage": "https://github.com/lexis-solutions/oberst-scrapers#readme",
   "dependencies": {
-    "@prisma/client": "^5.6.0",
+    "@prisma/client": "^5.19.1",
     "@sentry/node": "^7.112.2",
     "@sentry/profiling-node": "^7.112.2",
     "@types/node-fetch": "2.x",
@@ -94,7 +94,6 @@
     "node-fetch": "2.x",
     "nodemailer": "^6.9.15",
     "pg": "^8.11.3",
-    "prisma": "^5.6.0",
     "progress": "^2.0.3",
     "reflect-metadata": "^0.1.13",
     "routing-controllers": "^0.10.4",
@@ -108,12 +107,13 @@
     "@types/franc": "^5.0.3",
     "@types/langdetect": "^0.2.2",
     "@types/lru-cache": "^7.10.10",
+    "@types/nodemailer": "^6.4.15",
     "@types/swagger-ui-express": "^4.1.6",
     "ngrok": "^5.0.0-beta.2",
+    "prisma": "^5.19.1",
     "tldts": "^6.1.21",
     "tsc-alias": "1.8.8",
     "tsconfig-paths": "4.2.0",
-    "typescript": "5.3.3",
-    "@types/nodemailer": "^6.4.15"
+    "typescript": "5.3.3"
   }
 }
