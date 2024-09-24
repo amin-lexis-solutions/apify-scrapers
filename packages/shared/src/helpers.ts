@@ -82,7 +82,7 @@ export function getMerchantDomainFromUrl(url: string): string {
   let domain: string | undefined = parsedUrl.pathname;
 
   // Remove 'http://' or 'https://' if present
-  domain = domain?.replace(/^(http:\/\/|https:\/\/)/, '');
+  domain = domain?.replace(/^(http:\/\/|https:\/\/)|\.html$/g, '');
   // Removes the last character (/)
   if (domain.endsWith('/')) {
     domain = domain?.slice(0, -1);
