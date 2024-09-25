@@ -8,19 +8,22 @@ import { localesToImport } from '../../config/primary-locales';
 import dayjs from 'dayjs';
 
 interface CouponSummaryRow {
-  coupons: bigint;
+  coupons: number;
   locale: string;
   domain: string;
   reliability: Reliability;
   proxyCountryCode: string | null;
   locale_active: boolean;
   source_active: boolean;
-  itemsSeenLast24h: bigint;
+  itemsSeenLast24h: number;
 }
 
 interface TargetPagesRow {
-  count: bigint;
+  totalPages: number;
   locale: string;
+  domain: string;
+  nonIndexPages: number;
+  disabledPages: number;
 }
 interface LocaleSummary {
   enabled: boolean;
@@ -34,6 +37,7 @@ interface LocaleSummary {
     proxy: string | null;
     itemsCount: number;
     itemsSeenLast24h: number;
+    targetPagesCount?: number;
   }[];
 }
 
@@ -122,6 +126,7 @@ export class SummaryController {
             proxy: proxyCountryCode || null,
             itemsCount: Number(coupons),
             itemsSeenLast24h: Number(itemsSeenLast24h),
+            targetPagesCount: 0,
           });
 
         return acc;
@@ -155,17 +160,31 @@ export class SummaryController {
       }
     }
 
-    // get count of targetPages for each locale
+    // get count of targetPages for each locale and domain
     const countTargetPages = await prisma.$queryRaw<TargetPagesRow[]>`
-        SELECT  count(tp.*), tl."locale" from "TargetLocale" tl
-        left join "TargetPage" tp
-        on tp."locale" = tl."locale" and tp."domain" in (select "domain" from "SourceDomain")
-        GROUP by tl."locale"
+       SELECT
+            COUNT(tp.id) AS "totalPages",
+            locale,
+            tp.domain
+        FROM
+            "TargetPage" tp
+        LEFT JOIN
+            "SourceDomain" sd ON sd.domain = tp.domain
+        WHERE
+            sd.domain = tp.domain
+        GROUP BY
+            locale,
+            tp.domain
     `;
     // append localesSummary with count of targetPages
     countTargetPages.forEach((row) => {
       if (localesSummary[row.locale]) {
-        localesSummary[row.locale].targetPagesCount = Number(row.count);
+        localesSummary[row.locale].targetPagesCount += Number(row.totalPages);
+        localesSummary[row.locale].domains.forEach((domain) => {
+          if (domain.domain === row.domain) {
+            domain.targetPagesCount = Number(row.totalPages);
+          }
+        });
       }
     });
 
