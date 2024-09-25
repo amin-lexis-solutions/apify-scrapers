@@ -87,6 +87,18 @@ export function getGoogleActorPriceInUsdMicroCents(
   );
 }
 
+// whitelist locales for the domain
+export function isValidLocaleForDomain(
+  domain: string,
+  locale: string
+): boolean {
+  const source = SOURCES_DATA.find((source) =>
+    source.domains.some((d) => d.domain === domain)
+  );
+  if (!source) return false;
+  return source.domains.some((d) => d.locales.includes(locale));
+}
+
 // Function to get locale from url
 export function getLocaleFromUrl(url: string): string | null {
   // find if url is present in any domain of SOURCES_DATA

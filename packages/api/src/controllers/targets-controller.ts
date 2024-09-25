@@ -8,7 +8,7 @@ import {
 } from '../lib/oberst-api';
 import { CostLimit } from '../middlewares/api-middleware';
 import { prisma } from '../lib/prisma';
-import { availableActorRuns } from '../utils/utils';
+import { availableActorRuns, isValidLocaleForDomain } from '../utils/utils';
 import {
   RunNLocalesBody,
   FindTargetPagesBody,
@@ -191,10 +191,6 @@ export class TargetsController {
     const sources = await prisma.source.findMany({
       where: {
         isActive: true,
-        OR: [
-          { lastRunAt: null },
-          { lastRunAt: { lt: dayjs().startOf('day').toDate() } },
-        ],
       },
       include: {
         domains: true,
@@ -278,7 +274,9 @@ export class TargetsController {
         return pagesByDomains;
       };
 
-      const pages = await getPages(sourceDomains);
+      const pages = (await getPages(sourceDomains)).filter((page) =>
+        isValidLocaleForDomain(page.domain, page.locale)
+      );
       const pagesByDomains = await groupPagesByDomains(pages);
 
       console.log(

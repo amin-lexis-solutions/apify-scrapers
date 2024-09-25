@@ -11,7 +11,7 @@ import {
   getToleranceMultiplier,
   removeDuplicateCoupons,
   getGoogleActorPriceInUsdMicroCents,
-  getLocaleFromUrl,
+  isValidLocaleForDomain,
   isValidLocale,
   isValidCouponCode,
   findMerchantBySearchTerm,
@@ -308,9 +308,16 @@ export class WebhooksController {
 
         updateData.isShown = true;
 
-        const locale = item.metadata.verifyLocale
+        const sourceDomain = new URL(item.sourceUrl).hostname.replace(
+          'www.',
+          ''
+        );
+        const locale = isValidLocaleForDomain(
+          sourceDomain,
+          item.metadata.verifyLocale || ''
+        )
           ? item.metadata.verifyLocale
-          : getLocaleFromUrl(item.sourceUrl);
+          : null;
 
         const merchantId = item.metadata.merchantId || null;
 
@@ -379,9 +386,13 @@ export class WebhooksController {
       );
     }
 
-    const locale = item.metadata.verifyLocale
+    const sourceDomain = new URL(item.sourceUrl).hostname.replace('www.', '');
+    const locale = isValidLocaleForDomain(
+      sourceDomain,
+      item.metadata.verifyLocale || ''
+    )
       ? item.metadata.verifyLocale
-      : getLocaleFromUrl(item.sourceUrl);
+      : null;
 
     if (!locale) {
       Sentry.captureException(
@@ -414,7 +425,7 @@ export class WebhooksController {
       archivedAt,
       archivedReason,
       shouldBeFake: item.code ? !isValidCouponCode(item.code) : null,
-      sourceDomain: new URL(sourceUrl).hostname.replace('www.', ''),
+      sourceDomain,
     };
   }
 
