@@ -266,7 +266,6 @@ router.addHandler(Label.details, async (context) => {
       forefront: true,
       userData: {
         ...request.userData,
-        validatorData: {},
       },
       transformRequestFunction: (req) => {
         req.keepUrlFragment = true;
