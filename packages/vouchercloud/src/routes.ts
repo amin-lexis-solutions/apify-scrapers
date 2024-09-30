@@ -1,12 +1,17 @@
-import { createCheerioRouter, log } from 'crawlee';
+import { createCheerioRouter } from 'crawlee';
+import cheerio from 'cheerio';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import { sleep, ItemResult, getMerchantDomainFromUrl } from 'shared/helpers';
+import {
+  ItemResult,
+  getMerchantDomainFromUrl,
+  formatDateTime,
+} from 'shared/helpers';
 import { Label, CUSTOM_HEADERS } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
+import jp from 'jsonpath';
 
-// TODO : Actor to investigate later
-function processItem(item: any, $cheerio: any): ItemResult {
+function processItem(item: any): ItemResult {
   // Create a new DataValidator instance
   const validator = new DataValidator();
 
@@ -16,13 +21,9 @@ function processItem(item: any, $cheerio: any): ItemResult {
   validator.addValue('domain', item.merchantDomain);
   validator.addValue('title', item.title);
   validator.addValue('idInSite', item.idInSite);
+  validator.addValue('expiryDateAt', formatDateTime(item.expiryDateAt));
   validator.addValue('isExclusive', item.isExclusive);
-  validator.addValue('isExpired', !$cheerio.Available);
   validator.addValue('isShown', true);
-
-  if ($cheerio.OfferType !== 'OnlineCode') {
-    return { hasCode: false, itemUrl: '', validator };
-  }
 
   const parsedUrl = new URL(item.sourceUrl);
 
@@ -34,38 +35,34 @@ function processItem(item: any, $cheerio: any): ItemResult {
 export const router = createCheerioRouter();
 
 router.addHandler(Label.listing, async (context) => {
-  const { request, $, crawler, log } = context;
+  const { request, $, enqueueLinks, log } = context;
 
   if (request.userData.label !== Label.listing) return;
-
-  if (!crawler.requestQueue) {
-    logger.error('Request queue is missing');
-    return;
-  }
 
   try {
     // Extracting request and body from context
 
     log.info(`Processing URL: ${request.url}`);
 
-    // Extracting the 'props' attribute from the 'view-all-codes' element.
-    const propsJson = $('view-all-codes').attr('props');
+    const scriptContent =
+      $('script[type="application/ld+json"]').first().html() || '{}';
 
-    if (!propsJson) {
-      logger.error('view-all-codes props JSON is missing');
-      return;
-    }
+    const jsonData = JSON.parse(scriptContent) || {};
 
-    const props = JSON.parse(propsJson.replace(/&quot;/g, '"'));
+    const merchantUrl =
+      jp.query(jsonData, `$..[?(@["@type"] == 'Brand')].url`)[0] ||
+      $('.accordion-mobile-content p a')?.attr('href') ||
+      null;
 
-    const merchantName = props.MerchantName;
+    const merchantName =
+      jp.query(jsonData, `$..[?(@["@type"] == 'Brand')].name`)[0] ||
+      $('.tile-signup-logo-image')?.attr('alt') ||
+      null;
 
     if (!merchantName) {
       logger.error('Unable to find merchant name');
       return;
     }
-
-    const merchantUrl = $('.accordion-mobile-content p a')?.attr('href');
 
     if (!merchantUrl) {
       log.warning('Unable to find merchantUrl');
@@ -75,7 +72,37 @@ router.addHandler(Label.listing, async (context) => {
       ? getMerchantDomainFromUrl(merchantUrl)
       : null;
 
-    const items = props.Offers;
+    const items = $('.tile[data-type]')
+      .map((_, el) => {
+        const footerContent = $(el).find('.tile-footer').text();
+
+        const expiryDateAt =
+          footerContent?.match(/(\d{2}-\d{2}-\d{2})/)?.[0] || null;
+
+        const $redeem_button = $(el)
+          .find('redeem-button')
+          .first()
+          .attr('props');
+        const objectDtat = JSON.parse(
+          $redeem_button?.replace(/&quot;/g, '"') || '{}'
+        );
+        return {
+          idInSite: jp.query(objectDtat, '$..offerId')[0],
+          title: jp.query(objectDtat, '$..offerTitle')[0],
+          termsAndConditions: null,
+          expiryDateAt,
+          merchantName: jp.query(objectDtat, '$..merchantName')[0],
+          merchantDomain,
+          hasCode: jp.query(objectDtat, '$..redemptionType')[0] === 'Code',
+          itemUrl: jp.query(objectDtat, '$..redeemUrl')[0],
+          termsUrl: $(el).find('.tile-terms').attr('data-redemption-modal'),
+          isExclusive: jp.query(objectDtat, '$..isExclusive')[0] === 'true',
+          isShown: true,
+          isExpired: jp.query(objectDtat, '$..available')[0] === 'true',
+          sourceUrl: request.url,
+        };
+      })
+      .get();
 
     try {
       await preProcess(
@@ -94,58 +121,69 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    let result: ItemResult;
-
-    for (const element of items) {
-      await sleep(1000); // Sleep for 1 second between requests to avoid rate limitings
-
-      const idInSite = element.OfferId.toString();
-
-      if (!idInSite) {
-        logger.error(`not idInSite found in item`);
+    for (const item of items) {
+      if (!item.title || !item.idInSite) {
+        log.warning('Skipping item due to missing title or idInSite');
         continue;
       }
 
-      const title = element.OfferTitle;
+      const { validator } = processItem(item);
 
-      if (!title) {
-        logger.error(`not title found in item`);
-        continue;
-      }
+      if (item.hasCode) {
+        if (!item.itemUrl) continue;
 
-      const item = {
-        idInSite,
-        title,
-        merchantName,
-        merchantDomain,
-        isExclusive: items.isExclusive,
-        sourceUrl: request.url,
-      };
+        const redeemUrl = new URL(item.itemUrl, request.url).href;
 
-      result = processItem(item, element);
-
-      if (result.hasCode) {
-        if (!result.itemUrl) continue;
-        // Add the coupon URL to the request queue
-        await crawler.requestQueue.addRequest(
-          {
-            url: result.itemUrl,
-            userData: {
-              ...request.userData,
-              label: Label.getCode,
-              validatorData: result.validator.getData(),
-            },
-            headers: CUSTOM_HEADERS,
+        await enqueueLinks({
+          label: Label.getCode,
+          urls: [redeemUrl],
+          forefront: true,
+          userData: {
+            ...request.userData,
+            validatorData: validator.getData(),
           },
-          { forefront: true }
-        );
+          transformRequestFunction: (req) => {
+            req.method = 'POST';
+            req.headers = {
+              ...CUSTOM_HEADERS,
+              ...request.headers,
+              'Content-Type': 'application/json; charset=utf-8',
+            };
+            return req;
+          },
+        });
         continue;
       }
+
+      if (item.termsUrl) {
+        const termsUrl = new URL(item.termsUrl, request.url).href;
+
+        await enqueueLinks({
+          label: Label.details,
+          urls: [termsUrl],
+          forefront: true,
+          userData: {
+            ...request.userData,
+            validatorData: validator.getData(),
+          },
+          transformRequestFunction: (req) => {
+            req.method = 'POST';
+            req.headers = {
+              ...CUSTOM_HEADERS,
+              ...request.headers,
+              'Content-Type': 'application/json; charset=utf-8',
+            };
+            return req;
+          },
+        });
+        continue;
+      }
+
       try {
         await postProcess(
           {
             SaveDataHandler: {
-              validator: result.validator,
+              validator: validator,
             },
           },
           context
@@ -161,15 +199,14 @@ router.addHandler(Label.listing, async (context) => {
   }
 });
 
-router.addHandler(Label.getCode, async (context) => {
+router.addHandler(Label.details, async (context) => {
   // context includes request, body, etc.
-  const { request, body } = context;
+  const { request, body, log } = context;
 
-  if (request.userData.label !== Label.getCode) return;
+  if (request.userData.label !== Label.details) return;
 
   try {
-    // Sleep for x seconds between requests to avoid rate limitings
-    await sleep(1000);
+    logger.info(`Processing URL: ${request.url}`);
 
     // Retrieve validatorData from request's userData
     const validatorData = request.userData.validatorData;
@@ -179,25 +216,83 @@ router.addHandler(Label.getCode, async (context) => {
     validator.loadData(validatorData);
 
     // Convert body to string if it's a Buffer
-    const htmlContent = body instanceof Buffer ? body.toString() : body;
+    const htmlContent = body.toString();
 
-    if (htmlContent.includes('{')) {
-      log.warning(`htmlContent not found in URL: ${request.url}`);
+    // Safely parse the JSON string
+    const responseJson = JSON.parse(htmlContent) || {};
+
+    if (!responseJson) {
+      log.error(`Failed to parse JSON response at: ${htmlContent}`);
       return;
     }
-    // Safely parse the JSON string
-    const jsonCodeData = JSON.parse(htmlContent);
 
-    // Validate the necessary data is present
-    if (!jsonCodeData || !jsonCodeData.Code) {
-      log.warning('Code data is missing in the parsed JSON');
+    const html = jp.query(responseJson, '$..Html')[0] || '';
+
+    // convert the HTML string to a Cheerio object
+    const $ = cheerio.load(html);
+
+    // Assuming the code should be added to the validator's data
+    validator.addValue(
+      'termsAndConditions',
+      $('.section-terms-list')?.text() || null
+    );
+
+    // Process and store the data
+    await postProcess(
+      {
+        SaveDataHandler: {
+          validator,
+        },
+      },
+      context
+    );
+  } finally {
+    // We don't catch so that the error is logged in Sentry, but use finally
+    // since we want the Apify actor to end successfully and not waste resources by retrying.
+  }
+});
+
+router.addHandler(Label.getCode, async (context) => {
+  // context includes request, body, etc.
+  const { request, body, log } = context;
+
+  if (request.userData.label !== Label.getCode) return;
+
+  try {
+    logger.info(`Processing URL: ${request.url}`);
+
+    // Retrieve validatorData from request's userData
+    const validatorData = request.userData.validatorData;
+
+    // Create a new DataValidator instance and load the data
+    const validator = new DataValidator();
+    validator.loadData(validatorData);
+
+    // Convert body to string if it's a Buffer
+    const htmlContent = body.toString();
+
+    // Safely parse the JSON string
+    const responseJson = JSON.parse(htmlContent) || {};
+
+    if (!responseJson) {
+      log.error(`Failed to parse JSON response at: ${htmlContent}`);
+      return;
     }
 
-    const code = jsonCodeData.Code;
+    const code = jp.query(responseJson, '$..Code')[0] || null;
+    const html = jp.query(responseJson, '$..Html')[0] || '';
+
+    // convert the HTML string to a Cheerio object
+    const $ = cheerio.load(html);
+
     log.info(`Found code: ${code}\n    at: ${request.url}`);
 
     // Assuming the code should be added to the validator's data
     validator.addValue('code', code);
+    validator.addValue(
+      'termsAndConditions',
+      $('.section-terms-list')?.text() || null
+    );
 
     // Process and store the data
     await postProcess(
