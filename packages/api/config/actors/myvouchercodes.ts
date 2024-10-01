@@ -3,7 +3,7 @@ import path from 'path';
 
 export default [
   {
-    apifyActorId: null, // Modify this line to match the actor ID of your actor
+    apifyActorId: '2nwAyqlFAP05i7BOV', // Modify this line to match the actor ID of your actor
     domains: [
       {
         domain: 'myvouchercodes.co.uk',
