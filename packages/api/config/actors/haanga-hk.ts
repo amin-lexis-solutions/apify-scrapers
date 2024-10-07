@@ -3,7 +3,7 @@ import path from 'path';
 
 export default [
   {
-    apifyActorId: null,
+    apifyActorId: 'M0CeDrCMRSClLXnyZ',
     domains: [
       {
         domain: 'haanga.hk',
