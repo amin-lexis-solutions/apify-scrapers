@@ -1,55 +1,65 @@
 import { createCheerioRouter } from 'crawlee';
-import { parse } from 'node-html-parser';
 import { DataValidator } from 'shared/data-validator';
 import { logger } from 'shared/logger';
-import { getMerchantDomainFromUrl, sleep } from 'shared/helpers';
+import { formatDateTime, ItemResult } from 'shared/helpers';
 import { Label } from 'shared/actor-utils';
 import { postProcess, preProcess } from 'shared/hooks';
-
-async function fetchItemCode(itemCodeURL: string): Promise<string | null> {
-  try {
-    const response = await fetch(itemCodeURL);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const itemCodeJSON = await response.json();
-    const itemCode = itemCodeJSON.voucher_code;
-    if (itemCode && itemCode !== '' && itemCode !== 'kein Code notwendig') {
-      console.log(`Item code: ${itemCode}`);
-      return itemCode;
-    }
-    return null;
-  } finally {
-    // We don't catch so that the error is logged in Sentry, but use finally
-    // since we want the Apify actor to end successfully and not waste resources by retrying.
-  }
-}
+import jp from 'jsonpath';
 
 // Export the router function that determines which handler to use based on the request label
 const router = createCheerioRouter();
 
+function processItem(item: any): ItemResult {
+  // Create a new DataValidator instance
+  const validator = new DataValidator();
+  // Add required values to the validator
+  validator.addValue('sourceUrl', item.sourceUrl);
+  validator.addValue('merchantName', item.merchantName);
+  validator.addValue('domain', item.merchantDomain);
+  validator.addValue('termsAndConditions', item.termsAndConditions);
+  validator.addValue('title', item?.title);
+  validator.addValue('idInSite', item?.idInSite);
+  validator.addValue('code', item?.code);
+  validator.addValue(
+    'expiryDateAt',
+    item?.expiryDateAt ? formatDateTime(item.expiryDateAt) : null
+  );
+  validator.addValue(
+    'startDateAt',
+    item?.startDateAt ? formatDateTime(item.startDateAt) : null
+  );
+  validator.addValue('isExclusive', item?.isExclusive ?? false);
+  validator.addValue('isShown', true);
+
+  return { hasCode: true, validator };
+}
+
 router.addHandler(Label.listing, async (context) => {
-  const { request, log, body, enqueueLinks } = context;
+  const { request, log, $, enqueueLinks } = context;
 
   if (request.userData.label !== Label.listing) return;
 
   try {
     log.info(`Listing ${request.url}`);
 
-    const content = typeof body === 'string' ? body : body.toString();
+    const graphSchema = $('script[id="schema-org-graph"]').html() || '{}';
 
-    const sectionWithItems = parse(content).querySelector(
-      '.providerpage__section:has(div#gutscheine)'
-    );
+    const graphData = JSON.parse(graphSchema) || null;
 
-    if (!sectionWithItems) {
-      logger.error('No coupons found');
+    if (!graphData) {
+      logger.error('Graph data not found');
       return;
     }
 
-    const items = sectionWithItems.querySelectorAll(
-      'div.voucher-teaser-list > div'
-    );
+    const items = $('main.grow  .block.cursor-pointer');
+
+    // extract slug from  request.url
+    const slug = request.url.split('/').pop();
+
+    if (!slug) {
+      logger.error(`Slug not found in URL: ${request.url}`);
+      return;
+    }
 
     try {
       await preProcess(
@@ -68,46 +78,17 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    log.info(`Coupons count ${items.length}`);
+    const detailsUrl = `https://www.sparwelt.de/api/pages/shop?slug=${slug}`;
 
-    for (const item of items) {
-      const itemId = item.getAttribute('data-ssr-vouchers-item');
-
-      if (!itemId) {
-        logger.error('Item ID not found in div HTML tag.');
-        continue;
-      }
-
-      const hasCode = !item.querySelector('button.ui-btn--ci-blue-600');
-
-      log.info(`Item ID ${itemId} has code: ${hasCode}`);
-
-      const detailsUrl = `https://www.sparwelt.de/hinge/graphql?query=%0A++query+VoucherById($id:+ID!)+%7B%0A++++voucher(id:+$id)+%7B%0A++++++id%0A++++++title%0A++++++provider+%7B%0A++++++++id%0A++++++++title%0A++++++++slug%0A++++++++domainUrl%0A++++++++image%0A++++++++affiliateDeeplink+%7B%0A++++++++++url%0A++++++++++id%0A++++++++%7D%0A++++++++minOrderValueWording%0A++++++%7D%0A++++++affiliateDeeplink+%7B%0A++++++++id%0A++++++++url%0A++++++%7D%0A++++++teaserDescription%0A++++++savingValue%0A++++++savingType%0A++++++minOrderValue%0A++++++limitProduct%0A++++++limitCustomer%0A++++++dateEnd%0A++++%7D%0A++%7D%0A&variables=%7B%22id%22:%22%2Fhinge%2Fvouchers%2F${itemId}%22%7D`;
-
-      const validator = new DataValidator();
-
-      validator.addValue('sourceUrl', request.url);
-      validator.addValue('idInSite', itemId);
-
-      if (hasCode) {
-        const itemCodeURL = `https://www.sparwelt.de/hinge/vouchercodes/${itemId}`;
-        const itemCode = await fetchItemCode(itemCodeURL);
-        if (itemCode) {
-          validator.addValue('code', itemCode);
-        }
-      }
-
-      // Forward to the details page
-      await enqueueLinks({
-        urls: [detailsUrl],
-        userData: {
-          ...request.userData,
-          label: Label.details,
-          validatorData: validator.getData(),
-        },
-        forefront: true,
-      });
-    }
+    await enqueueLinks({
+      urls: [detailsUrl],
+      userData: {
+        ...request.userData,
+        label: Label.details,
+        sourceUrl: request.url,
+      },
+      forefront: true,
+    });
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.
@@ -120,15 +101,7 @@ router.addHandler(Label.details, async (context) => {
   if (request.userData.label !== Label.details) return;
 
   try {
-    // Sleep for 3 seconds between requests to avoid rate limitings
-    await sleep(1000);
-
-    // Retrieve validatorData from request's userData
-    const validatorData = request.userData.validatorData;
-
-    // Create a new DataValidator instance and load the data
-    const validator = new DataValidator();
-    validator.loadData(validatorData);
+    log.info(`Processing URL: ${request.url}`);
 
     // Convert body to string if it's a Buffer
     const htmlContent = body instanceof Buffer ? body.toString() : body;
@@ -137,40 +110,50 @@ router.addHandler(Label.details, async (context) => {
     const voucherJson = JSON.parse(htmlContent);
 
     // Validate the necessary data is present
-    if (!voucherJson || !voucherJson.data || !voucherJson.data.voucher) {
-      log.warning('Voucher data is missing in the parsed JSON');
+    if (!voucherJson || !voucherJson.shop || !voucherJson.vouchers) {
+      logger.error('Voucher data not found');
+      return;
     }
 
-    // Extract voucher data from JSON
-    const voucher = voucherJson.data.voucher;
-    const provider = voucher.provider;
+    const merchantName = jp.query(voucherJson, '$.shop.title')[0];
+    const domainUrl = jp.query(voucherJson, '$.shop.domainUrl')[0];
 
-    // Extract domain name from URL
-    const merchantUrl = provider.domainUrl;
-    const domainName = getMerchantDomainFromUrl(merchantUrl);
+    const domainName = new URL(domainUrl).hostname || '';
 
-    // Populate the validator with data
-    // Add required values to the validator
-    validator.addValue('merchantName', provider.title);
-    validator.addValue('title', voucher.title);
+    const vouchers = jp.query(voucherJson, '$.vouchers')?.[0] || [];
+    const voucherExpired =
+      jp.query(voucherJson, '$.vouchersExpired')?.[0] || [];
 
-    // Add optional values to the validator
-    validator.addValue('domain', domainName);
-    validator.addValue('description', voucher.teaserDescription);
-    // Terms and Conditions, Start Date, Code, and Exclusive are not available in the JSON
-    // If you have these details from another source, add them here
-    validator.addValue('expiryDateAt', voucher.dateEnd);
-    validator.addValue('isShown', true);
+    const items = [...vouchers, ...voucherExpired]
+      .map((voucher: any) => {
+        return {
+          merchantName: merchantName,
+          merchantDomain: domainName,
+          sourceUrl: request.userData.sourceUrl,
+          title: voucher.title || null,
+          termsAndConditions: jp.query(voucher, '$..product')[0] || null,
+          idInSite: voucher.id || null,
+          code: voucher.code?.type === 'single' ? voucher.code.code : null,
+          expiryDateAt: jp.query(voucher, '$.expiryDate')[0] || null,
+          isExclusive: voucher.exclusive || false,
+          startDateAt: jp.query(voucher, '$..AvailableFrom')[0] || null,
+          expiryDate: jp.query(voucher, '$..AvailableTill')[0] || null,
+        };
+      })
+      .filter((item: any) => item.title && item.idInSite);
 
-    // Process and store the data
-    await postProcess(
-      {
-        SaveDataHandler: {
-          validator: validator,
+    for (const item of items) {
+      const { validator } = processItem(item);
+
+      await postProcess(
+        {
+          SaveDataHandler: {
+            validator: validator,
+          },
         },
-      },
-      context
-    );
+        context
+      );
+    }
   } finally {
     // We don't catch so that the error is logged in Sentry, but use finally
     // since we want the Apify actor to end successfully and not waste resources by retrying.
