@@ -219,9 +219,26 @@ export class SummaryController {
       return new StandardResponse('Invalid source domain', true);
     }
 
+    const TargetPagesList = await prisma.targetPage.findMany({
+      where: {
+        domain: domain,
+        locale: locale,
+        disabledAt: null,
+        markedAsNonIndexAt: null,
+        locale_relation: { isActive: true },
+        merchant: { disabledAt: null },
+      },
+    });
+
     const result = await prisma.coupon.groupBy({
       by: ['sourceUrl', 'lastSeenAt', 'isExpired'],
-      where: { locale, sourceDomain: sourceDomain.domain },
+      where: {
+        locale: locale,
+        sourceDomain: domain,
+        merchant_relation: { disabledAt: null },
+        locale_relation: { isActive: true },
+        sourceUrl: { in: TargetPagesList.map((row) => row.url) },
+      },
       _count: { _all: true },
       orderBy: {
         lastSeenAt: 'desc',
@@ -243,12 +260,12 @@ export class SummaryController {
       .filter((row) => !row.isExpired)
       .reduce((sum, row) => sum + row._count._all, 0);
 
-    const sourceUrls = new Set(result.map((row) => row.sourceUrl));
     const targetPagesMap = new Map<
       string,
       {
         url: string;
-        lastCrawled: string | null;
+        lastCrawled?: string | null;
+        lastItemCrawledAt?: string | null;
         totalItems: number;
         nonExpiredItems: number;
         markedAsNonIndexAt?: Date | null;
@@ -260,9 +277,11 @@ export class SummaryController {
       if (!targetPagesMap.has(url)) {
         targetPagesMap.set(url, {
           url,
-          lastCrawled: row.lastSeenAt ? row.lastSeenAt.toISOString() : null,
           totalItems: 0,
           nonExpiredItems: 0,
+          lastItemCrawledAt: row.lastSeenAt
+            ? row.lastSeenAt.toISOString()
+            : null,
         });
       }
       const targetPage = targetPagesMap.get(url)!;
@@ -271,7 +290,7 @@ export class SummaryController {
       if (row.lastSeenAt && !row.isExpired) {
         const lastCrawledAt = dayjs(row.lastSeenAt);
         const targetPageLastCrawled = targetPage.lastCrawled
-          ? dayjs(targetPage.lastCrawled)
+          ? dayjs(targetPage.lastCrawled).toISOString()
           : null;
 
         if (
@@ -285,26 +304,24 @@ export class SummaryController {
       }
     });
 
-    const relatedTargetPages = await prisma.targetPage.findMany({
-      where: {
-        domain: sourceDomain.domain,
-        locale,
-        disabledAt: null,
-        locale_relation: { isActive: true },
-        merchant: { disabledAt: null },
-        url: {
-          notIn: Array.from(sourceUrls),
-        },
-      },
-    });
-
-    relatedTargetPages.forEach((row) => {
+    TargetPagesList.forEach((row) => {
       if (!targetPagesMap.has(row.url)) {
         targetPagesMap.set(row.url, {
           url: row.url,
-          lastCrawled: null,
           totalItems: 0,
           nonExpiredItems: 0,
+          lastItemCrawledAt: null,
+          lastCrawled: row.lastApifyRunAt
+            ? row.lastApifyRunAt.toISOString()
+            : null,
+        });
+      } else {
+        const targetPage = targetPagesMap.get(row.url)!;
+        targetPagesMap.set(row.url, {
+          ...targetPage,
+          lastCrawled: row.lastApifyRunAt
+            ? row.lastApifyRunAt.toISOString()
+            : targetPage.lastCrawled,
         });
       }
     });
@@ -316,7 +333,7 @@ export class SummaryController {
         : null,
     }));
 
-    const totalTargetPages = sourceUrls.size + relatedTargetPages.length;
+    const totalTargetPages = TargetPagesList.length;
 
     const formattedResult = {
       locale,
@@ -326,6 +343,6 @@ export class SummaryController {
       targetPagesList,
     };
 
-    return new StandardResponse('Locales Summary', false, formattedResult);
+    return new StandardResponse('Locales Summary ', false, formattedResult);
   }
 }
