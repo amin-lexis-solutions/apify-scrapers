@@ -193,16 +193,26 @@ export class CouponsController {
     ]);
 
     // Format the expiryDateAt field for each item in the data array
-    const formattedData = data.map((item) => ({
-      merchantName: item.merchant_relation.name,
-      ...item,
-      startDateAt: item.startDateAt
-        ? dayjs(item.startDateAt).format('YYYY-MM-DD')
-        : null,
-      expiryDateAt: item.expiryDateAt
-        ? dayjs(item.expiryDateAt).format('YYYY-MM-DD')
-        : null,
-    }));
+    const formattedData = data.map((item) => {
+      const { merchantNameOnSite, merchant_relation, ...rest } = item;
+      return {
+        merchantName: merchantNameOnSite,
+        ...rest,
+        found_through_merchant_search: {
+          serpMerchantId: merchant_relation.id,
+          name: merchant_relation.name,
+          domain: merchant_relation.domain,
+          locale: merchant_relation.locale,
+          disabledAt: merchant_relation.disabledAt,
+        },
+        startDateAt: item.startDateAt
+          ? dayjs(item.startDateAt).format('YYYY-MM-DD')
+          : null,
+        expiryDateAt: item.expiryDateAt
+          ? dayjs(item.expiryDateAt).format('YYYY-MM-DD')
+          : null,
+      };
+    });
 
     const lastPage = Math.ceil(totalResults / pageSize);
     const currentPageResults = data.length;
