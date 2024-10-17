@@ -26,6 +26,8 @@ import { WebhooksController } from './controllers/webhooks-controller';
 import { SentryController } from './controllers/sentry-controller';
 import { TestsController } from './controllers/tests-controller';
 import { SummaryController } from './controllers/summary-controller';
+import { DashboardController } from './controllers/dashboard-controller';
+
 import { useNgrok } from './lib/ngrok';
 import { CustomErrorHandler } from './middlewares/custom-error-handler';
 import { authorizationChecker } from './utils/auth';
@@ -82,6 +84,7 @@ const routingControllersOptions: RoutingControllersOptions = {
     ExportsController,
     TestsController,
     SummaryController,
+    DashboardController,
   ],
   middlewares: [
     CustomErrorHandler, // Registering your custom error handler
