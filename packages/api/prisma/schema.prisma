@@ -33,6 +33,7 @@ model Coupon {
   description        String?
   termsAndConditions String?
   expiryDateAt       DateTime?      @db.Date
+  expiryDateMightBeFake Boolean?
   code               String?
   startDateAt        DateTime?      @db.Date
   sourceUrl          String

@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/node';
 import { SOURCES_DATA } from '../../config/actors';
 import { localesToImport } from '../../config/primary-locales';
 import { getMerchantDomainFromUrl } from 'shared/helpers';
+import dayjs from 'dayjs';
 
 export function normalizeString(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -304,6 +305,26 @@ export async function availableActorRuns(): Promise<number> {
   } catch (error) {
     console.error('🚫 Error fetching actor runs', error);
     throw error;
+  }
+}
+
+// Function to check if the expiry date might be fake
+export function isExpiryDateMightBeFake(expiryDate: Date): boolean | null {
+  try {
+    const today = dayjs();
+    const expiry = dayjs(expiryDate);
+    const deltaDays = expiry.diff(today, 'day');
+
+    const day = expiry.date();
+    const lastDayOfMonth = expiry.endOf('month').date();
+
+    const isValidDay = day === 1 || day === 15 || day === lastDayOfMonth;
+    const isWithinRange = Math.abs(deltaDays) <= 15;
+
+    return !(isValidDay || isWithinRange);
+  } catch (error) {
+    console.error('Error in isExpiryDateMightBeFake:', error);
+    return null;
   }
 }
 

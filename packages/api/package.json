@@ -30,6 +30,7 @@
     "scripts:tests": "ts-node -r tsconfig-paths/register  scripts/automated-tests.ts",
     "scripts:migrate-coupons-ids": "ts-node -r tsconfig-paths/register scripts/migrate-coupons-ids.ts",
     "scripts:del-unwhitelisted-coupons": "ts-node -r tsconfig-paths/register scripts/del-unwhitelisted-coupons.ts",
+    "scripts:detect-fake-expiryDate": "ts-node -r tsconfig-paths/register scripts/detect-fake-expiryDate.ts",
     "scripts:sync-merchants-data": "ts-node -r tsconfig-paths/register scripts/sync-merchants-data.ts",
     "scripts:migrate-old-sources": "ts-node -r tsconfig-paths/register scripts/migrate-old-sources.ts",
     "scripts:match-merchants-and-target-pages": "ts-node -r tsconfig-paths/register scripts/match-merchants-and-target-pages.ts",

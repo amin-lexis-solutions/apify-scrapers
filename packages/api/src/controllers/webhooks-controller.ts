@@ -15,6 +15,7 @@ import {
   isValidLocale,
   isValidCouponCode,
   findMerchantBySearchTerm,
+  isExpiryDateMightBeFake,
 } from '../utils/utils';
 
 import {
@@ -31,6 +32,7 @@ const updatableFields: (keyof Coupon)[] = [
   'description',
   'termsAndConditions',
   'expiryDateAt',
+  'expiryDateMightBeFake',
   'code',
   'startDateAt',
   'isShown',
@@ -345,8 +347,15 @@ export class WebhooksController {
         updateData.archivedAt = archivedAt;
         updateData.archivedReason = archivedReason;
 
-        if (key === 'expiryDateAt' || key === 'startDateAt')
-          (updateData as any)[key] = validDateOrNull(value as string | null);
+        if (key === 'expiryDateAt' || key === 'startDateAt') {
+          const validDate = validDateOrNull(value as string | null);
+          (updateData as any)[key] = validDate;
+          if (key === 'expiryDateAt' && validDate !== null) {
+            updateData.expiryDateMightBeFake = isExpiryDateMightBeFake(
+              new Date(validDate)
+            );
+          }
+        }
       }
     }
     return {
@@ -413,6 +422,7 @@ export class WebhooksController {
       description: item.description || null,
       termsAndConditions: item.termsAndConditions || null,
       expiryDateAt: validDateOrNull(item.expiryDateAt) || null,
+      expiryDateMightBeFake: isExpiryDateMightBeFake(item.expiryDateAt) || null,
       code: item.code || null,
       startDateAt: validDateOrNull(item.startDateAt) || null,
       sourceUrl: sourceUrl,
