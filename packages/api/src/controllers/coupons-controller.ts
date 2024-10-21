@@ -162,6 +162,7 @@ export class CouponsController {
           merchantId: true,
           termsAndConditions: true,
           expiryDateAt: true,
+          expiryDateMightBeFake: true,
           code: true,
           startDateAt: true,
           sourceUrl: true,
