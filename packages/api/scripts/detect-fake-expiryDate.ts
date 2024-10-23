@@ -13,7 +13,7 @@ async function detectFakeExpiryDate() {
 
   try {
     const totalCoupons = await prisma.coupon.count({
-      where: { expiryDateAt: { not: null } },
+      where: { expiryDateAt: { not: null }, expiryDateMightBeFake: null },
     });
     console.log(`Total coupons with Expiry Date: ${totalCoupons}`);
 
@@ -36,7 +36,7 @@ async function detectFakeExpiryDate() {
           id: true,
           expiryDateAt: true,
         },
-        where: { expiryDateAt: { not: null } },
+        where: { expiryDateAt: { not: null }, expiryDateMightBeFake: null },
         skip: offset,
         take: BATCH_SIZE,
       });
