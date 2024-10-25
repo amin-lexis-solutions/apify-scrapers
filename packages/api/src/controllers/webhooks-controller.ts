@@ -344,8 +344,11 @@ export class WebhooksController {
         updateData.source_relation = {
           connect: { apifyActorId },
         };
-        updateData.archivedAt = archivedAt;
-        updateData.archivedReason = archivedReason;
+
+        if (existingRecord?.archivedReason !== 'manual') {
+          updateData.archivedAt = archivedAt;
+          updateData.archivedReason = archivedReason;
+        }
 
         if (key === 'expiryDateAt' || key === 'startDateAt') {
           const validDate = validDateOrNull(value as string | null);
