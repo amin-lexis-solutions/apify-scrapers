@@ -97,7 +97,9 @@ export function isValidLocaleForDomain(
     source.domains.some((d) => d.domain === domain)
   );
   if (!source) return false;
-  return source.domains.some((d) => d.locales.includes(locale));
+  return source.domains.some(
+    (d) => d.locales.includes(locale) && d.domain === domain
+  );
 }
 
 // Function to get locale from url
