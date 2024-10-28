@@ -104,23 +104,6 @@ router.addHandler(Label.listing, async (context) => {
       return;
     }
 
-    const merchantLogoImgSelector = 'div.shopHeader img.shopLogo';
-
-    // Check if valid page
-    if (!$(merchantLogoImgSelector).length) {
-      log.warning(`Not Merchant URL: ${request.url}`);
-    }
-    const merchantLogoImg = $(merchantLogoImgSelector);
-    let merchantName = '';
-
-    if (merchantLogoImg.length > 0) {
-      merchantName = merchantLogoImg.attr('title')?.trim() || '';
-    }
-
-    if (!merchantName) {
-      logger.error('Unable to find merchant name');
-    }
-
     const merchantDomain = getMerchantDomainFromUrl(request.url);
 
     if (!merchantDomain) {
@@ -160,6 +143,12 @@ router.addHandler(Label.listing, async (context) => {
       if (!idInSite) {
         logger.error('idInSite not found in item');
         continue;
+      }
+
+      const merchantName = config?.shop;
+
+      if (!merchantName) {
+        logger.error('Unable to find merchant name');
       }
 
       const itemData = {
