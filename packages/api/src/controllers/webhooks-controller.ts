@@ -285,12 +285,12 @@ export class WebhooksController {
 
     for (const [key, value] of Object.entries(item)) {
       if (updatableFields.includes(key as keyof Coupon)) {
-        if (key === 'isExpired' && typeof value === 'boolean') {
+        if (key === 'isExpired') {
           if (value) {
             archivedAt = now;
             archivedReason = 'expired';
             updateData.isExpired = true;
-          } else if (existingRecord?.isExpired) {
+          } else {
             archivedAt = null;
             archivedReason = 'unexpired';
             updateData.isExpired = false;
@@ -348,6 +348,9 @@ export class WebhooksController {
         if (existingRecord?.archivedReason !== 'manual') {
           updateData.archivedAt = archivedAt;
           updateData.archivedReason = archivedReason;
+        } else {
+          archivedAt = existingRecord.archivedAt;
+          archivedReason = existingRecord.archivedReason;
         }
 
         if (key === 'expiryDateAt' || key === 'startDateAt') {

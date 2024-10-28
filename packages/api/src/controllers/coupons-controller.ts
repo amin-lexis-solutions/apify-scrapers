@@ -31,6 +31,10 @@ import { convertToBooleanOrNull } from '@api/utils/utils';
 export class CouponsController {
   private itemService: ItemService;
 
+  constructor() {
+    this.itemService = new ItemService();
+  }
+
   @Get('/')
   @OpenAPI({
     summary: 'List items',
