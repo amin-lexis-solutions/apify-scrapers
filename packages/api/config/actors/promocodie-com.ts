@@ -1,9 +1,11 @@
 import { Locale } from '../locales';
 import path from 'path';
 
+// Ref:https://github.com/OberstBV/apify-scrapers/issues/570
+// Actor ID : KJhCl7i4ECa0Hg6Ri  in case we want to re-enable it
 export default [
   {
-    apifyActorId: 'KJhCl7i4ECa0Hg6Ri',
+    apifyActorId: null,
     domains: [
       {
         domain: 'br.promocodie.com',
