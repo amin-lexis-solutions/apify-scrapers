@@ -38,6 +38,7 @@
     "scripts:match-merchants-and-coupons": "ts-node -r tsconfig-paths/register scripts/match-merchants-and-coupons.ts",
     "scripts:match-sourceDomains-and-coupons": "ts-node -r tsconfig-paths/register scripts/match-sourceDomains-and-coupons.ts",
     "scripts:match-sourceDomains-locales-and-coupons": "ts-node -r tsconfig-paths/register scripts/match-sourceDomains-locales-and-coupons.ts",
+    "scripts:match-sourceDomains-locales-and-targetPages": "ts-node -r tsconfig-paths/register scripts/match-sourceDomains-locales-and-targetPages.ts",
     "scripts:verify-runnable-actors-are-shared-with-oberst": "ts-node -r tsconfig-paths/register scripts/verify-runnable-actors-are-shared-with-oberst.ts",
     "schedule:actors": "./node_modules/.bin/ts-node -r tsconfig-paths/register  ./src/crons/schedule-actors.ts",
     "schedule:find-serp": "./node_modules/.bin/ts-node -r tsconfig-paths/register ./src/crons/schedule-find-serp.ts",

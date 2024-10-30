@@ -341,7 +341,7 @@ export class TargetsController {
                 targetPageId: data.id,
                 targetPageUrl: data.url,
                 verifyLocale:
-                  data.verified_locale || data.locale_relation.locale,
+                  data.verifiedLocale || data.locale_relation.locale,
                 merchantId: data.merchantId,
               },
             }));

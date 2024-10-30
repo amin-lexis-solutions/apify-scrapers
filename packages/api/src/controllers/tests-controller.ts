@@ -178,7 +178,7 @@ export class TestsController {
         metadata: {
           targetPageId: page.id,
           targetPageUrl: page.url,
-          verifyLocale: page.verified_locale,
+          verifyLocale: page.verifiedLocale,
           merchantId: page.merchantId,
         },
       };

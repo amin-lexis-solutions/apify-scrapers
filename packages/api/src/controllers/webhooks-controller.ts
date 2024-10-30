@@ -12,7 +12,7 @@ import {
   removeDuplicateCoupons,
   getGoogleActorPriceInUsdMicroCents,
   isValidLocaleForDomain,
-  isValidLocale,
+  getLocaleFromUrl,
   isValidCouponCode,
   findMerchantBySearchTerm,
   isExpiryDateMightBeFake,
@@ -726,6 +726,8 @@ export class WebhooksController {
 
       // Store the SERP data using upsert change localeId value
       for (const item of validData) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { verifiedLocale, ...rest } = item;
         try {
           await prisma.targetPage.upsert({
             where: {
@@ -739,7 +741,7 @@ export class WebhooksController {
               lastApifyRunAt: null,
             },
             update: {
-              ...item,
+              ...rest,
               lastApifyRunAt: startedAt,
               updatedAt: new Date(),
             },
@@ -828,17 +830,10 @@ export class WebhooksController {
           searchDomain: item.searchQuery.domain,
           apifyRunId: actorRunId,
           domain: new URL(item.url).hostname.replace('www.', ''),
-          verified_locale: null as string | null,
+          verifiedLocale: getLocaleFromUrl(item.url) || null,
           locale_relation: { connect: { locale: locale } },
           merchant: { connect: { id: merchantId } },
         };
-
-        if (item.searchQuery.term.startsWith('site:')) {
-          const verifiedLocale = `${item.searchQuery.languageCode.toLowerCase()}_${item.searchQuery.countryCode.toUpperCase()}`;
-          data.verified_locale = isValidLocale(verifiedLocale)
-            ? verifiedLocale
-            : (null as string | null);
-        }
 
         return data;
       });
