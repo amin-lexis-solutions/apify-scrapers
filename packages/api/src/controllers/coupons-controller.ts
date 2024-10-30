@@ -325,9 +325,7 @@ export class CouponsController {
   @ResponseSchema(StandardResponse)
   async archive(@Param('id') id: string): Promise<StandardResponse> {
     if (!id || id.trim() === '') {
-      throw new BadRequestError(
-        'ID parameter is required and cannot be empty.'
-      );
+      throw new BadRequestError('Invalid item ID provided');
     }
 
     const existingRecord = await prisma.coupon.findUnique({
@@ -335,7 +333,9 @@ export class CouponsController {
     });
 
     if (!existingRecord) {
-      throw new BadRequestError('Record not found.');
+      const error = new BadRequestError('Unprocessable Entity');
+      error.httpCode = 422;
+      throw error;
     }
 
     if (existingRecord.archivedAt) {
