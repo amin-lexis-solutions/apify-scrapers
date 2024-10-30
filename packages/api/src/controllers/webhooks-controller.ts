@@ -131,6 +131,9 @@ export class WebhooksController {
                 lt: startedAt,
               },
               isShown: true,
+              archivedReason: {
+                not: $Enums.ArchiveReason.manual,
+              },
             },
             data: {
               isShown: false,
