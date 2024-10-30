@@ -16,10 +16,12 @@ interface CouponSummaryRow {
   locale_active: boolean;
   source_active: boolean;
   itemsSeenLast24h: number;
+  scrapeableTargetPagesWithItemsCount: number;
 }
 
 interface TargetPagesRow {
-  totalPages: number;
+  totalTargetPagesCount: number;
+  scrapeableTargetPagesCount: number;
   locale: string;
   domain: string;
   nonIndexPages: number;
@@ -37,7 +39,9 @@ interface LocaleSummary {
     proxy: string | null;
     itemsCount: number;
     itemsSeenLast24h: number;
-    targetPagesCount?: number;
+    scrapeableTargetPagesWithItemsCount?: number;
+    scrapeableTargetPagesCount?: number;
+    totalTargetPagesCount?: number;
   }[];
 }
 
@@ -61,7 +65,8 @@ export class SummaryController {
           sd."proxyCountryCode",
           tl."isActive" as locale_active,
           s."isActive" as source_active,
-          SUM(CASE WHEN c."lastSeenAt" >= now() - INTERVAL '1 day' THEN 1 ELSE 0 END) AS "itemsSeenLast24h"
+          SUM(CASE WHEN c."lastSeenAt" >= now() - INTERVAL '1 day' THEN 1 ELSE 0 END) AS "itemsSeenLast24h",
+          COUNT(DISTINCT CASE WHEN c."lastSeenAt" >= now() - INTERVAL '1 day' THEN c."sourceUrl" ELSE NULL END) AS "scrapeableTargetPagesWithItemsCount"
       FROM
           "TargetLocale" tl
       LEFT JOIN
@@ -102,6 +107,7 @@ export class SummaryController {
           itemsSeenLast24h,
           locale_active,
           source_active,
+          scrapeableTargetPagesWithItemsCount,
         } = row;
 
         if (!acc[locale]) {
@@ -126,7 +132,11 @@ export class SummaryController {
             proxy: proxyCountryCode || null,
             itemsCount: Number(coupons),
             itemsSeenLast24h: Number(itemsSeenLast24h),
-            targetPagesCount: 0,
+            scrapeableTargetPagesWithItemsCount: Number(
+              scrapeableTargetPagesWithItemsCount
+            ),
+            scrapeableTargetPagesCount: 0,
+            totalTargetPagesCount: 0,
           });
 
         return acc;
@@ -156,6 +166,9 @@ export class SummaryController {
           proxy: source?.proxyCountryCode || null,
           itemsCount: 0,
           itemsSeenLast24h: 0,
+          scrapeableTargetPagesWithItemsCount: 0,
+          scrapeableTargetPagesCount: 0,
+          totalTargetPagesCount: 0,
         });
       }
     }
@@ -163,7 +176,8 @@ export class SummaryController {
     // get count of targetPages for each locale and domain
     const countTargetPages = await prisma.$queryRaw<TargetPagesRow[]>`
        SELECT
-            COUNT(tp.id) AS "totalPages",
+            COUNT(tp.id) AS "totalTargetPagesCount",
+            SUM( CASE WHEN tp."disabledAt" is null and tp."markedAsNonIndexAt" is null  THEN 1 ELSE 0 END) AS "scrapeableTargetPagesCount",
             locale,
             tp.domain
         FROM
@@ -179,10 +193,15 @@ export class SummaryController {
     // append localesSummary with count of targetPages
     countTargetPages.forEach((row) => {
       if (localesSummary[row.locale]) {
-        localesSummary[row.locale].targetPagesCount += Number(row.totalPages);
+        localesSummary[row.locale].targetPagesCount += Number(
+          row.totalTargetPagesCount
+        );
         localesSummary[row.locale].domains.forEach((domain) => {
           if (domain.domain === row.domain) {
-            domain.targetPagesCount = Number(row.totalPages);
+            domain.totalTargetPagesCount = Number(row.totalTargetPagesCount);
+            domain.scrapeableTargetPagesCount = Number(
+              row.scrapeableTargetPagesCount
+            );
           }
         });
       }
