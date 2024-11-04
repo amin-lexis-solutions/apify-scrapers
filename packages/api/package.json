@@ -4,10 +4,11 @@
   "description": "This project involves creating a TypeScript-based API that integrates with Apify for automated web scraping, stores data in a PostgreSQL database, and allows client data retrieval through well-documented endpoints.",
   "main": "index.js",
   "scripts": {
-    "dev": "ts-node -r tsconfig-paths/register src/server.ts --watch",
-    "start": "node ./dist/api/src/server.js",
+    "dev": "ts-node -r tsconfig-paths/register src/api-service.ts --watch",
+    "dev:pipeline": "ts-node -r tsconfig-paths/register src/pipeline-service.ts --watch",
+    "start": "node ./dist/api/src/api-service.js",
+    "start:pipeline": "node dist/api/src/pipeline-service.js",
     "build": "tsc && tsc-alias ",
-    "test": "echo \"Error: no test specified\" && exit 1",
     "prisma:dev": "./node_modules/.bin/prisma migrate dev --schema prisma/schema.prisma",
     "prisma:generate": "./node_modules/.bin/prisma generate --schema prisma/schema.prisma",
     "prisma:migrate": "./node_modules/.bin/prisma migrate deploy --schema prisma/schema.prisma",
@@ -104,7 +105,8 @@
     "routing-controllers": "^0.10.4",
     "routing-controllers-openapi": "^4.0.0",
     "swagger-ui-express": "^5.0.0",
-    "ts-node": "^10.9.2"
+    "ts-node": "^10.9.2",
+    "ioredis": "^5.x.x"
   },
   "devDependencies": {
     "@types/compression": "^1.7.5",
