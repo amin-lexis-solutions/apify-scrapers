@@ -50,6 +50,12 @@ To start the API, run `yarn dev` in the `packages/api` folder.
 
 To start the actor, run `yarn start` in one of the actor folders.
 
+Build the API docker image with `docker build -t oberst-scrapers-api -f docker/Dockerfile.api .`.
+Run the API docker container with `docker run --env-file packages/api/.env -p 3000:3000 oberst-scrapers-api `.
+
+Build the pipeline docker image with `docker build -t oberst-scrapers-pipeline -f docker/Dockerfile.pipeline .`.
+Run the pipeline docker container with `docker run --env-file packages/api/.env -p 3000:3000 oberst-scrapers-pipeline`.
+
 ## Deployment
 
 The actors are deployed to Apify. The API is deployed to DigitalOcean. The database is also hosted on DigitalOcean.
