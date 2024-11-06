@@ -231,15 +231,25 @@ export class WebhooksController {
         archivedReason
       );
 
+      const {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        archivedAt: _,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        archivedReason: __,
+        ...restUpdateData
+      } = updateData;
+
+      const update =
+        existingRecord?.archivedReason === $Enums.ArchiveReason.manual
+          ? restUpdateData // Use version without archive fields for manual archived coupons
+          : updateData; // Use complete version
+
       try {
         await prisma.coupon.upsert({
           where: {
             id,
-            archivedReason: {
-              not: $Enums.ArchiveReason.manual,
-            },
           },
-          update: updateData,
+          update: update,
           create: createData,
         });
 
