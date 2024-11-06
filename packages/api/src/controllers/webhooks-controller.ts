@@ -233,7 +233,12 @@ export class WebhooksController {
 
       try {
         await prisma.coupon.upsert({
-          where: { id },
+          where: {
+            id,
+            archivedReason: {
+              not: $Enums.ArchiveReason.manual,
+            },
+          },
           update: updateData,
           create: createData,
         });
@@ -348,7 +353,7 @@ export class WebhooksController {
           connect: { apifyActorId },
         };
 
-        if (existingRecord?.archivedReason !== 'manual') {
+        if (existingRecord?.archivedReason !== $Enums.ArchiveReason.manual) {
           updateData.archivedAt = archivedAt;
           updateData.archivedReason = archivedReason;
         } else {
