@@ -30,12 +30,34 @@ export class StandardResponse {
   @IsObject()
   data?: any;
 
-  constructor(message: string, isError: boolean, data?: any) {
+  @IsOptional()
+  @IsArray()
+  errors?: string[];
+
+  constructor(message: string, isError: boolean, data?: any, errors?: any[]) {
     this.status = isError ? 'ERROR' : 'SUCCESS';
     this.statusMessage = message;
-    if (data) {
-      this.data = data;
+    if (data) this.data = data;
+    if (errors) this.errors = this.parseValidationErrors(errors);
+  }
+  private parseValidationErrors(errors?: any[] | string[]): string[] {
+    if (!errors) return [];
+    if (
+      errors.every(
+        (err) =>
+          typeof err === 'object' && 'property' in err && 'constraints' in err
+      )
+    ) {
+      return errors.map((err) => {
+        if (err.constraints) {
+          const message = Object.values(err.constraints)[0];
+          return `${err.property} - ${message}`;
+        }
+        return `${err.property} - Invalid value`;
+      });
     }
+
+    return errors as string[];
   }
 }
 
@@ -93,9 +115,11 @@ export class ListRequestBody {
   @MinLength(1)
   sourceName?: string;
 
-  @IsString()
+  @IsString({ message: 'sourceDomain must be a string' })
   @IsOptional()
-  @MinLength(1)
+  @MinLength(1, {
+    message: 'sourceDomain cannot be empty when provided',
+  })
   sourceDomain?: string;
 
   @IsString()

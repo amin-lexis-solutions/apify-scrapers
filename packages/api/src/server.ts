@@ -89,6 +89,17 @@ const routingControllersOptions: RoutingControllersOptions = {
   middlewares: [
     CustomErrorHandler, // Registering your custom error handler
   ],
+  validation: {
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    forbidUnknownValues: true,
+    validationError: {
+      target: false,
+      value: false,
+    },
+    // Add detailed error messages
+    stopAtFirstError: false,
+  },
   defaultErrorHandler: false, // Disable the default error handler
   authorizationChecker,
 };

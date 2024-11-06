@@ -34,24 +34,20 @@ export class CustomErrorHandler implements ExpressErrorMiddlewareInterface {
       });
     }
 
-    // Log the error details, excluding sensitive information
-    console.error('Error occurred:', {
-      timestamp: new Date().toISOString(),
-      method: request.method,
-      path: request.path,
-      errorMessage: error.message,
-      // Avoid logging the error stack or sensitive data in production
-      // errorStack: error instanceof Error ? error.stack : '',
-    });
-
     let responseMessage = error.message || 'An error occurred';
     const httpCode = error instanceof HttpError ? error.httpCode : 500;
     if (httpCode === 500) {
       responseMessage = 'Internal Server Error';
     }
 
-    // Standardized error response with appropriate message
-    response.status(httpCode).json(new StandardResponse(responseMessage, true));
+    const errorResponse = new StandardResponse(
+      responseMessage,
+      true,
+      undefined,
+      error.errors ? [error.errors].flat() : undefined
+    );
+
+    response.status(httpCode).json(errorResponse);
 
     if (!response.headersSent) {
       next(error);
