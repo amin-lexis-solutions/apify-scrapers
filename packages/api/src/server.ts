@@ -90,7 +90,7 @@ const routingControllersOptions: RoutingControllersOptions = {
     CustomErrorHandler, // Registering your custom error handler
   ],
   validation: {
-    whitelist: true,
+    whitelist: false,
     forbidNonWhitelisted: true,
     forbidUnknownValues: true,
     validationError: {
