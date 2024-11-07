@@ -42,6 +42,9 @@ interface LocaleSummary {
     scrapeableTargetPagesWithItemsCount?: number;
     scrapeableTargetPagesCount?: number;
     totalTargetPagesCount?: number;
+    totalCouponCount?: number;
+    totalPromoCount?: number;
+    totalActiveCount?: number;
   }[];
 }
 
@@ -169,6 +172,9 @@ export class SummaryController {
           scrapeableTargetPagesWithItemsCount: 0,
           scrapeableTargetPagesCount: 0,
           totalTargetPagesCount: 0,
+          totalCouponCount: 0,
+          totalPromoCount: 0,
+          totalActiveCount: 0,
         });
       }
     }
@@ -206,6 +212,105 @@ export class SummaryController {
         });
       }
     });
+
+    async function getCouponPromoCode(locale: string, domains: any) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // sets time to 00:00:00.000 (midnight)
+
+      const codes = await prisma.coupon.groupBy({
+        by: 'sourceDomain',
+        where: {
+          locale: locale,
+          code: {
+            not: null,
+          },
+          sourceDomain: {
+            in: domains,
+          },
+        },
+        _count: {
+          id: true,
+        },
+      });
+
+      const expires = await prisma.coupon.groupBy({
+        by: 'sourceDomain',
+        where: {
+          AND: [
+            {
+              locale: locale,
+            },
+            {
+              sourceDomain: {
+                in: domains,
+              },
+            },
+            {
+              isExpired: true,
+            },
+          ],
+        },
+        _count: {
+          id: true,
+        },
+      });
+      const actives = await prisma.coupon.groupBy({
+        by: 'sourceDomain',
+        where: {
+          AND: [
+            {
+              locale: locale,
+            },
+            {
+              sourceDomain: {
+                in: domains,
+              },
+            },
+            {
+              isExpired: false,
+            },
+          ],
+        },
+        _count: {
+          id: true,
+        },
+      });
+      return [codes, expires, actives];
+    }
+
+    for (const locale of Object.keys(localesSummary)) {
+      const domains = localesSummary[locale]?.domains?.map((obj) => obj.domain);
+
+      const [codes, expires, actives] = await getCouponPromoCode(
+        locale,
+        domains
+      );
+
+      localesSummary[locale].domains = localesSummary[locale].domains.reduce(
+        (acc: any, domain) => {
+          const matchingCode: any = codes?.filter((codeObj: any) =>
+            codeObj?.sourceDomain === domain.domain ? codeObj : null
+          );
+
+          const matchingActives: any = actives?.filter((activeObj: any) =>
+            activeObj?.sourceDomain === domain.domain ? activeObj : null
+          );
+
+          const matchingExpires: any = expires?.filter((expiresObj: any) =>
+            expiresObj?.sourceDomain === domain.domain ? expiresObj : null
+          );
+
+          acc.push({
+            ...domain,
+            totalCouponCount: matchingCode[0]?._count?.id || 0,
+            totalExpireCount: matchingExpires[0]?._count?.id || 0,
+            totalActiveCount: matchingActives[0]?._count?.id || 0,
+          });
+          return acc;
+        },
+        []
+      );
+    }
 
     return new StandardResponse(`Locales Summary`, false, {
       locales: localesSummary,
