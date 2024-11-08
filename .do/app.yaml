@@ -117,16 +117,60 @@ envs:
     -----END CERTIFICATE-----
 ingress:
   rules:
-    - component:
-        name: pipeline
-      match:
-        path:
-          prefix: /(webhooks|targets|sentry|tests)
-    - component:
-        name: api
-      match:
-        path:
-          prefix: /
+  - component:
+      name: pipeline
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /webhooks
+  - component:
+      name: pipeline
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /targets
+  - component:
+      name: pipeline
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /sentry
+  - component:
+      name: pipeline
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /tests
+  - component:
+      name: api
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /items
+  - component:
+      name: api
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /overview
+  - component:
+      name: api
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /exports
+  - component:
+      name: api
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /api-docs
+  - component:
+      name: api
+      preserve_path_prefix: true
+    match:
+      path:
+        prefix: /dashboards
 name: apify-scrapers
 region: fra
 services:
@@ -144,13 +188,11 @@ services:
     initial_delay_seconds: 30
     period_seconds: 60
   autoscaling:
-    min_replicas: 1
-    max_replicas: 3
+    min_instance_count: 1
+    max_instance_count: 3
     metrics:
-      - type: cpu_utilization
-        target_percentage: 70
-      - type: memory_utilization
-        target_percentage: 80
+      cpu:
+        percent: 80
 - dockerfile_path: docker/Dockerfile.api
   github:
     branch: 584-stage-1
@@ -165,10 +207,8 @@ services:
     initial_delay_seconds: 30
     period_seconds: 60
   autoscaling:
-    min_replicas: 1
-    max_replicas: 3
+    min_instance_count: 1
+    max_instance_count: 3
     metrics:
-      - type: cpu_utilization
-        target_percentage: 70
-      - type: memory_utilization
-        target_percentage: 80
+      cpu:
+        percent: 80
