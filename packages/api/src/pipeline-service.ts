@@ -96,7 +96,7 @@ useExpressServer(app, routingControllersOptions);
 // The error handler must be before any other error middleware and after all controllers
 app.use(Sentry.Handlers.errorHandler());
 
-const port = process.env.PIPELINE_PORT || 3000;
+const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
   console.log(`Pipeline service running on port ${port}`);

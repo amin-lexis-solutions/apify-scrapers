@@ -139,6 +139,10 @@ services:
   instance_count: 1
   instance_size_slug: apps-s-1vcpu-0.5gb
   name: pipeline
+  health_check:  # Added health check
+    http_path: /
+    initial_delay_seconds: 30
+    period_seconds: 60
 - dockerfile_path: docker/Dockerfile.api
   github:
     branch: 584-stage-1
@@ -148,3 +152,7 @@ services:
   instance_count: 1
   instance_size_slug: apps-s-1vcpu-0.5gb
   name: api
+  health_check:  # Added health check
+    http_path: /api/
+    initial_delay_seconds: 30
+    period_seconds: 60
