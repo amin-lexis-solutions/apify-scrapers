@@ -18,4 +18,4 @@ if ! DATABASE_URL=$DATABASE_URL_NON_POOLED yarn prisma:seed:migrate-domains; the
 fi
 
 # Start the application server
-node dist/api/src/server.js
+node dist/api/src/api-service.js
