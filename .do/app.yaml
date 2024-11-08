@@ -137,12 +137,20 @@ services:
     repo: amin-lexis-solutions/apify-scrapers
   http_port: 8080
   instance_count: 1
-  instance_size_slug: apps-s-1vcpu-0.5gb
+  instance_size_slug: apps-s-2vcpu-2gb
   name: pipeline
-  health_check:  # Added health check
+  health_check:
     http_path: /
     initial_delay_seconds: 30
     period_seconds: 60
+  autoscaling:
+    min_replicas: 1
+    max_replicas: 3
+    metrics:
+      - type: cpu_utilization
+        target_percentage: 70
+      - type: memory_utilization
+        target_percentage: 80
 - dockerfile_path: docker/Dockerfile.api
   github:
     branch: 584-stage-1
@@ -150,9 +158,17 @@ services:
     repo: amin-lexis-solutions/apify-scrapers
   http_port: 8080
   instance_count: 1
-  instance_size_slug: apps-s-1vcpu-0.5gb
+  instance_size_slug: apps-s-2vcpu-2gb
   name: api
-  health_check:  # Added health check
+  health_check:
     http_path: /api/
     initial_delay_seconds: 30
     period_seconds: 60
+  autoscaling:
+    min_replicas: 1
+    max_replicas: 3
+    metrics:
+      - type: cpu_utilization
+        target_percentage: 70
+      - type: memory_utilization
+        target_percentage: 80
