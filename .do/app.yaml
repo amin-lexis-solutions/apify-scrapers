@@ -117,16 +117,16 @@ envs:
     -----END CERTIFICATE-----
 ingress:
   rules:
-  - component:
-      name: pipeline
-    match:
-      path:
-        prefix: /
-  - component:
-      name: api
-    match:
-      path:
-        prefix: /api
+    - component:
+        name: pipeline
+      match:
+        path:
+          prefix: /(webhooks|targets|sentry|tests)
+    - component:
+        name: api
+      match:
+        path:
+          prefix: /
 name: apify-scrapers
 region: fra
 services:
